@@ -154,16 +154,27 @@ class DataPreprocessor:
     def parse_iec_identifier(self, identifier: str) -> Dict[str, str]:
         """解析IEC 60204标识符"""
         import re
+        print(f"\n解析标识符: {identifier}")  # 调试信息
+        
         pattern = r'=(?P<function>[^+]*)\+(?P<location>[^-]*)-(?P<device>[^:]*):(?P<terminal>.*)'
         match = re.match(pattern, identifier)
+        
         if not match:
-            return {
+            # 如果不符合标准格式，尝试解析location
+            print("不符合标准格式，尝试提取location")  # 调试信息
+            location_match = re.search(r'K1\.\d{2}', identifier)
+            result = {
                 'function': '',
-                'location': '',
+                'location': location_match.group(0) if location_match else '',
                 'device': '',
                 'terminal': ''
             }
-        return match.groupdict()
+            print(f"解析结果: {result}")  # 调试信息
+            return result
+            
+        result = match.groupdict()
+        print(f"标准格式解析结果: {result}")  # 调试信息
+        return result
 
     def to_graph_data(self, selected_columns: Dict[str, str]):
         """转换为图论数据结构"""
@@ -222,8 +233,50 @@ class DataPreprocessor:
         
     def clean_data(self, graph_data: Dict):
         """清洗数据"""
-        # 实现数据清洗逻辑
-        # ...
+        import re
+        import json
+        
+        # 筛选有效连接
+        valid_edges = []
+        for edge in graph_data['edges']:
+            source_node = next((n for n in graph_data['nodes'] if n['id'] == edge['source']), None)
+            target_node = next((n for n in graph_data['nodes'] if n['id'] == edge['target']), None)
+            
+            # 检查location是否符合K1.格式
+            source_valid = source_node and re.match(r'K1\..*', source_node['properties']['location'])
+            target_valid = target_node and re.match(r'K1\..*', target_node['properties']['location'])
+            
+            if source_valid and target_valid:
+                valid_edges.append(edge)
+        
+        # 更新图数据
+        graph_data['edges'] = valid_edges
+        
+        # 显示筛选结果
+        print(f"\n筛选后的连接（共{len(valid_edges)}条）:")
+        print(f"{'序列号':<10} {'源':<20} {'目标':<20} {'颜色':<10}")
+        for edge in valid_edges:  # 显示所有结果
+            print(f"{edge['properties']['serial_number']:<10} {edge['source']:<20} {edge['target']:<20} {edge['properties']['color']:<10}")
+            
+        # 保存清洗后的数据
+        while True:
+            try:
+                filename = input("\n请输入保存文件名（不带扩展名）：").strip()
+                if not filename:
+                    raise ValueError("文件名不能为空")
+                    
+                save_path = f"output/{filename}.json"
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    json.dump(graph_data, f, ensure_ascii=False, indent=2)
+                    
+                print(f"\n数据已成功保存到：{save_path}")
+                break
+                
+            except Exception as e:
+                print(f"保存失败：{e}，请重试")
+            
         return graph_data
         
     def show_results(self, graph_data: Dict):
