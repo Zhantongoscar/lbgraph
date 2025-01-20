@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "id": "TEST_A_UNIT_1_P1",
+      "type": "A_UNIT_POINT",
+      "parent_device": "TEST_A_UNIT_1",
+      "properties": {}
+    },
+    {
+      "id": "TEST_A_UNIT_1_P2",
+      "type": "A_UNIT_POINT",
+      "parent_device": "TEST_A_UNIT_1",
+      "properties": {}
+    },
+    {
+      "id": "TEST_A_UNIT_1",
+      "type": "A_UNIT",
+      "properties": {
+        "connection_points": 2,
+        "status": "disconnected",
+        "connection_state": "disconnected",
+        "point1": "TEST_A_UNIT_1_P1",
+        "point2": "TEST_A_UNIT_1_P2"
+      },
+      "is_test_device": true
+    },
+    {
+      "id": "TEST_B_UNIT_4",
+      "type": "B_UNIT",
+      "properties": {
+        "voltage": 24.0,
+        "unit": "VDC"
+      },
+      "is_test_device": true
+    },
+    {
+      "id": "TEST_D_UNIT_5",
+      "type": "D_UNIT",
+      "properties": {
+        "measurement_type": "voltage",
+        "precision": 0.1
+      },
+      "is_test_device": true
+    }
+  ],
+  "edges": [],
+  "metadata": {
+    "type": "test_devices",
+    "version": "1.0"
+  }
+}
