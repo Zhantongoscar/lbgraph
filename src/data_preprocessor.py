@@ -69,8 +69,21 @@ class DataPreprocessor:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"文件不存在: {file_path}")
             
-        # 读取Excel并确保关键列为字符串类型
-        self.df = pd.read_excel(file_path, dtype=str)
+        # 询问转换数量
+        while True:
+            try:
+                count = input("请输入要转换的数量（输入'all'转换全部）：").strip().lower()
+                if count == 'all':
+                    self.df = pd.read_excel(file_path, dtype=str)
+                    break
+                else:
+                    count = int(count)
+                    if count > 0:
+                        self.df = pd.read_excel(file_path, dtype=str, nrows=count)
+                        break
+                    print("请输入大于0的数字或'all'")
+            except ValueError:
+                print("请输入有效的数字或'all'")
         
         # 定义需要处理的列
         required_columns = ['Consecutive number',

@@ -1,0 +1,239 @@
+{
+  "nodes": [
+    {
+      "id": "TEST_EDB_1",
+      "type": "EDB",
+      "name": "增强模块 EDB",
+      "properties": {
+        "description": "20点（7DI + 3DO + 10DI）",
+        "point_count": 20,
+        "input_points": [
+          "D1",
+          "D2",
+          "D3",
+          "D4",
+          "D5",
+          "D6",
+          "D7",
+          "D8",
+          "D9",
+          "D10",
+          "D11",
+          "D12",
+          "D13",
+          "D14",
+          "D15",
+          "D16",
+          "D17"
+        ],
+        "output_points": [
+          "B1",
+          "B2",
+          "B3"
+        ],
+        "location": "K1.S1"
+      },
+      "is_test_device": true
+    },
+    {
+      "id": "TEST_EDB_1_D1",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D2",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D3",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D4",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D5",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D6",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D7",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D8",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D9",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D10",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D11",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D12",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D13",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D14",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D15",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D16",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_D17",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "input"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_B1",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "output"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_B2",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "output"
+      }
+    },
+    {
+      "id": "TEST_EDB_1_B3",
+      "type": "EDB_POINT",
+      "parent_device": "TEST_EDB_1",
+      "properties": {
+        "point_type": "output"
+      }
+    },
+    {
+      "id": "TEST_EDB_1",
+      "type": "EDB",
+      "name": "增强模块 EDB",
+      "description": "20点（7DI + 3DO + 10DI）",
+      "point_count": 20,
+      "input_points": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8",
+        "D9",
+        "D10",
+        "D11",
+        "D12",
+        "D13",
+        "D14",
+        "D15",
+        "D16",
+        "D17"
+      ],
+      "output_points": [
+        "B1",
+        "B2",
+        "B3"
+      ],
+      "properties": {
+        "location": "K1.S1"
+      },
+      "is_test_device": true
+    }
+  ],
+  "edges": [],
+  "metadata": {
+    "type": "test_devices",
+    "version": "1.0"
+  }
+}

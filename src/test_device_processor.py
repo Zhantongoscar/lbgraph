@@ -50,7 +50,12 @@ class TestDeviceProcessor:
             
         device = {
             'id': device_id,
-            'type': device_type,
+            'type': device_type_id,
+            'name': device_type.name,
+            'description': device_type.description,
+            'point_count': device_type.point_count,
+            'input_points': device_type.input_points,
+            'output_points': device_type.output_points,
             'properties': properties,
             'is_test_device': True
         }
@@ -113,39 +118,67 @@ class TestDeviceProcessor:
             json.dump(graph_data, f, ensure_ascii=False, indent=2)
 
 def display_menu():
-    print("\n==== 测试设备管理系统 ====")
-    print("1. 添加设备")
-    print("2. 查看设备列表")
-    print("3. 保存配置")
-    print("4. 退出")
-    return input("请选择操作（1-4）：")
+    """显示菜单并获取用户选择"""
+    max_retries = 3
+    retries = 0
+    
+    while retries < max_retries:
+        print("\n==== 测试设备管理系统 ====")
+        print("1. 添加设备")
+        print("2. 查看设备列表")
+        print("3. 保存配置")
+        print("4. 退出")
+        
+        choice = input("请选择操作（1-4）：").strip()
+        if choice in ['1', '2', '3', '4']:
+            return choice
+        else:
+            retries += 1
+            print(f"无效输入，请重试（剩余尝试次数：{max_retries - retries}）")
+    
+    print("超过最大重试次数，返回主菜单")
+    return '4'  # 返回退出选项
 
 def add_device_interactive(processor):
+    """交互式添加设备"""
     from device_types import list_device_types
     
-    print("\n可用设备类型：")
-    for i, device_type in enumerate(list_device_types(), 1):
-        print(f"{i}. {device_type.name} ({device_type.description})")
+    max_retries = 3
+    retries = 0
     
-    choice = input("请选择设备类型编号：")
-    try:
-        device_type = list_device_types()[int(choice) - 1]
-        properties = {}
+    while retries < max_retries:
+        print("\n可用设备类型：")
+        device_types = list(list_device_types())
+        for i, device_type in enumerate(device_types, 1):
+            print(f"{i}. {device_type.name} ({device_type.description})")
         
-        # 添加自定义属性
-        print(f"\n添加 {device_type.name} 设备")
-        for key, value in device_type.properties.items():
-            properties[key] = input(f"请输入 {key}（默认：{value}）：") or value
-        
-        # 添加位置信息
-        location = input("请输入设备位置（如 K1.01）：")
-        if location:
-            properties['location'] = location
+        choice = input("请选择设备类型编号（输入q退出）：").strip()
+        if choice.lower() == 'q':
+            return
             
-        device_id = processor.add_device(device_type.id, properties)
-        print(f"设备添加成功，ID: {device_id}")
-    except (IndexError, ValueError):
-        print("无效的选择，请重试")
+        try:
+            device_type = device_types[int(choice) - 1]
+            properties = {}
+            
+            # 添加自定义属性
+            print(f"\n添加 {device_type.name} 设备")
+            if device_type.properties:
+                for key, value in device_type.properties.items():
+                    properties[key] = input(f"请输入 {key}（默认：{value}）：") or value
+                    
+            # 添加位置信息
+            location = input("请输入设备位置（如 K1.01）：")
+            if location:
+                properties['location'] = location
+                
+            device_id = processor.add_device(device_type.id, properties)
+            print(f"设备添加成功，ID: {device_id}")
+            return
+        except (IndexError, ValueError):
+            retries += 1
+            print(f"无效的选择，请重试（剩余尝试次数：{max_retries - retries}）")
+    
+    print("超过最大重试次数，返回主菜单")
 
 def list_devices(processor):
     print("\n当前设备列表：")
