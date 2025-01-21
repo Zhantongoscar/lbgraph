@@ -143,6 +143,55 @@ class GuiDeviceProcessor:
             )
             return None
             
+    def load_from_json(self, file_path: str, parent_widget: QWidget = None) -> bool:
+        """从JSON文件加载设备配置
+        
+        Args:
+            file_path: JSON文件路径
+            parent_widget: 父窗口部件
+            
+        Returns:
+            bool: 是否成功加载
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                graph_data = json.load(f)
+                
+            # 清空现有数据
+            self.devices.clear()
+            self.connections.clear()
+            
+            # 重建设备树结构
+            point_map = {}
+            for node in graph_data['nodes']:
+                if node.get('is_test_device'):
+                    # 主设备
+                    self.devices.append(node)
+                elif node.get('parent_device'):
+                    # 连接点
+                    point_map[node['id']] = node
+                    self.devices.append(node)
+            
+            # 重建连接关系
+            for edge in graph_data['edges']:
+                self.connections.append({
+                    'source': edge['source'],
+                    'target': edge['target'],
+                    'properties': edge.get('properties', {}),
+                    'is_test_connection': True
+                })
+            
+            return True
+            
+        except Exception as e:
+            if parent_widget:
+                QMessageBox.critical(
+                    parent_widget,
+                    "错误",
+                    f"加载配置文件失败: {str(e)}"
+                )
+            return False
+
     def set_a_unit_state(self, device_id: str, state: str, parent_widget: QWidget = None) -> bool:
         """设置A单元连接状态
         

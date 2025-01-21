@@ -1,11 +1,12 @@
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                            QHBoxLayout, QTreeWidget, QTreeWidgetItem, QGraphicsView,
-                            QGraphicsScene, QGraphicsItem, QGraphicsEllipseItem,
-                            QGraphicsLineItem, QMenuBar, QMenu, QAction, QStatusBar)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QHBoxLayout, QTreeWidget, QTreeWidgetItem, QGraphicsView,
+                             QGraphicsScene, QGraphicsItem, QGraphicsEllipseItem,
+                             QGraphicsLineItem, QMenuBar, QMenu, QAction, QStatusBar)
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 import json
 import os
+from datetime import datetime
 
 class GraphNode(QGraphicsEllipseItem):
     def __init__(self, node_id, x, y, radius=20):
@@ -180,6 +181,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(save_action)
         
         # 工具菜单
+        # 工具菜单
         tool_menu = menubar.addMenu("工具")
         
         # Excel转换
@@ -187,23 +189,63 @@ class MainWindow(QMainWindow):
         excel_convert_action.triggered.connect(self.convert_excel)
         tool_menu.addAction(excel_convert_action)
         
-        # 设备配置
-        device_config_action = QAction("设备配置", self)
-        device_config_action.triggered.connect(self.configure_devices)
-        tool_menu.addAction(device_config_action)
+        # 设备管理菜单
+        device_menu = menubar.addMenu("设备管理")
         
-        # 设备菜单
-        device_menu = menubar.addMenu("设备")
-        
-        # 添加设备
+        # 设备操作
         add_device_action = QAction("添加设备", self)
         add_device_action.triggered.connect(self.add_device)
         device_menu.addAction(add_device_action)
-        
-        # 管理单元
-        manage_units_action = QAction("管理单元", self)
+
+        edit_device_action = QAction("编辑设备", self)
+        edit_device_action.triggered.connect(self.edit_device)
+        device_menu.addAction(edit_device_action)
+
+        delete_device_action = QAction("删除设备", self)
+        delete_device_action.triggered.connect(self.delete_device)
+        device_menu.addAction(delete_device_action)
+
+        # 设备配置（从原工具菜单迁移）
+        device_config_action = QAction("设备配置", self)
+        device_config_action.triggered.connect(self.configure_devices)
+        device_menu.addAction(device_config_action)
+
+        # 管理单元子菜单
+        unit_submenu = device_menu.addMenu("单元管理")
+        manage_units_action = QAction("单元配置", self)
         manage_units_action.triggered.connect(self.manage_units)
-        device_menu.addAction(manage_units_action)
+        unit_submenu.addAction(manage_units_action)
+
+        monitor_units_action = QAction("单元监控", self)
+        monitor_units_action.triggered.connect(self.monitor_units)
+        unit_submenu.addAction(monitor_units_action)
+
+        # 测试管理菜单
+        test_menu = menubar.addMenu("测试管理")
+        
+        new_test_action = QAction("新建测试", self)
+        new_test_action.triggered.connect(self.new_test)
+        test_menu.addAction(new_test_action)
+
+        open_test_action = QAction("打开测试", self)
+        open_test_action.triggered.connect(self.open_test)
+        test_menu.addAction(open_test_action)
+
+        delete_test_action = QAction("删除测试", self)
+        delete_test_action.triggered.connect(self.delete_test)
+        test_menu.addAction(delete_test_action)
+        # 帮助菜单
+        help_menu = menubar.addMenu("帮助(&H)")
+        
+        # 关于
+        about_action = QAction("关于", self)
+        about_action.triggered.connect(self.show_about)
+        help_menu.addAction(about_action)
+        
+        # 用户手册
+        manual_action = QAction("用户手册", self)
+        manual_action.triggered.connect(self.show_manual)
+        help_menu.addAction(manual_action)
         
     def load_sample_data(self):
         """加载示例数据并初始化图论视图"""
@@ -521,6 +563,78 @@ class MainWindow(QMainWindow):
             # 更新状态栏
             self.statusBar().showMessage(f"已添加设备: {device_id}")
             
+    def edit_device(self):
+        """编辑设备"""
+        from PyQt5.QtWidgets import QInputDialog, QMessageBox
+        
+        if not hasattr(self, 'device_processor'):
+            self.device_processor = GuiDeviceProcessor()
+            
+        # 获取当前选中的设备
+        current_item = self.device_tree.currentItem()
+        if not current_item:
+            QMessageBox.warning(self, "警告", "请先选择要编辑的设备")
+            return
+            
+        # 从设备项文本中提取设备ID
+        device_text = current_item.text(0)
+        if "(" in device_text and ")" in device_text:
+            device_id = device_text.split("(")[1].split(")")[0]
+            
+            # 获取设备信息
+            device = next((d for d in self.device_processor.get_devices() if d['id'] == device_id), None)
+            if device:
+                # 编辑设备属性
+                new_name, ok = QInputDialog.getText(self, "编辑设备", "设备名称:", text=device['name'])
+                if ok and new_name:
+                    device['name'] = new_name
+                    # 更新设备树
+                    self.update_device_tree()
+                    self.statusBar().showMessage(f"已更新设备: {device_id}")
+            else:
+                QMessageBox.warning(self, "错误", "未找到设备信息")
+        else:
+            QMessageBox.warning(self, "错误", "无效的设备项")
+            
+    def delete_device(self):
+        """删除设备"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        if not hasattr(self, 'device_processor'):
+            self.device_processor = GuiDeviceProcessor()
+            
+        # 获取当前选中的设备
+        current_item = self.device_tree.currentItem()
+        if not current_item:
+            QMessageBox.warning(self, "警告", "请先选择要删除的设备")
+            return
+            
+        # 从设备项文本中提取设备ID
+        device_text = current_item.text(0)
+        if "(" in device_text and ")" in device_text:
+            device_id = device_text.split("(")[1].split(")")[0]
+            
+            # 确认删除
+            reply = QMessageBox.question(
+                self,
+                "确认删除",
+                f"确定要删除设备 {device_text} 吗？",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            
+            if reply == QMessageBox.Yes:
+                # 从设备处理器中删除设备
+                devices = self.device_processor.get_devices()
+                devices = [d for d in devices if d['id'] != device_id]
+                self.device_processor.devices = devices  # 更新设备列表
+                
+                # 更新设备树
+                self.update_device_tree()
+                self.statusBar().showMessage(f"已删除设备: {device_id}")
+        else:
+            QMessageBox.warning(self, "错误", "无效的设备项")
+            
     def update_device_tree(self):
         """更新设备树"""
         if hasattr(self, 'device_processor'):
@@ -624,6 +738,187 @@ class MainWindow(QMainWindow):
         dialog.setLayout(layout)
         dialog.exec_()
         
+    def monitor_units(self):
+        """监控单元状态"""
+        from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QTableWidget,
+                                   QTableWidgetItem, QPushButton, QLabel)
+        from PyQt5.QtCore import QTimer
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("单元监控")
+        dialog.setMinimumSize(600, 400)
+        layout = QVBoxLayout()
+        
+        # 状态标签
+        status_label = QLabel("监控状态: 运行中")
+        layout.addWidget(status_label)
+        
+        # 单元状态表格
+        table = QTableWidget()
+        table.setColumnCount(4)
+        table.setHorizontalHeaderLabels(["单元ID", "名称", "类型", "状态"])
+        layout.addWidget(table)
+        
+        def update_status():
+            """更新单元状态"""
+            if hasattr(self, 'device_processor'):
+                devices = self.device_processor.get_devices()
+                table.setRowCount(len(devices))
+                for row, device in enumerate(devices):
+                    # ID
+                    id_item = QTableWidgetItem(device['id'])
+                    table.setItem(row, 0, id_item)
+                    # 名称
+                    name_item = QTableWidgetItem(device['name'])
+                    table.setItem(row, 1, name_item)
+                    # 类型
+                    type_item = QTableWidgetItem(device.get('type', 'Unknown'))
+                    table.setItem(row, 2, type_item)
+                    # 状态 (模拟状态)
+                    import random
+                    status = random.choice(['正常', '忙碌', '离线'])
+                    status_item = QTableWidgetItem(status)
+                    table.setItem(row, 3, status_item)
+        
+        # 创建定时器定期更新状态
+        timer = QTimer(dialog)
+        timer.timeout.connect(update_status)
+        timer.start(5000)  # 每5秒更新一次
+        
+        # 初始更新
+        update_status()
+        
+        # 控制按钮
+        btn_refresh = QPushButton("立即刷新")
+        btn_refresh.clicked.connect(update_status)
+        layout.addWidget(btn_refresh)
+        
+        dialog.setLayout(layout)
+        
+        # 清理定时器
+        def cleanup():
+            timer.stop()
+        dialog.finished.connect(cleanup)
+        
+        dialog.exec_()
+        
+    def new_test(self):
+        """新建测试"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QMessageBox
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("新建测试")
+        layout = QVBoxLayout()
+        
+        # 表单布局
+        form_layout = QFormLayout()
+        
+        # 测试名称输入
+        test_name = QLineEdit()
+        form_layout.addRow("测试名称:", test_name)
+        
+        # 测试描述输入
+        test_desc = QLineEdit()
+        form_layout.addRow("测试描述:", test_desc)
+        
+        layout.addLayout(form_layout)
+        
+        # 确认按钮
+        btn_confirm = QPushButton("创建")
+        def create_test():
+            name = test_name.text().strip()
+            desc = test_desc.text().strip()
+            
+            if not name:
+                QMessageBox.warning(dialog, "警告", "请输入测试名称")
+                return
+                
+            # TODO: 保存测试数据
+            test_data = {
+                'name': name,
+                'description': desc,
+                'created_at': str(datetime.now()),
+                'devices': []  # 初始设备列表为空
+            }
+            
+            self.statusBar().showMessage(f"已创建测试: {name}")
+            dialog.accept()
+            
+        btn_confirm.clicked.connect(create_test)
+        layout.addWidget(btn_confirm)
+        
+        dialog.setLayout(layout)
+        dialog.exec_()
+        
+    def open_test(self):
+        """打开测试"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QMessageBox
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("打开测试")
+        layout = QVBoxLayout()
+        
+        # 测试列表
+        test_list = QListWidget()
+        # TODO: 加载已有测试列表
+        test_list.addItem("测试功能开发中")
+        layout.addWidget(test_list)
+        
+        # 打开按钮
+        btn_open = QPushButton("打开")
+        def open_selected():
+            current = test_list.currentItem()
+            if current:
+                QMessageBox.information(dialog, "提示", "测试打开功能开发中")
+                dialog.accept()
+            else:
+                QMessageBox.warning(dialog, "警告", "请先选择要打开的测试")
+                
+        btn_open.clicked.connect(open_selected)
+        layout.addWidget(btn_open)
+        
+        dialog.setLayout(layout)
+        dialog.exec_()
+        
+    def delete_test(self):
+        """删除测试"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QMessageBox
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("删除测试")
+        layout = QVBoxLayout()
+        
+        # 测试列表
+        test_list = QListWidget()
+        # TODO: 加载已有测试列表
+        test_list.addItem("测试功能开发中")
+        layout.addWidget(test_list)
+        
+        # 删除按钮
+        btn_delete = QPushButton("删除")
+        def delete_selected():
+            current = test_list.currentItem()
+            if current:
+                reply = QMessageBox.question(
+                    dialog,
+                    "确认删除",
+                    "确定要删除选中的测试吗？",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    # TODO: 实现测试删除功能
+                    QMessageBox.information(dialog, "提示", "测试删除功能开发中")
+                    dialog.accept()
+            else:
+                QMessageBox.warning(dialog, "警告", "请先选择要删除的测试")
+                
+        btn_delete.clicked.connect(delete_selected)
+        layout.addWidget(btn_delete)
+        
+        dialog.setLayout(layout)
+        dialog.exec_()
+        
     def open_file(self):
         """打开配置文件"""
         from PyQt5.QtWidgets import QFileDialog
@@ -655,6 +950,35 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"成功保存配置文件: {file_path}")
             except Exception as e:
                 self.statusBar().showMessage(f"保存失败: {str(e)}")
+                
+    def show_about(self):
+        """显示关于对话框"""
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.about(self,
+            "关于图论配置工具",
+            """<h3>图论配置工具 v1.0</h3>
+            <p>一个用于配置和管理设备连接关系的图形化工具。</p>
+            <p>基于PyQt5开发。</p>
+            <p>Copyright © 2025 Leybold. All rights reserved.</p>""")
+            
+    def show_manual(self):
+        """显示用户手册对话框"""
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.information(self,
+            "用户手册",
+            """<h3>图论配置工具使用说明</h3>
+            <p><b>基本操作：</b></p>
+            <ul>
+                <li>导入数据：通过"文件"菜单导入Excel或JSON格式的设备数据</li>
+                <li>设备管理：使用"工具"菜单中的设备管理功能添加和配置设备</li>
+                <li>图形操作：可以拖拽节点、缩放视图，鼠标悬停可查看详细信息</li>
+            </ul>
+            <p><b>快捷操作：</b></p>
+            <ul>
+                <li>鼠标滚轮：缩放视图</li>
+                <li>左键拖拽：移动节点</li>
+                <li>右键拖拽：平移视图</li>
+            </ul>""")
 
 if __name__ == "__main__":
     import sys
