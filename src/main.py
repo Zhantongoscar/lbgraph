@@ -4,6 +4,8 @@ import os
 import time
 from data_preprocessor import DataPreprocessor
 from test_device_processor import TestDeviceProcessor
+import networkx as nx
+from collections import defaultdict
 
 class JsonProcessor:
     def __init__(self, file_path: str):
@@ -40,6 +42,47 @@ class JsonProcessor:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+
+class GraphAnalyzer:
+    def __init__(self, processors: List[JsonProcessor]):
+        self.processors = processors
+        self.graph = nx.Graph()
+        self.build_graph()
+
+    def build_graph(self):
+        """构建图"""
+        for processor in self.processors:
+            nodes = processor.get_nodes()
+            edges = processor.get_edges()
+            
+            for node in nodes:
+                self.graph.add_node(node['id'], **node)
+            
+            for edge in edges:
+                self.graph.add_edge(edge['source'], edge['target'], **edge['properties'])
+
+    def get_shortest_path(self, source: str, target: str) -> List[str]:
+        """获取最短路径"""
+        try:
+            return nx.shortest_path(self.graph, source=source, target=target)
+        except nx.NetworkXNoPath:
+            return []
+
+    def get_connected_components(self) -> List[List[str]]:
+        """获取连通组件"""
+        return list(nx.connected_components(self.graph))
+
+    def get_node_degree(self, node_id: str) -> int:
+        """获取节点的度"""
+        return self.graph.degree(node_id)
+
+    def get_graph_density(self) -> float:
+        """获取图的密度"""
+        return nx.density(self.graph)
+
+    def get_betweenness_centrality(self) -> Dict[str, float]:
+        """获取节点的介数中心性"""
+        return nx.betweenness_centrality(self.graph)
 
 def process_excel_data():
     """处理Excel数据"""
@@ -143,6 +186,9 @@ def graph_test():
         except json.JSONDecodeError:
             print("错误：文件格式不正确，请确保是有效的JSON文件")
     
+    # 创建图分析器
+    analyzer = GraphAnalyzer([processor1, processor2])
+    
     # 执行图论测试
     print("\n开始图论测试...")
     
@@ -195,6 +241,29 @@ def graph_test():
     print("2. 比较了两个图的连通性")
     print("3. 找出了两个图的共同节点")
     print("4. 找出了两个图的共同边")
+    
+    # 示例：获取最短路径
+    if common_nodes:
+        source = list(common_nodes)[0]
+        target = list(common_nodes)[-1]
+        shortest_path = analyzer.get_shortest_path(source, target)
+        print(f"\n最短路径示例（{source} -> {target}）：")
+        print(shortest_path)
+    
+    # 示例：获取连通组件
+    connected_components = analyzer.get_connected_components()
+    print(f"\n连通组件数: {len(connected_components)}")
+    print(f"最大连通组件大小: {max(len(c) for c in connected_components)}")
+    
+    # 示例：获取图的密度
+    density = analyzer.get_graph_density()
+    print(f"\n图的密度: {density:.4f}")
+    
+    # 示例：获取介数中心性
+    betweenness = analyzer.get_betweenness_centrality()
+    print("\n介数中心性最高的5个节点：")
+    for node, centrality in sorted(betweenness.items(), key=lambda x: x[1], reverse=True)[:5]:
+        print(f"{node}: {centrality:.4f}")
 
 def main_menu():
     """主菜单"""

@@ -153,8 +153,12 @@ class MainWindow(QMainWindow):
         # 状态栏
         self.statusBar().showMessage("就绪")
         
-        # 加载示例数据
-        self.load_sample_data()
+        # 初始化空项目
+        self.device_tree.clear()
+        self.graph_view.scene.clear()
+        if hasattr(self, 'device_processor'):
+            self.device_processor.devices = []
+        self.setWindowTitle("图论配置工具 - 新项目")
         
     def create_menus(self):
         menubar = self.menuBar()
@@ -165,21 +169,37 @@ class MainWindow(QMainWindow):
         # 导入数据
         import_menu = file_menu.addMenu("导入数据")
         
-        # 导入Excel
-        import_excel_action = QAction("导入Excel", self)
-        import_excel_action.triggered.connect(self.import_excel)
-        import_menu.addAction(import_excel_action)
+        # 导入图书json
+        import_book_action = QAction("导入图书json", self)
+        import_book_action.triggered.connect(self.import_book_json)
+        import_menu.addAction(import_book_action)
         
-        # 导入JSON
-        import_json_action = QAction("导入JSON", self)
-        import_json_action.triggered.connect(self.open_file)
-        import_menu.addAction(import_json_action)
+        # 导入设备json
+        import_device_action = QAction("导入设备json", self)
+        import_device_action.triggered.connect(self.import_device_json)
+        import_menu.addAction(import_device_action)
         
-        # 保存配置
-        save_action = QAction("保存配置", self)
-        save_action.triggered.connect(self.save_file)
-        file_menu.addAction(save_action)
-        
+        # 新建项目
+        new_project_action = QAction("新建项目", self)
+        new_project_action.triggered.connect(self.new_project)
+        file_menu.addAction(new_project_action)
+
+        # 读取项目
+        load_project_action = QAction("读取项目", self)
+        load_project_action.triggered.connect(self.load_project)
+        file_menu.addAction(load_project_action)
+
+        # 保存项目
+        # 保存项目
+        save_project_action = QAction("保存项目", self)
+        save_project_action.triggered.connect(self.save_project)
+        file_menu.addAction(save_project_action)
+
+        # 删除项目
+        delete_project_action = QAction("删除项目", self)
+        delete_project_action.triggered.connect(self.delete_project)
+        file_menu.addAction(delete_project_action)
+
         # 工具菜单
         # 工具菜单
         tool_menu = menubar.addMenu("工具")
@@ -510,44 +530,42 @@ class MainWindow(QMainWindow):
         dialog.setLayout(layout)
         dialog.exec_()
         
-    def import_excel(self):
-        """导入Excel数据"""
-        from gui_data_processor import GuiDataProcessor
+    def import_book_json(self):
+        """导入图书json数据"""
         from PyQt5.QtWidgets import QFileDialog
         
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "选择Excel文件", "", "Excel文件 (*.xlsx *.xls)")
+            self, "选择图书json文件", "", "JSON文件 (*.json)")
             
         if file_path:
-            processor = GuiDataProcessor()
-            if processor.load_data(file_path, self):
-                # 加载处理后的数据
-                graph_data = processor.process_data({}, self)
-                if graph_data:
-                    # 清空现有数据
-                    self.graph_view.scene.clear()
-                    
-                    # 创建节点
-                    nodes = {}
-                    x, y = 100, 100
-                    for node in graph_data['nodes']:
-                        node_item = self.graph_view.add_node(node['id'], x, y)
-                        nodes[node['id']] = node_item
-                        x = (x + 150) % 800  # 避免节点重叠
-                        if x < 150:
-                            y += 150
-                            
-                    # 创建边
-                    for edge in graph_data['edges']:
-                        source = nodes.get(edge['source'])
-                        target = nodes.get(edge['target'])
-                        if source and target:
-                            self.graph_view.add_edge(source, target)
-                            
-                    # 调整视图以适应所有内容
-                    self.graph_view.fit_scene()
-                            
-                    self.statusBar().showMessage(f"成功导入Excel文件: {file_path}")
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    book_data = json.load(f)
+                    # TODO: 处理图书数据
+                    self.statusBar().showMessage(f"成功导入图书数据: {file_path}")
+            except Exception as e:
+                self.statusBar().showMessage(f"导入图书数据失败: {str(e)}")
+                
+    def import_device_json(self):
+        """导入设备json数据"""
+        from PyQt5.QtWidgets import QFileDialog
+        
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "选择设备json文件", "", "JSON文件 (*.json)")
+            
+        if file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    device_data = json.load(f)
+                    # 清空现有设备数据
+                    self.device_tree.clear()
+                    # 加载新设备数据
+                    self.device_processor = GuiDeviceProcessor()
+                    self.device_processor.devices = device_data
+                    self.update_device_tree()
+                    self.statusBar().showMessage(f"成功导入设备数据: {file_path}")
+            except Exception as e:
+                self.statusBar().showMessage(f"导入设备数据失败: {str(e)}")
                 
     def add_device(self):
         """添加设备"""
@@ -935,19 +953,138 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.statusBar().showMessage(f"加载失败: {str(e)}")
                 
-    def save_file(self):
-        """保存配置文件"""
+    def new_project(self):
+        """新建项目"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        # 确认是否保存当前项目
+        reply = QMessageBox.question(
+            self,
+            "新建项目",
+            "是否保存当前项目？",
+            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
+            QMessageBox.Cancel
+        )
+        
+        if reply == QMessageBox.Cancel:
+            return
+            
+        if reply == QMessageBox.Yes:
+            self.save_project()
+            
+    def load_project(self):
+        """读取项目"""
         from PyQt5.QtWidgets import QFileDialog
         
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "保存配置文件", "", "JSON文件 (*.json)")
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "读取项目", "", "JSON文件 (*.json)")
             
         if file_path:
             try:
-                data = {}  # TODO: 获取当前配置数据
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    project_data = json.load(f)
+                    
+                # 清空当前数据
+                self.device_tree.clear()
+                self.graph_view.scene.clear()
+                
+                # 加载设备数据
+                if 'devices' in project_data:
+                    self.device_processor = GuiDeviceProcessor()
+                    self.device_processor.devices = project_data['devices']
+                    self.update_device_tree()
+                
+                # 加载图论数据
+                if 'graph' in project_data:
+                    nodes = {}
+                    # 创建节点
+                    for node_data in project_data['graph']['nodes']:
+                        node = self.graph_view.add_node(
+                            node_data['id'],
+                            node_data['x'],
+                            node_data['y']
+                        )
+                        nodes[node_data['id']] = node
+                    
+                    # 创建边
+                    for edge_data in project_data['graph']['edges']:
+                        source = nodes.get(edge_data['source'])
+                        target = nodes.get(edge_data['target'])
+                        if source and target:
+                            self.graph_view.add_edge(source, target)
+                    
+                    # 调整视图
+                    self.graph_view.fit_scene()
+                
+                self.statusBar().showMessage(f"成功读取项目: {file_path}")
+            except Exception as e:
+                self.statusBar().showMessage(f"读取项目失败: {str(e)}")
+                    
+    def delete_project(self):
+        """删除当前项目"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        # 确认删除
+        reply = QMessageBox.question(
+            self,
+            "确认删除",
+            "确定要删除当前项目吗？此操作不可恢复！",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            # 清空设备数据
+            self.device_tree.clear()
+            if hasattr(self, 'device_processor'):
+                self.device_processor.devices = []
+            
+            # 清空图形数据
+            self.graph_view.scene.clear()
+            
+            # 重置状态栏
+            self.statusBar().showMessage("项目已删除")
+            
+            # 重置窗口标题
+            self.setWindowTitle("图论配置工具 - 新项目")
+
+    def save_project(self):
+            """保存项目"""
+            from PyQt5.QtWidgets import QFileDialog
+            
+            file_path, _ = QFileDialog.getSaveFileName(
+                self, "保存项目", "", "JSON文件 (*.json)")
+                
+            if file_path:
+                try:
+                    # 获取当前项目数据
+                    project_data = {
+                        'devices': self.device_processor.get_devices() if hasattr(self, 'device_processor') else [],
+                        'graph': {
+                            'nodes': [{
+                                'id': item.node_id,
+                                'x': item.pos().x(),
+                                'y': item.pos().y()
+                            } for item in self.graph_view.scene.items() if isinstance(item, GraphNode)],
+                            'edges': [{
+                                'source': item.source_node.node_id,
+                                'target': item.target_node.node_id
+                            } for item in self.graph_view.scene.items() if isinstance(item, GraphEdge)]
+                        }
+                    }
+                    
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(project_data, f, ensure_ascii=False, indent=2)
+                    self.statusBar().showMessage(f"成功保存项目: {file_path}")
+                except Exception as e:
+                    self.statusBar().showMessage(f"保存失败: {str(e)}")
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
-                self.statusBar().showMessage(f"成功保存配置文件: {file_path}")
+                    json.dump(project_data, f, ensure_ascii=False, indent=2)
+                self.statusBar().showMessage(f"成功保存项目: {file_path}")
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(project_data, f, ensure_ascii=False, indent=2)
+                self.statusBar().showMessage(f"成功保存项目: {file_path}")
             except Exception as e:
                 self.statusBar().showMessage(f"保存失败: {str(e)}")
                 
