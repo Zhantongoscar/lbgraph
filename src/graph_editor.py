@@ -5,6 +5,8 @@ from dataclasses import asdict
 import json
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.patches
+import matplotlib.collections
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
 import mplcursors
@@ -20,6 +22,10 @@ class GraphEditor:
         self.cabinet_data: List[Dict] = []
         self.device_data: List[Dict] = []
         self.current_project: Optional[Dict] = None
+        
+        # 高亮显示相关
+        self.highlighted_nodes = []
+        self.highlighted_edge = None
         
         # 创建界面
         self.create_widgets()
@@ -184,20 +190,23 @@ class GraphEditor:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # 检查数据格式
-                if 'nodes' in data:
-                    self.cabinet_data = data['nodes']
-                else:
-                    self.cabinet_data = data
                 
-                # 将电柜数据添加到图中
-                for cabinet in self.cabinet_data:
-                    if 'id' in cabinet:
-                        node_attrs = cabinet.copy()
-                        node_attrs['node_type'] = 'cabinet'  # 使用node_type而不是type
-                        self.graph.add_node(cabinet['id'], **node_attrs)
+                # 添加节点
+                for node in data['nodes']:
+                    if 'id' in node:
+                        node_attrs = node.copy()
+                        node_attrs['node_type'] = 'cabinet'
+                        self.graph.add_node(node['id'], **node_attrs)
                     else:
-                        print(f"警告: 跳过无ID的节点: {cabinet}")
+                        print(f"警告: 跳过无ID的节点: {node}")
+                
+                # 添加边
+                for edge in data['edges']:
+                    if 'source' in edge and 'target' in edge:
+                        edge_attrs = edge.get('properties', {})
+                        self.graph.add_edge(edge['source'], edge['target'], **edge_attrs)
+                    else:
+                        print(f"警告: 跳过无效的边: {edge}")
                         
                 self.update_graph()
                 self.update_material_panel()
@@ -256,19 +265,82 @@ class GraphEditor:
             labels[node] = f"ID: {node}\nType: {node_type}"
         
         # 绘制图形
-        pos = nx.spring_layout(self.graph)
-        nx.draw(self.graph, pos, ax=self.ax, with_labels=False, node_size=500,
-                node_color=colors)
+        pos = nx.spring_layout(self.graph, k=0.15, iterations=50)  # 调整布局参数
+        nx.draw(self.graph, pos, ax=self.ax, with_labels=False,
+                node_size=50 if len(self.graph.nodes) > 100 else 200,  # 动态调整节点大小
+                node_color=colors, edge_color='gray', width=1, alpha=0.8,
+                linewidths=0.5)
+        
+        # 添加缩放功能
+        def on_scroll(event):
+            scale = 1.1 if event.button == 'up' else 0.9
+            self.ax.set_xlim(self.ax.get_xlim()[0]*scale, self.ax.get_xlim()[1]*scale)
+            self.ax.set_ylim(self.ax.get_ylim()[0]*scale, self.ax.get_ylim()[1]*scale)
+            self.canvas.draw()
+            
+        self.canvas.mpl_connect('scroll_event', on_scroll)
         
         # 添加鼠标悬停显示信息
         import mplcursors
         cursor = mplcursors.cursor(self.ax, hover=True)
+        
+        # 存储当前高亮的节点和边
+        self.highlighted_nodes = []
+        self.highlighted_edge = None
+        
         @cursor.connect("add")
         def on_add(sel):
-            node = list(self.graph.nodes)[sel.index]
-            if node in labels:
-                sel.annotation.set_text(labels[node])
-                sel.annotation.get_bbox_patch().set(fc="white", alpha=0.9)
+            try:
+                if isinstance(sel.artist, matplotlib.collections.PathCollection):  # 处理节点
+                    nodes = list(self.graph.nodes(data=True))
+                    node_idx = int(sel.target[0])
+                    if 0 <= node_idx < len(nodes):
+                        node, data = nodes[node_idx]
+                        # 显示节点的所有属性
+                        text = f"Node: {node}\n"
+                        if data:
+                            text += "\n".join(f"{k}: {v}" for k, v in data.items())
+                        sel.annotation.set_text(text)
+                        
+                elif isinstance(sel.artist, matplotlib.collections.LineCollection):  # 处理边
+                    edges = list(self.graph.edges(data=True))
+                    edge_idx = int(sel.target[0])
+                    if 0 <= edge_idx < len(edges):
+                        u, v, d = edges[edge_idx]
+                        # 高亮显示相连的节点和边
+                        self.highlighted_nodes = [u, v]
+                        self.highlighted_edge = (u, v)
+                        # 更新节点和边的颜色
+                        colors = []
+                        for node in self.graph.nodes():
+                            if node in self.highlighted_nodes:
+                                colors.append('red')
+                            else:
+                                node_type = self.graph.nodes[node].get('node_type', 'unknown')
+                                if node_type == 'cabinet':
+                                    colors.append('lightblue')
+                                elif node_type == 'device':
+                                    colors.append('lightgreen')
+                                else:
+                                    colors.append('gray')
+                        
+                        nx.draw_networkx_nodes(self.graph, pos, node_color=colors, ax=self.ax)
+                        edge_colors = ['red' if (e[0], e[1]) == self.highlighted_edge else 'gray'
+                                     for e in self.graph.edges()]
+                        nx.draw_networkx_edges(self.graph, pos, edge_color=edge_colors, ax=self.ax)
+                        self.canvas.draw()
+                        
+                        # 显示边的信息
+                        text = f"Edge: {u} -> {v}\n"
+                        if d:
+                            text += "\n".join(f"{k}: {v}" for k, v in d.items())
+                        sel.annotation.set_text(text)
+                        
+            except (AttributeError, TypeError, IndexError, ValueError) as e:
+                print(f"Error in on_add: {e}")
+                return
+            
+            sel.annotation.get_bbox_patch().set(fc="white", alpha=0.9)
         
         # 刷新画布
         self.canvas.draw()
