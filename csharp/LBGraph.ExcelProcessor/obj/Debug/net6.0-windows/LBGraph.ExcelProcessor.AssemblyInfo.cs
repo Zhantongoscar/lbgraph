@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LBGraph.ExcelProcessor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+66214b4e3fcf1b465d52d1e565eff036d795023b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0437f18dcf645788d9eec205286a875249c6d06")]
 [assembly: System.Reflection.AssemblyProductAttribute("LBGraph.ExcelProcessor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LBGraph.ExcelProcessor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
