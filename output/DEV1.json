@@ -1,0 +1,14 @@
+[
+  {
+    "id": "001",
+    "name": "edb1",
+    "type": "EDB - 增强模块 EDB",
+    "status": "正常"
+  },
+  {
+    "id": "002",
+    "name": "EBD_2",
+    "type": "EBD - 增强模块 EBD",
+    "status": "正常"
+  }
+]
