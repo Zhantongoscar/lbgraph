@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csharp", "csharp", "{B41BF331-FCCB-2ADF-CDB6-767964B34647}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBGraph.Core", "csharp\LBGraph.Core\LBGraph.Core.csproj", "{F1A8A93D-87FE-25B5-CD91-3FA538B803C2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBGraph.ExcelProcessor", "csharp\LBGraph.ExcelProcessor\LBGraph.ExcelProcessor.csproj", "{20631B3D-4B72-F00B-F61C-245714434038}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F1A8A93D-87FE-25B5-CD91-3FA538B803C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1A8A93D-87FE-25B5-CD91-3FA538B803C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1A8A93D-87FE-25B5-CD91-3FA538B803C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1A8A93D-87FE-25B5-CD91-3FA538B803C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20631B3D-4B72-F00B-F61C-245714434038}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20631B3D-4B72-F00B-F61C-245714434038}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20631B3D-4B72-F00B-F61C-245714434038}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20631B3D-4B72-F00B-F61C-245714434038}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F1A8A93D-87FE-25B5-CD91-3FA538B803C2} = {B41BF331-FCCB-2ADF-CDB6-767964B34647}
+		{20631B3D-4B72-F00B-F61C-245714434038} = {B41BF331-FCCB-2ADF-CDB6-767964B34647}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4F050D7F-5641-45A5-BAE8-BB429CD8F1F2}
+	EndGlobalSection
+EndGlobal
