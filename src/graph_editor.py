@@ -16,12 +16,15 @@ class GraphEditor:
     def __init__(self, root):
         self.root = root
         self.root.title("图论编辑器")
-        self.root.geometry("1200x800")
+        self.root.geometry("1200x800")  # 恢复默认窗口大小
         
         # 初始化数据
         self.cabinet_data: List[Dict] = []
         self.device_data: List[Dict] = []
         self.current_project: Optional[Dict] = None
+        
+        # 节点显示设置
+        self.node_size = 20  # 默认节点大小
         
         # 高亮显示相关
         self.highlighted_nodes = []
@@ -40,9 +43,11 @@ class GraphEditor:
         self.workspace = ttk.Frame(main_frame)
         self.workspace.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # 图形显示区域
-        self.figure = plt.Figure(figsize=(6, 6), dpi=100)
+        # 图形显示区域（最大化）
+        self.figure = plt.Figure(figsize=(8, 8), dpi=100)
         self.ax = self.figure.add_subplot(111)
+        self.ax.axis('off')  # 隐藏坐标轴
+        self.figure.subplots_adjust(left=0, right=1, bottom=0, top=1)  # 最大化绘图区域
         self.canvas = FigureCanvasTkAgg(self.figure, self.workspace)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
         
@@ -50,9 +55,9 @@ class GraphEditor:
         self.graph = nx.Graph()
         
         # 右侧素材区
-        self.material_panel = ttk.Frame(main_frame, width=300)
-        self.material_panel.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
-        
+        # 右侧素材区（缩小宽度以最大化图形显示区域）
+        self.material_panel = ttk.Frame(main_frame, width=150)
+        self.material_panel.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 0))
         # 素材区选项卡
         self.material_notebook = ttk.Notebook(self.material_panel)
         self.material_notebook.pack(fill=tk.BOTH, expand=True)
@@ -194,8 +199,13 @@ class GraphEditor:
                 # 添加节点
                 for node in data['nodes']:
                     if 'id' in node:
-                        node_attrs = node.copy()
-                        node_attrs['node_type'] = 'cabinet'
+                        # 将properties中的字段提升到顶层
+                        properties = node.get('properties', {})
+                        node_attrs = {
+                            **properties,
+                            'node_type': 'cabinet',
+                            'id': node['id']
+                        }
                         self.graph.add_node(node['id'], **node_attrs)
                     else:
                         print(f"警告: 跳过无ID的节点: {node}")
@@ -204,6 +214,9 @@ class GraphEditor:
                 for edge in data['edges']:
                     if 'source' in edge and 'target' in edge:
                         edge_attrs = edge.get('properties', {})
+                        # 添加颜色属性
+                        if 'color' in edge_attrs:
+                            edge_attrs['edge_color'] = edge_attrs['color']
                         self.graph.add_edge(edge['source'], edge['target'], **edge_attrs)
                     else:
                         print(f"警告: 跳过无效的边: {edge}")
@@ -264,22 +277,92 @@ class GraphEditor:
             # 收集节点信息
             labels[node] = f"ID: {node}\nType: {node_type}"
         
-        # 绘制图形
-        pos = nx.spring_layout(self.graph, k=0.15, iterations=50)  # 调整布局参数
-        nx.draw(self.graph, pos, ax=self.ax, with_labels=False,
-                node_size=50 if len(self.graph.nodes) > 100 else 200,  # 动态调整节点大小
-                node_color=colors, edge_color='gray', width=1, alpha=0.8,
-                linewidths=0.5)
+        try:
+            # 计算布局
+            pos = nx.spring_layout(self.graph, k=0.15, iterations=50)  # 调整布局参数
+            
+            # 绘制边，使用边的颜色属性
+            edge_colors = []
+            for u, v, d in self.graph.edges(data=True):
+                color = d.get('edge_color', 'gray')
+                # 确保颜色值是有效的
+                if color not in matplotlib.colors.cnames:
+                    color = 'gray'
+                edge_colors.append(color)
+                
+            # 绘制空心节点
+            for node, color in zip(self.graph.nodes(), colors):
+                nx.draw_networkx_nodes(
+                    self.graph, pos, ax=self.ax,
+                    nodelist=[node],
+                    node_size=self.node_size,
+                    node_color=color,
+                    linewidths=0.5,
+                    node_shape='o',
+                    edgecolors=color,
+                    alpha=0.7
+                )
+            
+            # 绘制边
+            nx.draw_networkx_edges(
+                self.graph, pos, ax=self.ax,
+                edge_color=edge_colors, width=1, alpha=0.8
+            )
+            
+        except ValueError as e:
+            print(f"绘图错误: {e}")
+            messagebox.showerror("错误", f"绘图时发生错误: {str(e)}")
         
         # 添加缩放功能
+        # 添加缩放和拖拽功能
+        self.dragging = False
+        self.last_mouse_pos = (0, 0)
+        
         def on_scroll(event):
             scale = 1.1 if event.button == 'up' else 0.9
             self.ax.set_xlim(self.ax.get_xlim()[0]*scale, self.ax.get_xlim()[1]*scale)
             self.ax.set_ylim(self.ax.get_ylim()[0]*scale, self.ax.get_ylim()[1]*scale)
             self.canvas.draw()
             
+        def on_press(event):
+            if event.button == 2:  # 中键
+                self.dragging = True
+                self.last_mouse_pos = (event.x, event.y)
+                
+        def on_release(event):
+            self.dragging = False
+            
+        def on_motion(event):
+            if self.dragging:
+                # 获取当前鼠标位置在数据坐标中的位置
+                current_pos = (event.xdata, event.ydata)
+                if current_pos[0] is None or current_pos[1] is None:
+                    return
+                
+                # 计算位移
+                dx = (event.x - self.last_mouse_pos[0]) / 100.0
+                dy = (event.y - self.last_mouse_pos[1]) / 100.0
+                
+                # 更新坐标轴范围
+                xlim = self.ax.get_xlim()
+                ylim = self.ax.get_ylim()
+                self.ax.set_xlim(xlim[0] - dx, xlim[1] - dx)
+                self.ax.set_ylim(ylim[0] + dy, ylim[1] + dy)  # 修正y轴方向
+                
+                # 保持鼠标点固定
+                new_pos = self.ax.transData.inverted().transform((event.x, event.y))
+                offset_x = current_pos[0] - new_pos[0]
+                offset_y = current_pos[1] - new_pos[1]
+                self.ax.set_xlim(xlim[0] - dx - offset_x, xlim[1] - dx - offset_x)
+                self.ax.set_ylim(ylim[0] + dy - offset_y, ylim[1] + dy - offset_y)
+                
+                self.last_mouse_pos = (event.x, event.y)
+                self.canvas.draw()
+                
         self.canvas.mpl_connect('scroll_event', on_scroll)
-        
+        self.canvas.mpl_connect('button_press_event', on_press)
+        self.canvas.mpl_connect('button_release_event', on_release)
+        self.canvas.mpl_connect('motion_notify_event', on_motion)
         # 添加鼠标悬停显示信息
         import mplcursors
         cursor = mplcursors.cursor(self.ax, hover=True)
@@ -297,44 +380,20 @@ class GraphEditor:
                     if 0 <= node_idx < len(nodes):
                         node, data = nodes[node_idx]
                         # 显示节点的所有属性
-                        text = f"Node: {node}\n"
-                        if data:
-                            text += "\n".join(f"{k}: {v}" for k, v in data.items())
-                        sel.annotation.set_text(text)
+                        # 显示节点基本信息
+                        location = data.get('location', 'N/A')
+                        device = data.get('device', data.get('id', 'N/A'))  # 优先使用device属性
+                        terminal = data.get('terminal', 'N/A')
                         
+                        # 确保信息不重复
+                        if location == device:
+                            device = data.get('id', 'N/A')
+                            
+                        text = f"+ {location} - {device} : {terminal}"
+                        sel.annotation.set_text(text)
                 elif isinstance(sel.artist, matplotlib.collections.LineCollection):  # 处理边
-                    edges = list(self.graph.edges(data=True))
-                    edge_idx = int(sel.target[0])
-                    if 0 <= edge_idx < len(edges):
-                        u, v, d = edges[edge_idx]
-                        # 高亮显示相连的节点和边
-                        self.highlighted_nodes = [u, v]
-                        self.highlighted_edge = (u, v)
-                        # 更新节点和边的颜色
-                        colors = []
-                        for node in self.graph.nodes():
-                            if node in self.highlighted_nodes:
-                                colors.append('red')
-                            else:
-                                node_type = self.graph.nodes[node].get('node_type', 'unknown')
-                                if node_type == 'cabinet':
-                                    colors.append('lightblue')
-                                elif node_type == 'device':
-                                    colors.append('lightgreen')
-                                else:
-                                    colors.append('gray')
-                        
-                        nx.draw_networkx_nodes(self.graph, pos, node_color=colors, ax=self.ax)
-                        edge_colors = ['red' if (e[0], e[1]) == self.highlighted_edge else 'gray'
-                                     for e in self.graph.edges()]
-                        nx.draw_networkx_edges(self.graph, pos, edge_color=edge_colors, ax=self.ax)
-                        self.canvas.draw()
-                        
-                        # 显示边的信息
-                        text = f"Edge: {u} -> {v}\n"
-                        if d:
-                            text += "\n".join(f"{k}: {v}" for k, v in d.items())
-                        sel.annotation.set_text(text)
+                    # 暂时不显示边的信息
+                    sel.annotation.set_visible(False)
                         
             except (AttributeError, TypeError, IndexError, ValueError) as e:
                 print(f"Error in on_add: {e}")
