@@ -29,16 +29,36 @@ class SimulationSyncer:
         # 获取设备
         cursor.execute("SELECT * FROM devices")
         devices = cursor.fetchall()
+
+        # 获取设备类型点位配置
+        cursor.execute("""
+            SELECT dtp.*, dt.type_name
+            FROM device_type_points dtp
+            JOIN device_types dt ON dtp.device_type_id = dt.id
+        """)
+        points = cursor.fetchall()
         
         cursor.close()
-        return device_types, devices
+        return device_types, devices, points
 
-    def sync_to_neo4j(self, device_types, devices):
+    def sync_to_neo4j(self, device_types, devices, points):
         with self.neo4j_driver.session() as session:
             # 同步设备类型
             session.write_transaction(self._sync_device_types, device_types)
             # 同步设备
             session.write_transaction(self._sync_devices, devices)
+            # 同步设备点位
+            session.write_transaction(self._sync_device_points, points)
+            
+            # 输出每个设备实例的单元信息
+            print("\n设备实例单元信息:")
+            for device in devices:
+                device_points = [p for p in points if p['device_type_id'] == device['type_id']]
+                print(f"\n设备: {device['project_name']} (ID: {device['id']})")
+                print(f"设备类型: {next((dt['type_name'] for dt in device_types if dt['id'] == device['type_id']), '未知')}")
+                print("单元列表:")
+                for point in device_points:
+                    print(f"  - 单元{point['point_index']}: {point['point_name']} ({point['point_type']})")
 
     @staticmethod
     def _sync_device_types(tx, device_types):
@@ -72,8 +92,26 @@ class SimulationSyncer:
                     type_id: $type_id,
                     status: $status,
                     rssi: $rssi
+                })""", **d)
+
+    @staticmethod
+    def _sync_device_points(tx, points):
+        # 删除旧数据
+        tx.run("MATCH (p:Point) DETACH DELETE p")
+        
+        # 创建点位节点并关联设备类型
+        for point in points:
+            tx.run("""
+                MATCH (t:DeviceType {id: $device_type_id})
+                CREATE (p:Point {
+                    index: $point_index,
+                    type: $point_type,
+                    name: $point_name,
+                    mode: $mode,
+                    description: $description
                 })
-            """, **d)
+                CREATE (t)-[:HAS_POINT]->(p)
+            """, **point)
 
     def close(self):
         if hasattr(self, 'mysql_conn'):
@@ -118,9 +156,8 @@ def main():
         if not syncer.connect_mysql():
             return
 
-        device_types, devices = syncer.fetch_simulation_data()
-        syncer.sync_to_neo4j(device_types, devices)
-        print("数据同步成功！")
+        device_types, devices, points = syncer.fetch_simulation_data()
+        syncer.sync_to_neo4j(device_types, devices, points)
     finally:
         syncer.close()
 
