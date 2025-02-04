@@ -97,17 +97,21 @@ class VirtualLayerManager:
                 name: $unit_name,
                 NodeLayer: $layer_name,
                 UnitType: $unit_type,
-                params: $params,
+                voltage_output: $voltage_output,
+                voltage_threshold: $voltage_threshold,
                 created_at: datetime()
             })
             CREATE (u)-[:CONNECTS {via: 'simulation', voltage: 0.0}]->(ext)
-            CREATE (u)-[:USES]->(:VirtualLayer {name: 'simulation_layer'})
+            WITH u
+            MATCH (vl:VirtualLayer {name: 'voltage_virtual_layer'})
+            CREATE (u)-[:USES]->(vl)
         """, {
             "position": position,
             "unit_name": f"{unit_type}_{position}",
             "layer_name": layer_name,
             "unit_type": unit_type,
-            "params": params
+            "voltage_output": params.get('voltage_output', 0.0),
+            "voltage_threshold": params.get('voltage_threshold', 0.0)
         })
 
     def create_test_connection(self, source_unit, target_unit, layer_name, expected_voltage):
