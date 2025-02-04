@@ -45,6 +45,9 @@ class SimulationSyncer:
         return device_types, devices, points
 
     def sync_to_neo4j(self, device_types, devices, points):
+        # 首先确保约束存在
+        self.ensure_constraints()
+        
         with self.neo4j_driver.session() as session:
             # 清理旧的虚拟层节点
             session.execute_write(self._cleanup_virtual_layer)
@@ -82,8 +85,7 @@ class SimulationSyncer:
             for record in stats:
                 print(f"- {record['layer']}层 {record['type']}类型节点: {record['count']}个")
 
-    @staticmethod
-    def _cleanup_virtual_layer(tx):
+    def _cleanup_virtual_layer(self, tx):
         """增强版虚拟层清理"""
         # 先删除相关关系
         tx.run("""
@@ -95,11 +97,14 @@ class SimulationSyncer:
             MATCH (vl:VirtualLayer {name: 'voltage_virtual_layer'})
             DETACH DELETE vl
         """)
-        # 创建唯一性约束
-        tx.run("""
-            CREATE CONSTRAINT IF NOT EXISTS
-            FOR (vl:VirtualLayer) REQUIRE vl.name IS UNIQUE
-        """)
+
+    def ensure_constraints(self):
+        """确保必要的约束存在"""
+        with self.neo4j_driver.session() as session:
+            session.run("""
+                CREATE CONSTRAINT IF NOT EXISTS
+                FOR (vl:VirtualLayer) REQUIRE vl.name IS UNIQUE
+            """)
 
     @staticmethod
     def _create_virtual_layer(tx):
