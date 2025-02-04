@@ -32,7 +32,6 @@ try:
     schema_query = "CALL db.schema.visualization()"
     schema_data = execute_with_retry(schema_query)
     
-    # 增强型数据查询
     analysis_queries = [
         """MATCH (n)
         RETURN labels(n) as labels, count(*) as count""",
@@ -44,7 +43,22 @@ try:
         """MATCH (n)
         WITH n, [key in keys(n) WHERE n[key] IS NULL] as null_props
         WHERE size(null_props) > 0
-        RETURN labels(n) as labels, null_props, count(*) as count"""
+        RETURN labels(n) as labels, null_props, count(*) as count""",
+
+        """MATCH (n:Vertex)
+        RETURN DISTINCT n.Location as location, count(*) as count
+        ORDER BY location""",
+
+        """MATCH (n:Vertex)
+        WHERE n.Location STARTS WITH 'K1'
+        RETURN n.name, n.Location, n.Function, n.Terminal
+        LIMIT 10""",
+
+        """MATCH ()-[r:Edge]->()
+        RETURN r.id as edge_id, r.color as color,
+        count(*) as count
+        ORDER BY edge_id
+        LIMIT 10"""
     ]
 
     # 执行分析查询
@@ -63,6 +77,9 @@ try:
     print_analysis("节点属性分布", analysis_results[0])
     print_analysis("关系类型分析", analysis_results[1])
     print_analysis("空值属性统计", analysis_results[2])
+    print_analysis("Location为空的节点示例", analysis_results[3])
+    print_analysis("K1开头的节点示例", analysis_results[4])
+    print_analysis("边的属性信息", analysis_results[5])
 finally:
     # 关闭驱动
     driver.close()
