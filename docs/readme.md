@@ -1,4 +1,29 @@
 # 项目
+## 文件说明
+
+CSV数据导入功能已完善。现在项目有三个主要工具:
+
+import_csv_data.py - CSV数据导入工具
+
+从CSV文件导入初始图数据
+支持数据清理和转换
+使用方法: python import_csv_data.py --csv_path data/SmartWiringzta.csv
+sync_simulation.py - 仿真数据同步工具
+
+从MySQL同步仿真设备数据
+创建仿真节点和虚拟层
+使用方法: python sync_simulation.py
+graph_analysis.py - 图数据分析工具
+
+分析Neo4j中的数据状态
+提供多种分析查询
+使用方法: python graph_analysis.py
+所有工具都使用config.py中的统一配置,支持通过命令行参数覆盖默认设置。每个工具都专注于自己的职责,可以独立运行
+
+## 
+### 读取文件位置
+python import_csv_data.py --csv_path temp/SmartWiringzta.csv
+
 
 ## 仿真测试板及单元信息
 ### 

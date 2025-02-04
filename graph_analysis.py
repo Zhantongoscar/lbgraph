@@ -2,17 +2,13 @@ from neo4j import GraphDatabase
 from neo4j.exceptions import ServiceUnavailable
 import time
 import json
-
-# Neo4j数据库连接信息
-URI = "bolt://192.168.35.10:7687"
-AUTH = ("neo4j", "13701033228")
+from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_CONFIG
 
 # 创建带连接池的驱动实例
 driver = GraphDatabase.driver(
-    f"{URI}?apoc.import.file.enabled=true",  # 通过URI参数启用APOC
-    auth=AUTH,
-    max_connection_pool_size=10,  # 保留连接池配置
-    connection_timeout=5  # 保留超时配置
+    f"{NEO4J_URI}?apoc.import.file.enabled=true",  # 通过URI参数启用APOC
+    auth=(NEO4J_USER, NEO4J_PASSWORD),
+    **NEO4J_CONFIG  # 使用配置文件中的连接池设置
 )
 
 
