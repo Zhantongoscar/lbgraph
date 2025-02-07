@@ -28,21 +28,25 @@ class VirtualLayerManager:
         AND NOT n.Terminal IN ['PE', 'N']
         CREATE (v:{virtual_layer_name})
         SET v = properties(n)
+        RETURN count(v) as copied_nodes
         """.format(virtual_layer_name=virtual_layer_name)
         result = tx.run(query)
-        print(f"复制了 {result.summary().counters.nodes_created} 个节点到虚拟层 '{virtual_layer_name}'")
+        record = result.single()
+        print(f"复制了 {record['copied_nodes']} 个节点到虚拟层 '{virtual_layer_name}'")
 
     @staticmethod
     def _copy_relationships(tx, virtual_layer_name):
         # 复制符合条件的边
         query = """
-        MATCH (a)-[r]->(b)
+        MATCH (a)-[r:CONNECTS]->(b)
         WHERE a.Location STARTS WITH 'K1.' AND b.Location STARTS WITH 'K1.'
         AND NOT a.Terminal IN ['PE', 'N'] AND NOT b.Terminal IN ['PE', 'N']
-        WITH a, r, b
         MATCH (va:{virtual_layer_name}), (vb:{virtual_layer_name})
-        WHERE va.id = a.id AND vb.id = b.id
-        CREATE (va)-[vr:{virtual_layer_name}]->(vb)
+        WHERE va.name = a.name AND vb.name = b.name
+        CREATE (va)-[vr:CONNECTS]->(vb)
         SET vr = properties(r)
+        RETURN count(vr) as copied_relationships
         """.format(virtual_layer_name=virtual_layer_name)
-        tx.run(query)
+        result = tx.run(query)
+        record = result.single()
+        print(f"复制了 {record['copied_relationships']} 个关系到虚拟层 '{virtual_layer_name}'")
