@@ -1,0 +1,1 @@
+ python cleanup_db.py; python import_csv_data.py 

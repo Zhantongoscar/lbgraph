@@ -147,7 +147,12 @@ CREATE TABLE `device_type_points`  (
 
 SET FOREIGN_KEY_CHECKS = 1;
 ### 测试指令
+python cleanup_db.py; python import_csv_data.py
+
 
 
  python sync_simulation.py --neo4j_uri "bolt://192.168.35.10:7687" --neo4j_user "neo4j" --neo4j_password "13701033228"
  python sync_simulation.py --neo4j_uri "bolt://192.168.35.10:7687" --neo4j_user "neo4j" --neo4j_password "13701033228"
+
+ ### 设备标识符说明
+         importer.close() 修改这个代码。我要从csv中获得Vertex。并提取 Function Location Device 和 Terminal。获得这些属性是基于 = + - : 四种标志来获得属性。如果没有标记=+-:，则默认再字符串前这四种，然后拆分。如果没有:  则在最后一个-后边增加:   。然后进行属性处理，=与第一个+之间，是Function； 第一个+ 与第一个 - 之间，是Location； 第一个 - 与第一个: 之间，是Device；第一个:之后，是Terminal；

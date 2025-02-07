@@ -1,98 +1,243 @@
-# import csv
-# from neo4j import GraphDatabase
-
-# class DataImporter:
-#     def __init__(self, uri, user, password):
-#         self.driver = GraphDatabase.driver(uri, auth=(user, password))
-
-#     def close(self):
-#         self.driver.close()
-
-#     def import_data(self):
-#         uri = "bolt://192.168.35.10:7687"
-#         user = "neo4j"
-#         password = "13701033228"
-        
-#         with self.driver.session() as session:
-#             with open('data/SmartWiringzta.csv', mode='r', encoding='utf-8') as file:
-#                 csv_reader = csv.DictReader(file)
-#                 for row in csv_reader:
-#                     source = row['source']
-#                     target = row['target']
-#                     wire_type = row['Consecutive number']
-#                     length = row['Length (full)']
-#                     color = row['Connection color / number']
-#                     cross_section = row['Connection: Cross-section / diameter']
-#                     connection_type = row['Connection: Type designation']
-#                     source_processing = row['Wire termination processing source']
-#                     target_processing = row['Wire termination processing target']
-#                     source_routing = row['Routing direction source']
-#                     target_routing = row['Routing direction target']
-#                     bundle = row['Bundle']
-#                     layout_space = row['Layout space: Routing track']
-#                     connection_designation = row['Connection designation']
-#                     remark = row['Remark']
-                    
-#                     # Create source node
-#                     session.run("""
-#                     MERGE (s:Vertex {name: $source})
-#                     ON CREATE SET s.Location = 'K1.' + $location, s.Terminal = $terminal, s.Function = $function, s.UnitType = $unit_type, s.DeviceId = $device_id, s.Device = $device, s.Voltage = $voltage, s.IsEnabled = $is_enabled
-#                     """, source=source, location=source.split('+')[1].split(':')[0], terminal=source.split('+')[1].split(':')[1], function='B', unit_type='B', device_id=1, device='1', voltage=0.0, is_enabled=True)
-                    
-#                     # Create target node
-#                     session.run("""
-#                     MERGE (t:Vertex {name: $target})
-#                     ON CREATE SET t.Location = 'K1.' + $location, t.Terminal = $terminal, t.Function = $function, t.UnitType = $unit_type, t.DeviceId = $device_id, t.Device = $device, t.Voltage = $voltage, t.IsEnabled = $is_enabled
-#                     """, target=target, location=target.split('+')[1].split(':')[0], terminal=target.split('+')[1].split(':')[1], function='B', unit_type='B', device_id=1, device='1', voltage=0.0, is_enabled=True)
-                    
-#                     # Create relationship
-#                     session.run("""
-#                     MATCH (s:Vertex {name: $source}), (t:Vertex {name: $target})
-#                     MERGE (s)-[r:CONNECTS {type: $connection_type, wireType: $wire_type, length: $length, color: $color, crossSection: $cross_section, sourceProcessing: $source_processing, targetProcessing: $target_processing, sourceRouting: $source_routing, targetRouting: $target_routing, bundle: $bundle, layoutSpace: $layout_space, connectionDesignation: $connection_designation, remark: $remark}]->(t)
-#                     """, source=source, target=target, connection_type=connection_type, wire_type=wire_type, length=length, color=color, cross_section=cross_section, source_processing=source_processing, target_processing=target_processing, source_routing=source_routing, target_routing=target_routing, bundle=bundle, layout_space=layout_space, connection_designation=connection_designation, remark=remark)
-
-# if __name__ == "__main__":
-#     importer = DataImporter("bolt://192.168.35.10:7687", "neo4j", "13701033228")
-#     importer.import_data()
-#     importer.close()
-
 import csv
+from neo4j import GraphDatabase
+from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 
 class DataImporter:
-    def __init__(self, uri, user, password):
-        pass
+    def __init__(self):
+        self.driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+
     def close(self):
-        pass
+        self.driver.close()
+
+    def get_vertex_id(self, node_str):
+        """获取节点ID
+        从完整字符串中提取第一个+后的所有字符串作为节点ID
+        """
+        plus_index = node_str.find('+')
+        if plus_index != -1:
+            vertex_id = node_str[plus_index + 1:].strip()
+        else:
+            vertex_id = node_str.strip()
+            
+        print(f"原始字符串: {node_str}")
+        print(f"提取的ID: {vertex_id}")
+        return vertex_id
+
+    def parse_node_properties(self, node_str):
+        """解析节点属性
+        从字符串中提取Function、Location、Device和Terminal属性
+        基于=+-:四种标记进行分割
+        """
+        print(f"\n开始解析节点属性: {node_str}")
+        
+        # 保存原始字符串作为name属性
+        properties = {
+            'name': node_str,
+        }
+        
+        # 如果字符串中没有任何标记,在开头添加标记
+        if not any(mark in node_str for mark in ['=', '+', '-', ':']):
+            print(f"未找到任何标记,添加默认标记")
+            node_str = f"=+{node_str}"
+            print(f"添加标记后: {node_str}")
+        
+        # 如果没有冒号,在最后一个减号后添加冒号
+        if ':' not in node_str:
+            last_dash_index = node_str.rfind('-')
+            if last_dash_index != -1:
+                node_str = f"{node_str[:last_dash_index+1]}:{node_str[last_dash_index+1:]}"
+                print(f"添加冒号后: {node_str}")
+            else:
+                node_str = f"{node_str}:"
+                print(f"在末尾添加冒号: {node_str}")
+
+        # 查找所有标记的位置
+        equal_index = node_str.find('=')
+        plus_index = node_str.find('+')
+        dash_index = node_str.find('-')
+        colon_index = node_str.find(':')
+
+        print(f"标记位置: = ({equal_index}), + ({plus_index}), - ({dash_index}), : ({colon_index})")
+
+        # 如果没有等号,假设它在开头
+        if equal_index == -1:
+            equal_index = 0
+
+        # 提取各个部分
+        if plus_index != -1:
+            function = node_str[equal_index+1:plus_index].strip()
+            if function:
+                properties['function'] = function
+                print(f"提取Function: {function}")
+                
+            if dash_index != -1:
+                location = node_str[plus_index+1:dash_index].strip()
+                if location:
+                    properties['location'] = location
+                    print(f"提取Location: {location}")
+                    
+                if colon_index != -1:
+                    device = node_str[dash_index+1:colon_index].strip()
+                    if device:
+                        properties['device'] = device
+                        print(f"提取Device: {device}")
+                        
+                    terminal = node_str[colon_index+1:].strip()
+                    if terminal:
+                        properties['terminal'] = terminal
+                        print(f"提取Terminal: {terminal}")
+                else:
+                    device = node_str[dash_index+1:].strip()
+                    if device:
+                        properties['device'] = device
+                        print(f"提取Device: {device}")
+            else:
+                location = node_str[plus_index+1:].strip()
+                if location:
+                    properties['location'] = location
+                    print(f"提取Location: {location}")
+        else:
+            function = node_str
+            if function:
+                properties['function'] = function
+                print(f"提取Function: {function}")
+
+        print(f"最终属性: {properties}\n")
+        return properties
+
     def import_data(self):
         with open('data/SmartWiringzta.csv', mode='r', encoding='utf-8') as file:
-            csv_reader = csv.DictReader(file)
+            # 跳过前两行合并的标题行
+            next(file)
+            next(file)
+            
+            csv_reader = csv.reader(file)
+            fieldnames = [
+                'Consecutive number',
+                'Connectiondevice identifier(full)',
+                'cableType/connections number/RCS',
+                'Connection: Type designation',
+                'Connection color / number',
+                'Connection: Cross-section / diameter',
+                'Length (full)',
+                'source',
+                'target',
+                'Wire termination processing source',
+                'Wire termination processing target',
+                'Routing direction source',
+                'Routing direction target',
+                'Bundle',
+                'Layout space: Routing track',
+                'Connection designation',
+                'Remark'
+            ]
+            
+            # csv_reader = csv.DictReader(file, fieldnames=fieldnames)
+            
+            count = 0
+            i=0
+            test_count = 0  # 在循环之前初始化 test_count
             for row in csv_reader:
-                source = row['source']
-                target = row['target']
-                
-                # Skip if source or target doesn't contain '+' and ':'
-                if '+' not in source or ':' not in source or '+' not in target or ':' not in target:
-                    print(f"Skipping row with invalid source or target: source={source}, target={target}")
+                # 跳过第一行（字段名）
+                if i == 0:
+                    i += 1
                     continue
                 
-                wire_type = row['Consecutive number']
-                length = row['Length (full)']
-                color = row['Connection color / number']
-                cross_section = row['Connection: Cross-section / diameter']
-                connection_type = row['Connection: Type designation']
-                source_processing = row['Wire termination processing source']
-                target_processing = row['Wire termination processing target']
-                source_routing = row['Routing direction source']
-                target_routing = row['Routing direction target']
-                bundle = row['Bundle']
-                layout_space = row['Layout space: Routing track']
-                connection_designation = row['Connection designation']
-                remark = row['Remark']
+                # 构建字典
+                row_dict = {}
+                for j, value in enumerate(row):
+                    row_dict[fieldnames[j]] = value.strip()
+                
+                # 检查是否存在 None 键
+                if None in row_dict:
+                    print(f"发现包含 None 键的行: {row_dict}")
+                    # 可以选择跳过该行或用默认值填充
+                    # continue  # 跳过该行
+                    row_dict.pop(None)  # 移除 None 键
+                
+                # 打印row 和换行
+                i+=1
+                print(f"{i}\n", row_dict, end='\n\n')  # 在行后添加两个换行符
+                
+                source_str = row_dict.get('source', '').strip()
+                target_str = row_dict.get('target', '').strip()
+                wire_termination_processing_source_str = row_dict.get('Wire termination processing source', '').strip()
+                wire_termination_processing_target_str = row_dict.get('Wire termination processing target', '').strip()
 
-                # Placeholder for actual server communication logic
-                print(f"Processing: source={source}, target={target}, wire_type={wire_type}, length={length}, color={color}")
+                # 获取或创建 Wire termination processing source Vertex
+                wire_termination_processing_source_id = self.get_vertex_id(wire_termination_processing_source_str)
+                wire_termination_processing_source_properties = self.parse_node_properties(wire_termination_processing_source_str)
+
+                # 获取或创建 Wire termination processing target Vertex
+                wire_termination_processing_target_id = self.get_vertex_id(wire_termination_processing_target_str)
+                wire_termination_processing_target_properties = self.parse_node_properties(wire_termination_processing_target_str)
+
+                # 获取或创建 source Vertex
+                source_id = self.get_vertex_id(source_str)
+                source_properties = self.parse_node_properties(source_str)
+
+                # 获取或创建 target Vertex
+                target_id = self.get_vertex_id(target_str)
+                target_properties = self.parse_node_properties(target_str)
+
+                wire_properties = {
+                    'wire_number': row_dict.get('Consecutive number', ''),
+                    'cable_type': row_dict.get('cableType/connections number/RCS', ''),
+                    # 'connection_type': row_dict.get('Connection: Type designation', ''), # 删除 connection_type
+                    'color': row_dict.get('Connection color / number', ''),
+                    # 'cross_section': row_dict.get('Connection: Cross-section / diameter', ''), # 删除 cross_section
+                    'length': row_dict.get('Length (full)', ''),
+                    'bundle': row_dict.get('Bundle', ''),
+                    'remark': row_dict.get('Remark', '')
+                }
+
+                wire_properties = {k: v for k, v in wire_properties.items() if v}
+
+                with self.driver.session() as session:
+                    # 创建节点和关系
+                    query = (
+                        "MERGE (w_source:Vertex {id: $wire_termination_processing_source_id}) "
+                        "SET w_source += $wire_termination_processing_source_properties "
+                        "MERGE (w_target:Vertex {id: $wire_termination_processing_target_id}) "
+                        "SET w_target += $wire_termination_processing_target_properties "
+                        "MERGE (source:Vertex {id: $source_id}) "
+                        "SET source += $source_properties "
+                        "MERGE (target:Vertex {id: $target_id}) "
+                        "SET target += $target_properties "
+                        "MERGE (source)-[c:conn]->(target) " # 修改关系名称为 conn
+                        "SET c = $wire_properties "
+                        "MERGE (target)-[c2:conn]->(source) " # 修改关系名称为 conn
+                        "SET c2 = $wire_properties"
+                    )
+                    session.run(
+                        query,
+                        wire_termination_processing_source_id=wire_termination_processing_source_id,
+                        wire_termination_processing_source_properties=wire_termination_processing_source_properties,
+                        wire_termination_processing_target_id=wire_termination_processing_target_id,
+                        wire_termination_processing_target_properties=wire_termination_processing_target_properties,
+                        source_id=source_id,
+                        target_id=target_id,
+                        source_properties=source_properties,
+                        target_properties=target_properties,
+                        wire_properties=wire_properties
+                    )
+                    count += 1
+
+                    if count % 100 == 0:
+                        print(f"已处理 {count} 条连接")
+
+                test_count += 1
+                if test_count >= 10:
+                    print("已处理10行数据，停止测试")
+                    break
 
 if __name__ == "__main__":
-    importer = DataImporter("bolt://192.168.35.10:7687", "neo4j", "13701033228")
-    importer.import_data()
-    importer.close()
+    importer = DataImporter()
+    try:
+        print("开始导入数据...")
+        importer.import_data()
+        print("数据导入完成")
+    except Exception as e:
+        print(f"导入过程中出现错误: {str(e)}")
+    finally:
+        importer.close()
