@@ -13,14 +13,17 @@ class DataImporter:
         """获取节点ID
         从完整字符串中提取第一个+后的所有字符串作为节点ID
         """
+        # 去除空格
+        node_str = node_str.strip()
+        
         plus_index = node_str.find('+')
         if plus_index != -1:
             vertex_id = node_str[plus_index + 1:].strip()
         else:
             vertex_id = node_str.strip()
             
-        print(f"原始字符串: {node_str}")
-        print(f"提取的ID: {vertex_id}")
+        # print(f"完整设备标识符: {node_str}")
+        print(f"简化设备标识符: {vertex_id}")
         return vertex_id
 
     def parse_node_properties(self, node_str):
@@ -28,7 +31,7 @@ class DataImporter:
         从字符串中提取Function、Location、Device和Terminal属性
         基于=+-:四种标记进行分割
         """
-        print(f"\n开始解析节点属性: {node_str}")
+        print(f"开始解析节点属性: {node_str}")
         
         # 保存原始字符串作为name属性
         properties = {
@@ -57,7 +60,7 @@ class DataImporter:
         dash_index = node_str.find('-')
         colon_index = node_str.find(':')
 
-        print(f"标记位置: = ({equal_index}), + ({plus_index}), - ({dash_index}), : ({colon_index})")
+        # print(f"标记位置: = ({equal_index}), + ({plus_index}), - ({dash_index}), : ({colon_index})")
 
         # 如果没有等号,假设它在开头
         if equal_index == -1:
@@ -68,19 +71,19 @@ class DataImporter:
             function = node_str[equal_index+1:plus_index].strip()
             if function:
                 properties['function'] = function
-                print(f"提取Function: {function}")
+                print(f"= {function}")
                 
             if dash_index != -1:
                 location = node_str[plus_index+1:dash_index].strip()
                 if location:
                     properties['location'] = location
-                    print(f"提取Location: {location}")
+                    print(f"+: {location}")
                     
                 if colon_index != -1:
                     device = node_str[dash_index+1:colon_index].strip()
                     if device:
                         properties['device'] = device
-                        print(f"提取Device: {device}")
+                        print(f"- {device}")
                         
                         # 增加 type 属性
                         if device.startswith('A'):
@@ -88,15 +91,15 @@ class DataImporter:
                             print(f"设置 type 属性为 PLC")
                         elif not location.startswith('K1.'):
                             properties['type'] = 'field'
-                            print(f"设置 type 属性为 field")
+                            print(f"type=field")
                         else:
                             properties['type'] = 'panel'
-                            print(f"设置 type 属性为 panel")
+                            print(f"type=panel")
                         
                     terminal = node_str[colon_index+1:].strip()
                     if terminal:
                         properties['terminal'] = terminal
-                        print(f"提取Terminal: {terminal}")
+                        print(f": {terminal}")
                 else:
                     device = node_str[dash_index+1:].strip()
                     if device:
@@ -160,6 +163,9 @@ class DataImporter:
             i=0
             test_count = 0  # 在循环之前初始化 test_count
             for row in csv_reader:
+                # 打印分隔符
+                print("-------------------- i =", i, " count =", count, "--------------------")
+                
                 # 跳过第一行（字段名）
                 if i == 0:
                     i += 1
@@ -178,8 +184,7 @@ class DataImporter:
                     row_dict.pop(None)  # 移除 None 键
                 
                 # 打印row 和换行
-                i+=1
-                print(f"{i}\n", row_dict, end='\n\n')  # 在行后添加两个换行符
+                # print(f"**row No{i}**\n", row_dict, end='\n\n')  # 在行后添加两个换行符**********
                 
                 source_str = row_dict.get('source', '').strip()
                 target_str = row_dict.get('target', '').strip()
@@ -187,12 +192,22 @@ class DataImporter:
                 wire_termination_processing_target_str = row_dict.get('Wire termination processing target', '').strip()
 
                 # 获取或创建 Wire termination processing source Vertex
-                wire_termination_processing_source_id = self.get_vertex_id(wire_termination_processing_source_str)
-                wire_termination_processing_source_properties = self.parse_node_properties(wire_termination_processing_source_str)
+                # 处理 wire_termination_processing_source_str 为空字符串的情况
+                if wire_termination_processing_source_str:
+                    wire_termination_processing_source_id = self.get_vertex_id(wire_termination_processing_source_str)
+                    wire_termination_processing_source_properties = self.parse_node_properties(wire_termination_processing_source_str)
+                else:
+                    wire_termination_processing_source_id = None
+                    wire_termination_processing_source_properties = {}
 
                 # 获取或创建 Wire termination processing target Vertex
-                wire_termination_processing_target_id = self.get_vertex_id(wire_termination_processing_target_str)
-                wire_termination_processing_target_properties = self.parse_node_properties(wire_termination_processing_target_str)
+                # 处理 wire_termination_processing_target_str 为空字符串的情况
+                if wire_termination_processing_target_str:
+                    wire_termination_processing_target_id = self.get_vertex_id(wire_termination_processing_target_str)
+                    wire_termination_processing_target_properties = self.parse_node_properties(wire_termination_processing_target_str)
+                else:
+                    wire_termination_processing_target_id = None
+                    wire_termination_processing_target_properties = {}
 
                 # 获取或创建 source Vertex
                 source_id = self.get_vertex_id(source_str)
@@ -215,41 +230,51 @@ class DataImporter:
 
                 wire_properties = {k: v for k, v in wire_properties.items() if v}
 
-                with self.driver.session() as session:
-                    # 创建节点和关系
-                    query = (
-                        "MERGE (w_source:Vertex {id: $wire_termination_processing_source_id}) "
-                        "SET w_source += $wire_termination_processing_source_properties "
-                        "MERGE (w_target:Vertex {id: $wire_termination_processing_target_id}) "
-                        "SET w_target += $wire_termination_processing_target_properties "
-                        "MERGE (source:Vertex {id: $source_id}) "
-                        "SET source += $source_properties "
-                        "MERGE (target:Vertex {id: $target_id}) "
-                        "SET target += $target_properties "
-                        "MERGE (source)-[c:conn]->(target) " # 修改关系名称为 conn
-                        "SET c = $wire_properties "
-                        "MERGE (target)-[c2:conn]->(source) " # 修改关系名称为 conn
-                        "SET c2 = $wire_properties"
-                    )
-                    session.run(
-                        query,
-                        wire_termination_processing_source_id=wire_termination_processing_source_id,
-                        wire_termination_processing_source_properties=wire_termination_processing_source_properties,
-                        wire_termination_processing_target_id=wire_termination_processing_target_id,
-                        wire_termination_processing_target_properties=wire_termination_processing_target_properties,
-                        source_id=source_id,
-                        target_id=target_id,
-                        source_properties=source_properties,
-                        target_properties=target_properties,
-                        wire_properties=wire_properties
-                    )
-                    count += 1
+                # 检查 source 和 target 的 type 属性
+                if source_properties.get('type') in ('panel', 'PLC') and target_properties.get('type') in ('panel', 'PLC'):
+                    with self.driver.session() as session:
+                        # 创建节点和关系
+                        query = (
+                            # 创建或合并 w_source 节点（如果 wire_termination_processing_source_id 不为 None）
+                            ("FOREACH (ignoreMe IN CASE WHEN $wire_termination_processing_source_id IS NOT NULL THEN [1] ELSE [] END | "
+                             "MERGE (w_source:Vertex {id: $wire_termination_processing_source_id}) "
+                             "SET w_source += $wire_termination_processing_source_properties) ") +
+                            # 创建或合并 w_target 节点（如果 wire_termination_processing_target_id 不为 None）
+                            ("FOREACH (ignoreMe IN CASE WHEN $wire_termination_processing_target_id IS NOT NULL THEN [1] ELSE [] END | "
+                             "MERGE (w_target:Vertex {id: $wire_termination_processing_target_id}) "
+                             "SET w_target += $wire_termination_processing_target_properties) ") +
+                            # 创建或合并 source 和 target 节点
+                            ("MERGE (source:Vertex {id: $source_id}) "
+                             "SET source += $source_properties "
+                             "MERGE (target:Vertex {id: $target_id}) "
+                             "SET target += $target_properties "
+                             "MERGE (source)-[c:conn]->(target) "  # 修改关系名称为 conn
+                             "SET c = $wire_properties "
+                             "MERGE (target)-[c2:conn]->(source) "  # 修改关系名称为 conn
+                             "SET c2 = $wire_properties")
+                        )
+                        session.run(
+                            query,
+                            wire_termination_processing_source_id=wire_termination_processing_source_id,
+                            wire_termination_processing_source_properties=wire_termination_processing_source_properties,
+                            wire_termination_processing_target_id=wire_termination_processing_target_id,
+                            wire_termination_processing_target_properties=wire_termination_processing_target_properties,
+                            source_id=source_id,
+                            source_properties=source_properties,
+                            target_id=target_id,
+                            target_properties=target_properties,
+                            wire_properties=wire_properties
+                        )
+                        count += 1
 
-                    if count % 100 == 0:
-                        print(f"已处理 {count} 条连接")
+                        if count % 100 == 0:
+                            print(f"已处理 {count} 条连接")
+                else:
+                    print(f"跳过连接：source type = {source_properties.get('type')}, target type = {target_properties.get('type')}")
 
+                i += 1
                 test_count += 1
-                if test_count >= 200:
+                if test_count >= 5:
                     print("已处理10行数据，停止测试")
                     break
 

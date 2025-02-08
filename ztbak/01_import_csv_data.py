@@ -82,6 +82,17 @@ class DataImporter:
                         properties['device'] = device
                         print(f"提取Device: {device}")
                         
+                        # 增加 type 属性
+                        if device.startswith('A'):
+                            properties['type'] = 'PLC'
+                            print(f"设置 type 属性为 PLC")
+                        elif not location.startswith('K1.'):
+                            properties['type'] = 'field'
+                            print(f"设置 type 属性为 field")
+                        else:
+                            properties['type'] = 'panel'
+                            print(f"设置 type 属性为 panel")
+                        
                     terminal = node_str[colon_index+1:].strip()
                     if terminal:
                         properties['terminal'] = terminal
@@ -91,6 +102,17 @@ class DataImporter:
                     if device:
                         properties['device'] = device
                         print(f"提取Device: {device}")
+                        
+                        # 增加 type 属性
+                        if device.startswith('A'):
+                            properties['type'] = 'PLC'
+                            print(f"设置 type 属性为 PLC")
+                        elif not location.startswith('K1.'):
+                            properties['type'] = 'field'
+                            print(f"设置 type 属性为 field")
+                        else:
+                            properties['type'] = 'panel'
+                            print(f"设置 type 属性为 panel")
             else:
                 location = node_str[plus_index+1:].strip()
                 if location:
@@ -227,7 +249,7 @@ class DataImporter:
                         print(f"已处理 {count} 条连接")
 
                 test_count += 1
-                if test_count >= 10:
+                if test_count >= 200:
                     print("已处理10行数据，停止测试")
                     break
 
