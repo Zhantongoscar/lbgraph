@@ -31,7 +31,7 @@ class SimulationSyncer:
         # 获取设备类型
         cursor.execute("SELECT * FROM device_types")
         device_types = cursor.fetchall()
-           
+        
         # 获取设备
         cursor.execute("SELECT * FROM devices")
         devices = cursor.fetchall()
