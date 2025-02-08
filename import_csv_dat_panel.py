@@ -198,7 +198,7 @@ class DataImporter:
 
                 i += 1
                 test_count += 1
-                if test_count >= 50:
+                if test_count >= 2000:
                     print("已处理5行数据，停止测试")
                     break
 
