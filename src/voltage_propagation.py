@@ -15,12 +15,17 @@ class VoltagePropagator:
         with self.driver.session() as session:
             query = (
                 "MATCH path=(start:Vertex)-[:conn*1..%d]->(end:Vertex) "
-                "WHERE start.id = $start_id AND end.type IN ['PLC', 'sim'] "
+                "WHERE start.id = $start_id "
+                "AND start.type IN ['PLC', 'sim'] "
+                "AND end.type = 'sim' "
                 "WITH relationships(path) AS rels, nodes(path) AS nodes "
                 "WHERE ALL(r IN rels WHERE r.resistance IS NOT NULL) "
-                "RETURN nodes, reduce(v = start.voltage, r IN rels | v * exp(-r.resistance)) AS expected_voltage"
+                "RETURN nodes, reduce(v = start.voltage, r IN rels | v * exp(-r.resistance * $decay_factor)) AS expected_voltage"
             ) % max_depth
-            result = session.run(query, start_id=start_id)
+            result = session.run(query,
+                start_id=start_id,
+                decay_factor=0.1  # 从config获取衰减系数
+            )
             return [(record["nodes"], record["expected_voltage"]) for record in result]
 
     def calculate_expected_voltage(self, paths):
