@@ -54,8 +54,19 @@ def export_graph_data():
                 return
         
         print("\nSTEP 8: 写入 CSV 文件", flush=True)
+        # 如果文件已存在，尝试删除，避免权限问题
+        if os.path.exists(output_file):
+            try:
+                # 尝试修改文件权限后删除
+                os.chmod(output_file, 0o666)
+                os.remove(output_file)
+                print(f"[DEBUG] 已删除存在的文件: {output_file}", flush=True)
+            except Exception as e:
+                print(f"[DEBUG] 无法删除文件 {output_file}, 错误: {e}", flush=True)
+                # 这里可以选择退出或继续，当前选择退出
+                raise
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
+            writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             
             # 调整表头：将 connection_number 放在第一列
             headers = ['connection_number', 'source_name', 'source_location', 'source_type',
@@ -63,14 +74,31 @@ def export_graph_data():
             writer.writerow(headers)
             print(f"[DEBUG] 表头写入成功: {headers}", flush=True)
             
-            records_written = 0
+            # 构建字典过滤重复 connection_number
+            unique_records = {}
             for record in records:
+                try:
+                    conn_num = int(record['connection_number'])
+                except Exception as e:
+                    print(f"[DEBUG] 无法转换 connection_number: {record['connection_number']}, 跳过", flush=True)
+                    continue
+                
+                if conn_num not in unique_records:
+                    unique_records[conn_num] = record
+
+            def fix_string_for_csv(value):
+                # Always prefix with a single quote
+                val = str(value)
+                return val if val.startswith("'") else "'" + val
+
+            records_written = 0
+            for conn_num, record in sorted(unique_records.items()):
                 row = [
-                    str(record['connection_number'] or ''),
-                    str(record['source_name'] or ''),
+                    conn_num,
+                    fix_string_for_csv(record['source_name'] or ''),
                     str(record['source_location'] or ''),
                     str(record['source_type'] or ''),
-                    str(record['target_name'] or ''),
+                    fix_string_for_csv(record['target_name'] or ''),
                     str(record['target_location'] or ''),
                     str(record['target_type'] or ''),
                     str(record['wire_color'] or '')
@@ -90,6 +118,55 @@ def export_graph_data():
             print(f"[DEBUG] 输出目录内容: {os.listdir(output_dir)}", flush=True)
         else:
             print("错误: 文件未能成功创建!", flush=True)
+
+        # 新增Excel导出处理：将生成的CSV转换为Excel格式，并确保source_name和target_name为文本格式
+        try:
+            import pandas as pd
+            excel_output = os.path.join(output_dir, 'graph_data.xlsx')
+            df = pd.read_csv(output_file)
+            df['connection_number'] = df['connection_number'].astype(int)
+            
+            with pd.ExcelWriter(excel_output, engine='xlsxwriter') as writer:
+                workbook = writer.book
+                worksheet = writer.sheets['Sheet1'] = workbook.add_worksheet()
+                
+                text_format = workbook.add_format({'num_format': '@'})
+                
+                # 步骤1：先整列设置文本格式，并写空值
+                worksheet.set_column('B:B', 30, text_format)  # source_name列
+                worksheet.set_column('E:E', 30, text_format)  # target_name列
+                for row_idx in range(1, len(df) + 1):
+                    worksheet.write_string(row_idx, 1, '', text_format)  # 先空写source_name
+                    worksheet.write_string(row_idx, 4, '', text_format)  # 先空写target_name
+                
+                # 写表头
+                for col_num, value in enumerate(df.columns.values):
+                    worksheet.write(0, col_num, value)
+                
+                # 步骤2：再写入真实值，加一个空格
+                for row_num, row in enumerate(df.values):
+                    for col_num, value in enumerate(row):
+                        if col_num in [1, 4]:  # source_name / target_name
+                            val_str = str(value)
+                            # 如果没有以单引号开头，就加单引号+空格
+                            if not val_str.startswith("'"):
+                                val_str = "' " + val_str
+                            worksheet.write_string(row_num + 1, col_num, val_str, text_format)
+                        else:
+                            worksheet.write(row_num + 1, col_num, value)
+                            
+            process_excel_content(excel_output)
+
+        except ImportError:
+            print("[DEBUG] pandas模块未安装，跳过生成Excel文件", flush=True)
+
+        finally:
+            # 删除临时文件
+            try:
+                os.remove(temp_csv_path)
+                print(f"[DEBUG] 临时文件已删除: {temp_csv_path}", flush=True)
+            except Exception as e:
+                print(f"[DEBUG] 无法删除临时文件 {temp_csv_path}, 错误: {e}", flush=True)
             
     except Exception as e:
         print(f"ERROR: {str(e)}", file=sys.stderr, flush=True)
@@ -99,6 +176,23 @@ def export_graph_data():
         if 'driver' in locals():
             driver.close()
             print("\nSTEP 10: 数据库连接已关闭", flush=True)
+
+def process_excel_content(excel_path):
+    # 使用 openpyxl 处理Excel内容，对source_name和target_name列去除多余空格
+    try:
+        import openpyxl
+    except ImportError:
+        print("[DEBUG] openpyxl模块未安装，无法处理Excel内容", flush=True)
+        return
+    wb = openpyxl.load_workbook(excel_path)
+    ws = wb.active
+    # 假设第一行为表头，source_name 为第2列，target_name 为第5列
+    for row in ws.iter_rows(min_row=2):
+        for cell in (row[1], row[4]):
+            if isinstance(cell.value, str):
+                cell.value = cell.value.strip()
+    wb.save(excel_path)
+    print(f"[DEBUG] 处理Excel内容完成: {excel_path}", flush=True)
 
 def test_connection():
     try:
