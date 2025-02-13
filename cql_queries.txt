@@ -1,0 +1,35 @@
+// 查询 Location 包含 X20、X21、X22 的 Vertex 节点
+MATCH (v:Vertex)
+WHERE v.Location CONTAINS 'X20'
+   OR v.Location CONTAINS 'X21'
+   OR v.Location CONTAINS 'X22'
+RETURN v;
+
+// 查询与上述节点连接的边及其相邻节点
+MATCH (v:Vertex)-[r]-(w:Vertex)
+WHERE v.Location CONTAINS 'X20'
+   OR v.Location CONTAINS 'X21'
+   OR v.Location CONTAINS 'X22'
+RETURN v, r, w;
+
+// 查询所有conn关系及其节点
+MATCH (v:Vertex)-[r:conn]->(w:Vertex)
+RETURN v, r, w;
+
+// 导出上述查询到 CSV (需安装 APOC 插件)
+CALL apoc.export.csv.query(
+  "MATCH (v:Vertex)-[r:conn]->(w:Vertex) RETURN v, r, w",
+  "all_connections.csv",
+  {}
+);
+
+// 使用Neo4j浏览器导出数据
+MATCH (v:Vertex)-[r:conn]->(w:Vertex)
+RETURN v.name as source_name, 
+       v.Location as source_location,
+       v.type as source_type,
+       w.name as target_name,
+       w.Location as target_location,
+       w.type as target_type,
+       r.wire_number as connection_number,
+       r.color as wire_color
