@@ -1,7 +1,7 @@
 import csv
 from neo4j import GraphDatabase
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
-from vertex_type_rules import get_vertex_type
+from vertex_type_rules import get_vertex_type, get_vertex_properties, get_relationship_type
 
 class DataImporter:
     def __init__(self):
@@ -74,16 +74,28 @@ class DataImporter:
                     
                 if colon_index != -1:
                     device = node_str[dash_index+1:colon_index].strip()
+                    terminal = node_str[colon_index+1:].strip()
+                    
                     if device:
                         properties['device'] = device
                         formatted_output += f"<{device}>;"
                         
-                        properties['type'] = get_vertex_type(properties.get('function', ''),
-                                                             properties.get('location', ''),
-                                                             properties.get('device', ''))
-                        print(f"type={properties['type']}")
+                        # 获取节点类型列表和属性
+                        types = get_vertex_type(properties.get('function', ''),
+                                           properties.get('location', ''),
+                                           device)
+                        properties['types'] = types
+                        print(f"types={properties['types']}")
                         
-                    terminal = node_str[colon_index+1:].strip()
+                        # 获取节点属性
+                        extra_props = get_vertex_properties(
+                            properties.get('function', ''),
+                            properties.get('location', ''),
+                            device,
+                            terminal
+                        )
+                        properties.update(extra_props)
+                        
                     if terminal:
                         properties['terminal'] = terminal
                         formatted_output += f"<{terminal}>"
@@ -160,18 +172,29 @@ class DataImporter:
                 }
                 wire_properties = {k: v for k, v in wire_properties.items() if v}
 
-                if (source_properties.get('type') in ('panel', 'PLC') and 
-                    target_properties.get('type') in ('panel', 'PLC') and 
+                if (any(t in ['IntComp', 'PLC'] for t in source_properties.get('types', [])) and 
+                    any(t in ['IntComp', 'PLC'] for t in target_properties.get('types', [])) and 
                     not skip_terminals):
                     with self.driver.session() as session:
+                        # 构建Neo4j标签字符串
+                        source_labels = ':'.join(source_properties.pop('types', ['Vertex']))
+                        target_labels = ':'.join(target_properties.pop('types', ['Vertex']))
+                        
+                        # 获取关系类型
+                        rel_type = get_relationship_type(
+                            source_properties.get('types', []),
+                            target_properties.get('types', []),
+                            bool(wire_properties.get('cable_type'))
+                        )
+                        
                         query = (
-                            "MERGE (source:Vertex {id: $source_id}) "
-                            "SET source += $source_properties "
-                            "MERGE (target:Vertex {id: $target_id}) "
-                            "SET target += $target_properties "
-                            "MERGE (source)-[c:conn]->(target) "
+                            f"MERGE (source:{source_labels} {{id: $source_id}}) "
+                            f"SET source += $source_properties "
+                            f"MERGE (target:{target_labels} {{id: $target_id}}) "
+                            f"SET target += $target_properties "
+                            f"MERGE (source)-[c:{rel_type}]->(target) "
                             "SET c = $wire_properties "
-                            "MERGE (target)-[c2:conn]->(source) "
+                            f"MERGE (target)-[c2:{rel_type}]->(source) "
                             "SET c2 = $wire_properties"
                         )
                         session.run(
@@ -190,7 +213,7 @@ class DataImporter:
                     if skip_terminals:
                         print(f"跳过PE/N连接：source terminal = {source_terminal}, target terminal = {target_terminal}")
                     else:
-                        print(f"跳过连接：source type = {source_properties.get('type')}, target type = {target_properties.get('type')}")
+                        print(f"跳过连接：source types = {source_properties.get('types')}, target types = {target_properties.get('types')}")
 
                 i += 1
                 test_count += 1
