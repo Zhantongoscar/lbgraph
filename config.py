@@ -3,7 +3,7 @@
 """
 
 # Neo4j配置
-NEO4J_URI = "bolt://192.168.35.10:7687"
+NEO4J_URI = "neo4j://192.168.35.10:7687"  # 使用 neo4j:// 协议
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "13701033228"
 NEO4J_CONFIG = {

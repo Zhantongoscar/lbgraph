@@ -176,16 +176,23 @@ class DataImporter:
                     any(t in ['IntComp', 'PLC'] for t in target_properties.get('types', [])) and 
                     not skip_terminals):
                     with self.driver.session() as session:
+                        # 保存types用于关系判断
+                        source_types = source_properties.get('types', ['Vertex'])
+                        target_types = target_properties.get('types', ['Vertex'])
+                        
                         # 构建Neo4j标签字符串
                         source_labels = ':'.join(source_properties.pop('types', ['Vertex']))
                         target_labels = ':'.join(target_properties.pop('types', ['Vertex']))
                         
-                        # 获取关系类型
-                        rel_type = get_relationship_type(
-                            source_properties.get('types', []),
-                            target_properties.get('types', []),
-                            bool(wire_properties.get('cable_type'))
+                        # 获取关系类型和额外属性
+                        rel_type, extra_props = get_relationship_type(
+                            source_types,
+                            target_types,
+                            wire_properties
                         )
+                        
+                        # 合并wire_properties和extra_props
+                        relationship_props = {**wire_properties, **extra_props}
                         
                         query = (
                             f"MERGE (source:{source_labels} {{id: $source_id}}) "
@@ -193,19 +200,23 @@ class DataImporter:
                             f"MERGE (target:{target_labels} {{id: $target_id}}) "
                             f"SET target += $target_properties "
                             f"MERGE (source)-[c:{rel_type}]->(target) "
-                            "SET c = $wire_properties "
+                            "SET c = $relationship_props "
                             f"MERGE (target)-[c2:{rel_type}]->(source) "
-                            "SET c2 = $wire_properties"
+                            "SET c2 = $relationship_props"
                         )
+                        
                         session.run(
                             query,
                             source_id=source_id,
                             source_properties=source_properties,
                             target_id=target_id,
                             target_properties=target_properties,
-                            wire_properties=wire_properties
+                            relationship_props=relationship_props
                         )
                         count += 1
+                        
+                        print(f"创建关系: ({source_labels})-[{rel_type}]->({target_labels})")
+                        print(f"关系属性: {relationship_props}")
 
                         if count % 100 == 0:
                             print(f"已处理 {count} 条连接")

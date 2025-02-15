@@ -68,14 +68,46 @@ def get_vertex_properties(function, location, device, terminal):
                 
     return properties
 
-def get_relationship_type(source_types, target_types, has_cable=False):
-    """确定连接关系类型
+def get_relationship_type(source_types, target_types, wire_properties):
+    """确定连接关系类型和属性
     Args:
         source_types: 源节点的类型列表
         target_types: 目标节点的类型列表
-        has_cable: 是否通过电缆连接
+        wire_properties: 连接属性字典
     Returns:
-        str: 连接关系类型
+        tuple: (关系类型, 额外属性字典)
     """
-    # 第一阶段保持简单的连接关系
-    return 'conn'
+    # 初始化返回值
+    rel_type = 'CONNECTED_TO'  # 默认关系类型
+    extra_props = {}
+    
+    # 判断是否有电缆相关信息
+    has_cable = bool(wire_properties.get('cable_type') or wire_properties.get('length'))
+    
+    # 根据节点类型和连接特征确定关系类型
+    if 'PLC' in source_types:
+        if 'Relay' in target_types:
+            rel_type = 'CONTROLS'
+            extra_props['control_type'] = 'digital'
+            
+    # 如果涉及到电缆，使用CONNECTED_VIA
+    if has_cable:
+        rel_type = 'CONNECTED_VIA'
+        # 添加电缆相关属性
+        if wire_properties.get('cable_type'):
+            extra_props['cable_spec'] = wire_properties['cable_type']
+        if wire_properties.get('length'):
+            extra_props['cable_length'] = wire_properties['length']
+            
+    # 根据端子类型判断
+    if any('CableSock' in types for types in [source_types, target_types]):
+        rel_type = 'TERMINATES_AT'
+        if wire_properties.get('color'):
+            extra_props['wire_color'] = wire_properties['color']
+            
+    # 设备与其端子之间的关系
+    if ('IntComp' in source_types and 'Vertex' in target_types) or \
+       ('IntComp' in target_types and 'Vertex' in source_types):
+        rel_type = 'HAS_TERMINAL'
+            
+    return rel_type, extra_props
