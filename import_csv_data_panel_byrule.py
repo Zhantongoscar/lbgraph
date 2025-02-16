@@ -1,11 +1,16 @@
+"""
+基于规则的数据导入程序
+"""
 import csv
 from neo4j import GraphDatabase
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from vertex_type_rules import get_vertex_type, get_vertex_properties, get_relationship_type
+from relay_importer import RelayImporter
 
 class DataImporter:
     def __init__(self):
         self.driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        self.relay_importer = RelayImporter(self.driver)
 
     def close(self):
         self.driver.close()
@@ -104,6 +109,18 @@ class DataImporter:
         print(f"最终属性: {properties}")
         return properties
 
+    def process_device(self, node_str):
+        """处理设备节点，为继电器创建完整结构
+        """
+        properties = self.parse_node_properties(node_str)
+        device = properties.get('device', '')
+        
+        # 如果是继电器，创建完整结构
+        if device.startswith(('Q', 'K')):
+            self.relay_importer.process_relay(device)
+            
+        return properties
+
     def import_data(self):
         with open('data/SmartWiringzta.csv', mode='r', encoding='utf-8') as file:
             next(file)  # 跳过前两行合并的标题行
@@ -150,18 +167,11 @@ class DataImporter:
                 source_str = row_dict.get('source', '').strip()
                 target_str = row_dict.get('target', '').strip()
 
-                source_id = self.get_vertex_id(source_str)
-                source_properties = self.parse_node_properties(source_str)
+                # 处理源设备和目标设备
+                source_properties = self.process_device(source_str)
+                target_properties = self.process_device(target_str)
 
-                target_id = self.get_vertex_id(target_str)
-                target_properties = self.parse_node_properties(target_str)
-
-                # 检查端子是否为 PE 或 N
-                source_terminal = source_properties.get('terminal', '')
-                target_terminal = target_properties.get('terminal', '')
-                skip_terminals = (self.is_pe_or_n_terminal(source_terminal) or 
-                                self.is_pe_or_n_terminal(target_terminal))
-
+                # 获取连接属性
                 wire_properties = {
                     'wire_number': row_dict.get('Consecutive number', ''),
                     'cable_type': row_dict.get('cableType/connections number/RCS', ''),
@@ -172,64 +182,86 @@ class DataImporter:
                 }
                 wire_properties = {k: v for k, v in wire_properties.items() if v}
 
-                if (any(t in ['IntComp', 'PLC'] for t in source_properties.get('types', [])) and 
-                    any(t in ['IntComp', 'PLC'] for t in target_properties.get('types', [])) and 
-                    not skip_terminals):
-                    with self.driver.session() as session:
-                        # 保存types用于关系判断
-                        source_types = source_properties.get('types', ['Vertex'])
-                        target_types = target_properties.get('types', ['Vertex'])
-                        
-                        # 构建Neo4j标签字符串
-                        source_labels = ':'.join(source_properties.pop('types', ['Vertex']))
-                        target_labels = ':'.join(target_properties.pop('types', ['Vertex']))
-                        
-                        # 获取关系类型和额外属性
-                        rel_type, extra_props = get_relationship_type(
-                            source_types,
-                            target_types,
-                            wire_properties
-                        )
-                        
-                        # 合并wire_properties和extra_props
-                        relationship_props = {**wire_properties, **extra_props}
-                        
-                        query = (
-                            f"MERGE (source:{source_labels} {{id: $source_id}}) "
-                            f"SET source += $source_properties "
-                            f"MERGE (target:{target_labels} {{id: $target_id}}) "
-                            f"SET target += $target_properties "
-                            f"MERGE (source)-[c:{rel_type}]->(target) "
-                            "SET c = $relationship_props "
-                            f"MERGE (target)-[c2:{rel_type}]->(source) "
-                            "SET c2 = $relationship_props"
-                        )
-                        
-                        session.run(
-                            query,
-                            source_id=source_id,
-                            source_properties=source_properties,
-                            target_id=target_id,
-                            target_properties=target_properties,
-                            relationship_props=relationship_props
-                        )
-                        count += 1
-                        
-                        print(f"创建关系: ({source_labels})-[{rel_type}]->({target_labels})")
-                        print(f"关系属性: {relationship_props}")
+                # 检查是否为继电器连接
+                source_device = source_properties.get('device', '')
+                target_device = target_properties.get('device', '')
+                source_terminal = source_properties.get('terminal', '')
+                target_terminal = target_properties.get('terminal', '')
 
-                        if count % 100 == 0:
-                            print(f"已处理 {count} 条连接")
+                if source_device.startswith(('Q', 'K')) or target_device.startswith(('Q', 'K')):
+                    # 使用继电器导入器处理连接
+                    self.relay_importer.connect_terminals(
+                        source_device, source_terminal,
+                        target_device, target_terminal,
+                        wire_properties
+                    )
                 else:
-                    if skip_terminals:
-                        print(f"跳过PE/N连接：source terminal = {source_terminal}, target terminal = {target_terminal}")
+                    # 使用常规方式处理其他连接
+                    source_id = self.get_vertex_id(source_str)
+                    target_id = self.get_vertex_id(target_str)
+
+                    # 检查端子是否为 PE 或 N
+                    skip_terminals = (self.is_pe_or_n_terminal(source_terminal) or 
+                                    self.is_pe_or_n_terminal(target_terminal))
+
+                    if (any(t in ['IntComp', 'PLC'] for t in source_properties.get('types', [])) and 
+                        any(t in ['IntComp', 'PLC'] for t in target_properties.get('types', [])) and 
+                        not skip_terminals):
+                        with self.driver.session() as session:
+                            # 保存types用于关系判断
+                            source_types = source_properties.get('types', ['Vertex'])
+                            target_types = target_properties.get('types', ['Vertex'])
+                            
+                            # 构建Neo4j标签字符串
+                            source_labels = ':'.join(source_properties.pop('types', ['Vertex']))
+                            target_labels = ':'.join(target_properties.pop('types', ['Vertex']))
+                            
+                            # 获取关系类型和额外属性
+                            rel_type, extra_props = get_relationship_type(
+                                source_types,
+                                target_types,
+                                wire_properties
+                            )
+                            
+                            # 合并wire_properties和extra_props
+                            relationship_props = {**wire_properties, **extra_props}
+                            
+                            query = (
+                                f"MERGE (source:{source_labels} {{id: $source_id}}) "
+                                f"SET source += $source_properties "
+                                f"MERGE (target:{target_labels} {{id: $target_id}}) "
+                                f"SET target += $target_properties "
+                                f"MERGE (source)-[c:{rel_type}]->(target) "
+                                "SET c = $relationship_props "
+                                f"MERGE (target)-[c2:{rel_type}]->(source) "
+                                "SET c2 = $relationship_props"
+                            )
+                            
+                            session.run(
+                                query,
+                                source_id=source_id,
+                                source_properties=source_properties,
+                                target_id=target_id,
+                                target_properties=target_properties,
+                                relationship_props=relationship_props
+                            )
+                            count += 1
+                            
+                            print(f"创建关系: ({source_labels})-[{rel_type}]->({target_labels})")
+                            print(f"关系属性: {relationship_props}")
+
+                            if count % 100 == 0:
+                                print(f"已处理 {count} 条连接")
                     else:
-                        print(f"跳过连接：source types = {source_properties.get('types')}, target types = {target_properties.get('types')}")
+                        if skip_terminals:
+                            print(f"跳过PE/N连接：source terminal = {source_terminal}, target terminal = {target_terminal}")
+                        else:
+                            print(f"跳过连接：source types = {source_properties.get('types')}, target types = {target_properties.get('types')}")
 
                 i += 1
                 test_count += 1
-                if test_count >= 50:
-                    print("已处理5行数据，停止测试")
+                if test_count >= 10:
+                    print("已处理10行数据，停止测试")
                     break
 
 if __name__ == "__main__":

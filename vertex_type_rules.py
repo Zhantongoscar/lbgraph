@@ -1,3 +1,5 @@
+from relay_rules import analyze_terminal, parse_relay_model, RelayType
+
 def get_vertex_type(function, location, device):
     """确定节点类型的规则
     Args:
@@ -12,8 +14,14 @@ def get_vertex_type(function, location, device):
     # 1. 分析设备类型和位置来确定具体类型
     if any(x in device for x in ['X1', 'X2', 'X20']):
         types.extend(['IntComp', 'CableSock'])
-    elif device.startswith('Q'):
+    elif device.startswith(('Q', 'K')):  # 扩展继电器识别范围
+        # 判断继电器类型
+        relay_type, _ = parse_relay_model(device)
         types.extend(['IntComp', 'Relay'])
+        if relay_type == RelayType.SAFETY_RELAY:
+            types.append('SafetyRelay')
+        elif relay_type == RelayType.TIME_RELAY:
+            types.append('TimeRelay')
     elif device.startswith('G'):
         types.extend(['IntComp', 'PowerSupply'])
     elif 'PLC' in device.upper():
@@ -49,8 +57,13 @@ def get_vertex_properties(function, location, device, terminal):
         properties['location'] = location
         
     # 2. 根据设备类型添加特定属性
-    if device.startswith('Q'):  # 继电器
-        properties['coil_voltage'] = '24VDC'
+    if device.startswith(('Q', 'K')):  # 继电器
+        if terminal:
+            # 使用 relay_rules 进行端子分析
+            term_type, term_props = analyze_terminal(device, terminal)
+            properties.update(term_props)
+            if 'type' not in properties:
+                properties['type'] = term_type
     elif device.startswith('G'):  # 电源
         properties['output_voltage'] = '24VDC'
         properties['max_current'] = '10A'
@@ -84,12 +97,15 @@ def get_relationship_type(source_types, target_types, wire_properties):
     # 判断是否有电缆相关信息
     has_cable = bool(wire_properties.get('cable_type') or wire_properties.get('length'))
     
-    # 根据节点类型和连接特征确定关系类型
-    if 'PLC' in source_types:
-        if 'Relay' in target_types:
-            rel_type = 'CONTROLS'
-            extra_props['control_type'] = 'digital'
-            
+    # 处理继电器特殊关系
+    if 'Relay' in source_types:
+        source_terminal = wire_properties.get('source_terminal', '')
+        if source_terminal.startswith('A'):
+            rel_type = 'CONTROLS'  # 线圈控制关系
+            extra_props['control_type'] = 'electromagnetic'
+            if 'TimeRelay' in source_types:
+                extra_props['timing_control'] = True
+                
     # 如果涉及到电缆，使用CONNECTED_VIA
     if has_cable:
         rel_type = 'CONNECTED_VIA'
