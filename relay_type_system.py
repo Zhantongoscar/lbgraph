@@ -30,7 +30,8 @@ class RelayTypeAnalyzer:
     def __init__(self):
         self.relay_types = {}  # 存储已知的继电器型号
         self.relay_instances = defaultdict(list)  # 存储每个型号的实例
-
+        self.device_features = defaultdict(dict)  # 存储设备特征
+        
     def analyze_csv(self, csv_path: str):
         """分析CSV文件中的继电器数据"""
         device_terminals = defaultdict(set)  # 收集每个设备的所有端子
@@ -77,8 +78,88 @@ class RelayTypeAnalyzer:
             
         return device.strip(), terminal.strip()
 
+    def analyze_device_features(self, device: str, terminals: set):
+        """分析设备特征
+        Args:
+            device: 设备ID
+            terminals: 该设备的所有端子
+        """
+        features = {
+            'terminal_count': len(terminals),
+            'has_coil': any(t.startswith('A') for t in terminals),
+            'contact_groups': self._analyze_contact_groups(terminals),
+            'power_terminals': [t for t in terminals if t.startswith(('L', 'T'))],
+            'diagnostic_terminals': [t for t in terminals if t.startswith('D')]
+        }
+        self.device_features[device] = features
+        return features
+    
+    def _analyze_contact_groups(self, terminals: set) -> dict:
+        """分析触点组配置"""
+        contact_groups = defaultdict(dict)
+        for term in terminals:
+            if term.isdigit() and len(term) == 2:
+                group = int(term[0])
+                type_num = int(term[1])
+                if type_num == 1:
+                    contact_groups[group]['com'] = term
+                elif type_num == 2:
+                    contact_groups[group]['nc'] = term
+                elif type_num == 4:
+                    contact_groups[group]['no'] = term
+        return dict(contact_groups)
+    
+    def find_similar_devices(self, device: str) -> list:
+        """查找具有相似特征的设备
+        Args:
+            device: 设备ID
+        Returns:
+            list: 相似设备的ID列表
+        """
+        if device not in self.device_features:
+            return []
+            
+        base_features = self.device_features[device]
+        similar_devices = []
+        
+        for other_device, other_features in self.device_features.items():
+            if other_device != device and self._compare_features(base_features, other_features):
+                similar_devices.append(other_device)
+                
+        return similar_devices
+    
+    def _compare_features(self, features1: dict, features2: dict) -> bool:
+        """比较两个设备的特征是否相似"""
+        # 检查端子数量
+        if features1['terminal_count'] != features2['terminal_count']:
+            return False
+            
+        # 检查线圈存在性
+        if features1['has_coil'] != features2['has_coil']:
+            return False
+            
+        # 检查触点组结构
+        if len(features1['contact_groups']) != len(features2['contact_groups']):
+            return False
+            
+        # 比较每个触点组的配置
+        for group_num in features1['contact_groups']:
+            if group_num not in features2['contact_groups']:
+                return False
+            if features1['contact_groups'][group_num].keys() != features2['contact_groups'][group_num].keys():
+                return False
+                
+        # 比较功率端子
+        if len(features1['power_terminals']) != len(features2['power_terminals']):
+            return False
+            
+        return True
+    
     def _analyze_relay_type(self, device: str, terminals: set) -> Optional[RelayTypeInfo]:
         """分析继电器类型"""
+        # 首先分析设备特征
+        features = self.analyze_device_features(device, terminals)
+        
         # 对终端进行分类
         coil_terms = []
         power_terms = []
@@ -95,10 +176,18 @@ class RelayTypeAnalyzer:
             elif term.isdigit():
                 aux_terms.append(term)
 
-        # 根据端子模式推断继电器类型
-        if power_terms:  # 可能是接触器
+        # 根据特征推断设备类型
+        if device.startswith('S'):
+            category = "Button"
+            type_prefix = "S"
+            if len(aux_terms) > 2:
+                type_prefix = "S-MULTI"
+        elif power_terms:  # 可能是接触器
             category = "Contactor"
             type_prefix = "3RT"
+        elif not features['has_coil']:  # 无线圈的设备
+            category = "Button"
+            type_prefix = "S"
         elif len(aux_terms) >= 4:  # 多触点继电器
             category = "Relay"
             type_prefix = "RY"
@@ -115,7 +204,19 @@ class RelayTypeAnalyzer:
             diagnostic_terminals=sorted(diag_terms)
         )
 
-        # 创建继电器类型信息
+        # 检查是否已存在相似的类型
+        similar_devices = self.find_similar_devices(device)
+        if similar_devices:
+            existing_type = None
+            for similar_device in similar_devices:
+                for type_id, instances in self.relay_instances.items():
+                    if similar_device in instances:
+                        existing_type = self.relay_types[type_id]
+                        break
+            if existing_type:
+                return existing_type
+
+        # 创建新的继电器类型信息
         return RelayTypeInfo(
             type_id=f"{type_prefix}{len(self.relay_types) + 1}",
             manufacturer="Unknown",
