@@ -8,6 +8,7 @@ class RelayType:
     SIGNAL_RELAY = "SIGNAL_RELAY"  # 信号继电器
     TIME_RELAY = "TIME_RELAY"    # 时间继电器
     SAFETY_RELAY = "SAFETY_RELAY"  # 安全继电器
+    BUTTON = "BUTTON"  # 按钮类型
 
 class ContactType:
     """触点类型定义"""
@@ -16,6 +17,7 @@ class ContactType:
     CO = "CO"  # 转换触点
     DM = "DM"  # 双断点触点
     POWER = "POWER"  # 功率触点
+    MANUAL = "MANUAL"  # 手动操作触点
 
 class RelayTerminalType:
     """继电器端子类型"""
@@ -85,6 +87,23 @@ RELAY_CONFIGS = {
         "coil_voltage": "24VDC",
         "contacts": [
             {"type": ContactType.CO, "count": 1, "rating": "6A"}
+        ]
+    },
+    
+    # 按钮类型
+    "S": {
+        "type": RelayType.BUTTON,
+        "contacts": [
+            {"type": ContactType.MANUAL, "count": 1, "rating": "6A"}
+        ]
+    },
+    
+    # 多功能按钮
+    "S-MULTI": {
+        "type": RelayType.BUTTON,
+        "contacts": [
+            {"type": ContactType.NO, "count": 2, "rating": "6A"},
+            {"type": ContactType.NC, "count": 2, "rating": "6A"}
         ]
     },
     
@@ -1326,7 +1345,7 @@ class DevicePathValidator:
                 terminal_info = {'main_terminal': None, 'sub_terminals': []}
             
             # 移除前导等号
-            if base_path.startswith('='):
+            if base_path.startswith('=')):
                 base_path = base_path[1:]
                 
             # 分解位置和设备部分
