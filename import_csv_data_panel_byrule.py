@@ -121,6 +121,151 @@ class DataImporter:
             
         return properties
 
+    def validate_import_data(self, row):
+        """验证导入数据的有效性
+        Args:
+            row: CSV行数据字典
+        Returns:
+            tuple: (是否有效, 错误信息列表)
+        """
+        errors = []
+        validator = DevicePathValidator()
+        
+        # 验证源设备标识符
+        source_str = row.get('source', '').strip()
+        if not source_str:
+            errors.append("源设备标识符不能为空")
+        else:
+            is_valid, error_msg = validator.validate_device_path_format(source_str)
+            if not is_valid:
+                errors.append(f"源设备标识符错误: {error_msg}")
+                
+        # 验证目标设备标识符
+        target_str = row.get('target', '').strip()
+        if not target_str:
+            errors.append("目标设备标识符不能为空")
+        else:
+            is_valid, error_msg = validator.validate_device_path_format(target_str)
+            if not is_valid:
+                errors.append(f"目标设备标识符错误: {error_msg}")
+                
+        # 如果没有错误，则验证导线属性
+        if not errors:
+            # 验证导线规格
+            cross_section = row.get('Connection: Cross-section / diameter', '')
+            if cross_section:
+                try:
+                    size = float(cross_section.replace(',', '.'))
+                    if size <= 0:
+                        errors.append("导线截面积必须大于0")
+                except ValueError:
+                    errors.append(f"无效的导线截面积值: {cross_section}")
+                    
+            # 验证导线类型
+            wire_type = row.get('Connection: Type designation', '')
+            if wire_type and not wire_type.startswith(('H05V-K', 'H07V-K')):
+                errors.append(f"不支持的导线类型: {wire_type}")
+                
+        return (len(errors) == 0, errors)
+
+    def process_csv_row(self, row):
+        """处理CSV的一行数据
+        Args:
+            row: CSV行数据字典
+        Returns:
+            tuple: (连接对象, 问题列表)
+        """
+        # 首先验证数据
+        is_valid, errors = self.validate_import_data(row)
+        if not is_valid:
+            return None, errors
+        
+        validator = DevicePathValidator()
+        
+        # 解析源设备信息
+        source_str = row.get('source', '').strip()
+        source_info = validator.extract_device_info(source_str)
+        
+        # 解析目标设备信息
+        target_str = row.get('target', '').strip()
+        target_info = validator.extract_device_info(target_str)
+        
+        # 准备线缆属性
+        wire_properties = {
+            'wire_number': row.get('Consecutive number', ''),
+            'cable_type': row.get('cableType/connections number/RCS', ''),
+            'wire_type': row.get('Connection: Type designation', ''),
+            'color': row.get('Connection color / number', ''),
+            'cross_section': row.get('Connection: Cross-section / diameter', ''),
+            'length': row.get('Length (full)', ''),
+            'bundle': row.get('Bundle', ''),
+            'remark': row.get('Remark', '')
+        }
+        wire_properties = {k: v for k, v in wire_properties.items() if v}
+        
+        # 检查是否涉及继电器设备
+        source_is_relay = source_info['device_id'].startswith(('K', 'Q'))
+        target_is_relay = target_info['device_id'].startswith(('K', 'Q'))
+        
+        if source_is_relay or target_is_relay:
+            # 使用继电器规则处理连接
+            try:
+                # 判断是否为同一设备的内部连接
+                is_internal = validator.is_same_device(
+                    source_info['normalized_path'],
+                    target_info['normalized_path']
+                )
+                
+                connection_type = 'INTERNAL_CONNECTION' if is_internal else 'EXTERNAL_CONNECTION'
+                
+                connection = create_relay_connection(
+                    source_str,
+                    target_str,
+                    connection_type,
+                    wire_properties
+                )
+                
+                return connection, []
+                
+            except Exception as e:
+                return None, [f"继电器连接处理错误: {str(e)}"]
+        
+        return None, ["非继电器连接"]
+
+    def process_relay_connection(self, source_info, target_info, wire_properties):
+        """处理继电器相关的连接
+        Args:
+            source_info: 源设备信息字典
+            target_info: 目标设备信息字典
+            wire_properties: 导线属性字典
+        Returns:
+            tuple: (连接对象, 问题列表)
+        """
+        issues = []
+        
+        # 检查设备路径匹配（如果是内部连接）
+        if source_info['device_path'] == target_info['device_path']:
+            # 内部连接 - 确保使用相同的继电器节点
+            connection_type = 'INTERNAL_CONNECTION'
+            # 添加内部连接特定属性
+            wire_properties['internal'] = True
+        else:
+            # 外部连接 - 创建两个继电器之间的连接
+            connection_type = 'EXTERNAL_CONNECTION'
+            wire_properties['internal'] = False
+        
+        try:
+            connection = create_relay_connection(
+                f"{source_info['device_path']}:{source_info['terminal']}",
+                f"{target_info['device_path']}:{target_info['terminal']}",
+                connection_type,
+                wire_properties
+            )
+            return connection, issues
+        except Exception as e:
+            issues.append(f"创建继电器连接失败: {str(e)}")
+            return None, issues
+
     def import_data(self):
         with open('data/SmartWiringzta.csv', mode='r', encoding='utf-8') as file:
             next(file)  # 跳过前两行合并的标题行

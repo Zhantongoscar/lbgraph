@@ -142,29 +142,58 @@ RELAY_CONFIGS = {
     }
 }
 
+def create_terminal_id(device_path, terminal_id):
+    """创建端子完整标识符
+    Args:
+        device_path: 设备完整路径，如 "=A01+K1.H2-Q1"
+        terminal_id: 端子基本ID，如 "A1"
+    Returns:
+        str: 完整的端子标识符，如 "=A01+K1.H2-Q1:A1"
+    """
+    return f"{device_path}:{terminal_id}"
+
 def create_relay_structure(device_id, config):
     """创建继电器的完整图结构
     Args:
-        device_id: 继电器标识
+        device_id: 设备ID，可以是简单形式如 "K1" 或完整形式如 "=A01+K1.H2-Q1"
         config: 继电器配置
     Returns:
         dict: 节点和关系的配置
     """
+    # 解析设备标识符
+    device_info = None
+    device_path = device_id
+    if any(c in device_id for c in ['=', '+', '.', '-']):
+        device_info = parse_device_identifier(device_id)
+        if device_info:
+            device_id = device_info['device_id']
+            device_path = device_info['device_path']
+    
     structure = {
         'nodes': [],
         'relationships': []
     }
     
-    # 1. 创建继电器本体节点
+    # 创建继电器本体节点
     relay_node = {
-        'id': device_id,
+        'id': device_path,  # 使用完整的设备路径作为ID
         'labels': ['Component', 'IntComp', 'Relay'],
         'properties': {
-            'name': device_id,
+            'name': device_path,
+            'device_id': device_id,
             'type': config['type'],
             'coil_voltage': config['coil_voltage']
         }
     }
+    
+    # 如果有完整的设备信息，添加到属性中
+    if device_info:
+        relay_node['properties'].update({
+            'location': device_info['location'],
+            'sub_terminal': device_info['sub_terminal'],
+            'reference_device': device_info['reference']
+        })
+    
     structure['nodes'].append(relay_node)
     
     # 2. 创建线圈端子节点
@@ -173,10 +202,11 @@ def create_relay_structure(device_id, config):
         # 功率继电器使用标准线圈
         coil_terminals.extend([
             {
-                'id': f"{device_id}:A1",
+                'id': create_terminal_id(device_path, 'A1'),
                 'labels': ['Component', 'Vertex', 'CoilTerminal'],
                 'properties': {
-                    'name': f"{device_id}:A1",
+                    'name': create_terminal_id(device_path, 'A1'),
+                    'device_path': device_path,
                     'terminal': 'A1',
                     'coil_type': RelayCoilType.STANDARD,
                     'polarity': 'positive',
@@ -184,10 +214,11 @@ def create_relay_structure(device_id, config):
                 }
             },
             {
-                'id': f"{device_id}:A2",
+                'id': create_terminal_id(device_path, 'A2'),
                 'labels': ['Component', 'Vertex', 'CoilTerminal'],
                 'properties': {
-                    'name': f"{device_id}:A2",
+                    'name': create_terminal_id(device_path, 'A2'),
+                    'device_path': device_path,
                     'terminal': 'A2',
                     'coil_type': RelayCoilType.STANDARD,
                     'polarity': 'negative',
@@ -199,10 +230,11 @@ def create_relay_structure(device_id, config):
         # 时间继电器可能有额外的控制端子
         coil_terminals.extend([
             {
-                'id': f"{device_id}:A1",
+                'id': create_terminal_id(device_path, 'A1'),
                 'labels': ['Component', 'Vertex', 'CoilTerminal'],
                 'properties': {
-                    'name': f"{device_id}:A1",
+                    'name': create_terminal_id(device_path, 'A1'),
+                    'device_path': device_path,
                     'terminal': 'A1',
                     'coil_type': RelayCoilType.ELECTRONIC,
                     'polarity': 'positive',
@@ -210,10 +242,11 @@ def create_relay_structure(device_id, config):
                 }
             },
             {
-                'id': f"{device_id}:A2",
+                'id': create_terminal_id(device_path, 'A2'),
                 'labels': ['Component', 'Vertex', 'CoilTerminal'],
                 'properties': {
-                    'name': f"{device_id}:A2",
+                    'name': create_terminal_id(device_path, 'A2'),
+                    'device_path': device_path,
                     'terminal': 'A2',
                     'coil_type': RelayCoilType.ELECTRONIC,
                     'polarity': 'negative',
@@ -221,10 +254,11 @@ def create_relay_structure(device_id, config):
                 }
             },
             {
-                'id': f"{device_id}:B1",
+                'id': create_terminal_id(device_path, 'B1'),
                 'labels': ['Component', 'Vertex', 'CoilTerminal'],
                 'properties': {
-                    'name': f"{device_id}:B1",
+                    'name': create_terminal_id(device_path, 'B1'),
+                    'device_path': device_path,
                     'terminal': 'B1',
                     'coil_type': RelayCoilType.ELECTRONIC,
                     'function': 'timing_control',
@@ -238,10 +272,11 @@ def create_relay_structure(device_id, config):
             group_suffix = str(i) if i > 1 else ''
             coil_terminals.extend([
                 {
-                    'id': f"{device_id}:A1{group_suffix}",
+                    'id': create_terminal_id(device_path, f"A1{group_suffix}"),
                     'labels': ['Component', 'Vertex', 'CoilTerminal'],
                     'properties': {
-                        'name': f"{device_id}:A1{group_suffix}",
+                        'name': create_terminal_id(device_path, f"A1{group_suffix}"),
+                        'device_path': device_path,
                         'terminal': f"A1{group_suffix}",
                         'coil_type': RelayCoilType.DUAL if group_suffix else RelayCoilType.STANDARD,
                         'coil_group': i,
@@ -250,10 +285,11 @@ def create_relay_structure(device_id, config):
                     }
                 },
                 {
-                    'id': f"{device_id}:A2{group_suffix}",
+                    'id': create_terminal_id(device_path, f"A2{group_suffix}"),
                     'labels': ['Component', 'Vertex', 'CoilTerminal'],
                     'properties': {
-                        'name': f"{device_id}:A2{group_suffix}",
+                        'name': create_terminal_id(device_path, f"A2{group_suffix}"),
+                        'device_path': device_path,
                         'terminal': f"A2{group_suffix}",
                         'coil_type': RelayCoilType.DUAL if group_suffix else RelayCoilType.STANDARD,
                         'coil_group': i,
@@ -284,10 +320,11 @@ def create_relay_structure(device_id, config):
         for term in poles['terminals']:
             # 创建输入端子(L1,L2,L3)
             input_node = {
-                'id': f"{device_id}:{term['input']}",
+                'id': create_terminal_id(device_path, term['input']),
                 'labels': ['Component', 'Vertex', 'PowerTerminal'],
                 'properties': {
-                    'name': f"{device_id}:{term['input']}",
+                    'name': create_terminal_id(device_path, term['input']),
+                    'device_path': device_path,
                     'terminal': term['input'],
                     'terminal_type': 'POWER_IN',
                     'phase': term['input'][-1],
@@ -297,10 +334,11 @@ def create_relay_structure(device_id, config):
             
             # 创建输出端子(T1,T2,T3)
             output_node = {
-                'id': f"{device_id}:{term['output']}",
+                'id': create_terminal_id(device_path, term['output']),
                 'labels': ['Component', 'Vertex', 'PowerTerminal'],
                 'properties': {
-                    'name': f"{device_id}:{term['output']}",
+                    'name': create_terminal_id(device_path, term['output']),
+                    'device_path': device_path,
                     'terminal': term['output'],
                     'terminal_type': 'POWER_OUT',
                     'phase': term['output'][-1],
@@ -347,10 +385,11 @@ def create_relay_structure(device_id, config):
                 contact_nodes = []
                 for terminal_id, role, default_state in terminals:
                     node = {
-                        'id': f"{device_id}:{terminal_id}",
+                        'id': create_terminal_id(device_path, terminal_id),
                         'labels': ['Component', 'Vertex', 'ContactTerminal'],
                         'properties': {
-                            'name': f"{device_id}:{terminal_id}",
+                            'name': create_terminal_id(device_path, terminal_id),
+                            'device_path': device_path,
                             'terminal': terminal_id,
                             'contact_role': role,
                             'contact_group': group,
@@ -383,10 +422,11 @@ def create_relay_structure(device_id, config):
         for diag_config in config['diagnostic_contacts']:
             for terminal_id in diag_config['terminals']:
                 node = {
-                    'id': f"{device_id}:{terminal_id}",
+                    'id': create_terminal_id(device_path, terminal_id),
                     'labels': ['Component', 'Vertex', 'DiagnosticTerminal'],
                     'properties': {
-                        'name': f"{device_id}:{terminal_id}",
+                        'name': create_terminal_id(device_path, terminal_id),
+                        'device_path': device_path,
                         'terminal': terminal_id,
                         'terminal_type': 'DIAGNOSTIC',
                         'state': 'open'
@@ -411,10 +451,16 @@ def create_relay_structure(device_id, config):
 def parse_relay_model(device_id):
     """解析继电器型号
     Args:
-        device_id: 设备ID，如 "Q1", "K5" 等
+        device_id: 设备ID，可以是简单形式如 "K1" 或完整形式如 "=A01+K1.H2-Q1"
     Returns:
         tuple: (继电器类型, 配置字典)
     """
+    # 解析完整设备标识符
+    if any(c in device_id for c in ['=', '+', '.', '-']):
+        device_info = parse_device_identifier(device_id)
+        if device_info:
+            device_id = device_info['device_id']  # 使用基本设备ID
+    
     # 移除可能存在的设备位置前缀
     device_id = device_id.split('-')[-1]
     
@@ -439,35 +485,46 @@ def parse_relay_model(device_id):
         # 默认使用标准继电器配置
         base_config = RELAY_CONFIGS["K"]
     
-    # 创建配置副本并返回
+    # 复制配置，避免修改原始配置
     config = base_config.copy()
     
     # 确保配置中包含 'contacts' 字段
     if 'contacts' not in config:
         config['contacts'] = []
-    
+        
     return config["type"], config
 
 class RelayCoil:
     """继电器线圈类"""
-    def __init__(self, voltage, connections=None):
+    def __init__(self, voltage, device_path, connections=None):
         self.voltage = voltage
-        self.connections = connections or {'A1': None, 'A2': None}
+        self.device_path = device_path  # 添加完整设备路径
+        self.connections = connections or {
+            create_terminal_id(device_path, 'A1'): None,
+            create_terminal_id(device_path, 'A2'): None
+        }
         self.state = 'de-energized'
         
     def calculate_voltage_difference(self):
         """计算线圈两端电压差"""
-        if self.connections['A1'] and self.connections['A2']:
-            return abs(self.connections['A1'].voltage - self.connections['A2'].voltage)
+        a1_id = create_terminal_id(self.device_path, 'A1')
+        a2_id = create_terminal_id(self.device_path, 'A2')
+        if self.connections[a1_id] and self.connections[a2_id]:
+            return abs(self.connections[a1_id].voltage - self.connections[a2_id].voltage)
         return 0
 
 class RelayContact:
     """继电器触点类"""
-    def __init__(self, contact_type, group_number=1):
+    def __init__(self, contact_type, device_path, group_number=1):
         self.type = contact_type
+        self.device_path = device_path  # 添加完整设备路径
         self.group = group_number
         self.state = 'open'
         self.connections = {}
+        
+    def get_terminal_id(self, terminal):
+        """获取端子的完整标识符"""
+        return create_terminal_id(self.device_path, terminal)
         
     def update_state(self, coil_energized):
         """根据线圈状态更新触点状态"""
@@ -479,9 +536,12 @@ class RelayContact:
 class Relay:
     """继电器类"""
     def __init__(self, device_id, config):
-        self.device_id = device_id
+        # 解析设备标识符以获取完整路径
+        device_info = parse_device_identifier(device_id) if any(c in device_id for c in ['=', '+', '.', '-']) else None
+        self.device_path = device_info['device_path'] if device_info else device_id
+        self.device_id = device_info['device_id'] if device_info else device_id
         self.config = config
-        self.coil = RelayCoil(config['coil_voltage'])
+        self.coil = RelayCoil(config['coil_voltage'], self.device_path)
         self.contacts = {}
         self._initialize_contacts()
         
@@ -493,16 +553,20 @@ class Relay:
                 if contact_config['type'] == ContactType.CO:
                     # 创建一组转换触点（COM-NO-NC）
                     self.contacts[f'{group_number}'] = {
-                        'COM': RelayContact(ContactType.CO, group_number),
-                        'NO': RelayContact(ContactType.NO, group_number),
-                        'NC': RelayContact(ContactType.NC, group_number)
+                        'COM': RelayContact(ContactType.CO, self.device_path, group_number),
+                        'NO': RelayContact(ContactType.NO, self.device_path, group_number),
+                        'NC': RelayContact(ContactType.NC, self.device_path, group_number)
                     }
                 else:
                     # 创建单个触点
                     self.contacts[f'{group_number}'] = {
-                        'MAIN': RelayContact(contact_config['type'], group_number)
+                        'MAIN': RelayContact(contact_config['type'], self.device_path, group_number)
                     }
-
+                    
+    def get_terminal_id(self, terminal):
+        """获取端子的完整标识符"""
+        return create_terminal_id(self.device_path, terminal)
+        
     def energize(self):
         """励磁线圈"""
         voltage_diff = self.coil.calculate_voltage_difference()
@@ -521,6 +585,30 @@ class Relay:
         for contact_group in self.contacts.values():
             for contact in contact_group.values():
                 contact.update_state(is_energized)
+                
+    def get_terminal_properties(self, terminal_id):
+        """获取特定端子的属性"""
+        properties = get_terminal_properties(self.device_path, terminal_id)
+        
+        # 添加运行时状态
+        if terminal_id.startswith('A'):
+            # 线圈端子
+            properties.update({
+                'coil_state': self.coil.state,
+                'voltage': self.coil.connections.get(self.get_terminal_id(terminal_id), 0.0)
+            })
+        else:
+            # 触点端子
+            for group in self.contacts.values():
+                for contact in group.values():
+                    if contact.get_terminal_id(terminal_id) in contact.connections:
+                        properties.update({
+                            'contact_state': contact.state,
+                            'last_update': contact.last_update if hasattr(contact, 'last_update') else None
+                        })
+                        break
+                        
+        return properties
 
 def get_contact_properties(terminal_id, relay_config):
     """获取触点属性
@@ -617,93 +705,184 @@ def get_coil_properties(terminal_id, relay_config):
         
     return properties
 
+def parse_device_identifier(full_identifier):
+    """解析完整的设备标识符
+    Args:
+        full_identifier: 完整设备标识符，如 "=A01+K1.H2-Q1:D2"
+    Returns:
+        dict: 解析后的设备信息，包含：
+            - device_path: 设备路径 (=A01+K1.H2-Q1)
+            - location: 位置标识 (A01)
+            - device_id: 设备ID (K1)
+            - sub_terminal: 子端子 (H2)
+            - reference: 引用设备 (Q1)
+            - terminal: 端子号 (D2)
+    """
+    parts = {}
+    try:
+        # 先分离端子号
+        main_part, *terminal_part = full_identifier.split(':')
+        parts['terminal'] = terminal_part[0] if terminal_part else None
+        
+        # 处理主要部分
+        if (main_part.startswith('=')):
+            main_part = main_part[1:]
+            
+        # 分解位置和设备部分
+        location, rest = main_part.split('+', 1) if '+' in main_part else (None, main_part)
+        parts['location'] = location
+        
+        # 分解设备ID和子端子
+        if '.' in rest:
+            device_id, sub_rest = rest.split('.', 1)
+            parts['device_id'] = device_id
+            
+            # 处理引用部分
+            if '-' in sub_rest:
+                sub_terminal, reference = sub_rest.split('-', 1)
+            else:
+                sub_terminal, reference = sub_rest, None
+            
+            parts['sub_terminal'] = sub_terminal
+            parts['reference'] = reference
+        else:
+            parts['device_id'] = rest
+            parts['sub_terminal'] = None
+            parts['reference'] = None
+            
+        # 构建设备路径
+        parts['device_path'] = f"={'=' + location if location else ''}"
+        if parts['device_id']:
+            parts['device_path'] += f"+{parts['device_id']}"
+        if parts['sub_terminal']:
+            parts['device_path'] += f".{parts['sub_terminal']}"
+        if parts['reference']:
+            parts['device_path'] += f"-{parts['reference']}"
+            
+    except Exception as e:
+        print(f"解析设备标识符失败: {str(e)}")
+        return None
+        
+    return parts
+
 def analyze_terminal(device_id, terminal_id):
     """分析端子类型和属性
     Args:
-        device_id: 设备ID，如 "Q1", "K5" 等
-        terminal_id: 端子ID，如 "L1", "T1", "13", "14", "A1" 等
+        device_id: 设备ID，如 "K1" 或完整形式如 "=A01+K1.H2-Q1"
+        terminal_id: 端子ID，如 "A1" 或带子端子的形式如 "P2:1"
     Returns:
         tuple: (端子类型, 属性字典)
     """
-    # 获取继电器配置
-    relay_type, config = parse_relay_model(device_id)
+    # 解析完整设备标识符
+    device_info = None
+    if any(c in device_id for c in ['=', '+', '.', '-']):
+        validator = DevicePathValidator()
+        device_info = validator.extract_device_info(device_id)
+        if device_info:
+            device_id = device_info['device_id']  # 使用基本设备ID进行配置查找
     
-    # 解析端子ID
-    terminal_props = parse_terminal_id(terminal_id)
+    # 处理带有子端子的端子ID
+    terminal_parts = terminal_id.split(':') if ':' in terminal_id else [terminal_id]
+    base_terminal = terminal_parts[0]
+    sub_terminals = terminal_parts[1:] if len(terminal_parts) > 1 else []
     
     # 基本属性
     properties = {
         "terminal": terminal_id,
-        "terminal_type": terminal_props['type'],
-        "is_connection": True
+        "base_terminal": base_terminal,
+        "sub_terminals": sub_terminals,
+        "is_connection": True,
+        "type": "generic"  # 添加默认类型
     }
     
-    # 根据端子类型处理
-    if terminal_props['type'] == RelayTerminalType.POWER_IN:
-        # 电源输入端子
+    # 如果有完整的设备信息，添加到属性中
+    if device_info:
         properties.update({
-            "role": "power_input",
-            "phase": terminal_props['phase'],
-            "state": "open"
+            "device_path": device_info.get('normalized_path'),
+            "location": device_info.get('location'),
+            "sub_terminal": device_info.get('sub_terminal'),
+            "reference": device_info.get('reference'),
+            "sub_references": device_info.get('sub_references', [])
         })
-        if 'power_poles' in config:
-            properties["rating"] = config['power_poles']['rating']
-        return "PowerTerminal", properties
-        
-    elif terminal_props['type'] == RelayTerminalType.POWER_OUT:
-        # 负载输出端子
+
+    # 判断端子类型
+    if base_terminal.startswith('P'):
+        # 处理连接器端子
         properties.update({
-            "role": "power_output",
-            "phase": terminal_props['phase'],
-            "state": "open"
+            "type": "connector",
+            "terminal_type": "connector",
+            "role": "pin",
+            "connector_type": "terminal_block",
+            "pin_number": sub_terminals[0] if sub_terminals else None
         })
-        if 'power_poles' in config:
-            properties["rating"] = config['power_poles']['rating']
-        return "PowerTerminal", properties
+        return "ConnectorTerminal", properties
         
-    elif terminal_props['type'] == RelayTerminalType.COIL:
-        # 线圈端子
+    # 获取继电器配置（如果是继电器设备）
+    if device_id.startswith(('K', 'Q')):
+        relay_type, config = parse_relay_model(device_id)
+        
+        # 解析端子基本属性
+        terminal_props = parse_terminal_id(base_terminal)
+        properties["type"] = terminal_props['type']
+        properties["terminal_type"] = terminal_props['type']
+        
+        # 根据端子类型处理
+        if terminal_props['type'] == RelayTerminalType.POWER_IN:
+            properties.update({
+                "role": "power_input",
+                "phase": terminal_props.get('phase'),
+                "state": "open"
+            })
+            if 'power_poles' in config:
+                properties["rating"] = config['power_poles']['rating']
+            return "PowerTerminal", properties
+            
+        elif terminal_props['type'] == RelayTerminalType.POWER_OUT:
+            properties.update({
+                "role": "power_output",
+                "phase": terminal_props.get('phase'),
+                "state": "open"
+            })
+            if 'power_poles' in config:
+                properties["rating"] = config['power_poles']['rating']
+            return "PowerTerminal", properties
+            
+        elif terminal_props['type'] == RelayTerminalType.COIL:
+            properties.update({
+                "role": terminal_props.get('role', 'coil'),
+                "coil_voltage": config["coil_voltage"],
+                "polarity": "positive" if terminal_props.get('role') == RelayTerminalRole.COIL_PLUS else "negative"
+            })
+            return "RelayCoilTerm", properties
+            
+        elif terminal_props['type'] == RelayTerminalType.CONTACT:
+            properties.update({
+                "role": terminal_props.get('role', 'auxiliary'),
+                "state": "open" if terminal_props.get('role') == RelayTerminalRole.NO else "closed",
+                "contact_role": terminal_props.get('role'),
+                "contact_group": terminal_props.get('group', 1)
+            })
+            return "RelayContactTerm", properties
+            
+    # 处理其他类型的设备端子
+    if device_id.startswith('W'):
+        # 导线端子
         properties.update({
-            "coil_voltage": config["coil_voltage"],
-            "polarity": "positive" if terminal_props['role'] == RelayTerminalRole.COIL_PLUS else "negative"
+            "type": "wire",
+            "terminal_type": "wire",
+            "role": "conductor",
+            "conductor_type": "signal"
         })
-        return "RelayCoilTerm", properties
+        return "WireTerminal", properties
         
-    elif terminal_props['type'] in [RelayTerminalType.CONTACT, RelayTerminalType.POWER_IN, RelayTerminalType.POWER_OUT]:
-        # 触点或电源端子
-        properties.update({
-            "state": "open" if terminal_props['role'] == RelayTerminalRole.NO else "closed",
-            "contact_role": terminal_props['role'],
-            "contact_group": terminal_props.get('group', 1)
-        })
-        
-        # 添加触点配置
-        if terminal_props['type'] == RelayTerminalType.CONTACT:
-            for contact_config in config["contacts"]:
-                if properties["contact_group"] <= contact_config["count"]:
-                    properties["contact_type"] = contact_config["type"]
-                    properties["rating"] = contact_config["rating"]
-                    break
-                    
-        return "RelayContactTerm", properties
-        
-    elif terminal_props['type'] == RelayTerminalType.DIAGNOSTIC:
-        # 诊断端子
-        properties.update({
-            "state": "unknown",
-            "diagnostic_type": "status",
-            "contact_role": RelayTerminalRole.DIAGNOSTIC
-        })
-        return "RelayDiagnosticTerm", properties
-        
-    else:
-        # 未知端子类型
-        properties.update({
-            "state": "unknown",
-            "contact_role": terminal_props['role'],
-            "contact_group": 1
-        })
-        return "RelayTerminal", properties
+    # 默认属性
+    properties.update({
+        "type": "generic",
+        "terminal_type": "generic",
+        "role": "connection",
+        "state": "unknown"
+    })
+    return "Terminal", properties
 
 class PowerPoleType:
     """电源极类型"""
@@ -731,49 +910,43 @@ def parse_terminal_id(terminal_id):
         'T3': {'type': RelayTerminalType.POWER_OUT, 'role': RelayTerminalRole.LINE, 'phase': 3},
     }
     
-    # 首先检查是否为电源端子
+    # 触点端子映射
+    CONTACT_TERMINAL_MAPPING = {
+        '1': RelayTerminalRole.COM,
+        '2': RelayTerminalRole.NC,
+        '4': RelayTerminalRole.NO
+    }
+    
+    # 线圈端子映射
+    COIL_TERMINAL_MAPPING = {
+        'A1': {'type': RelayTerminalType.COIL, 'role': RelayTerminalRole.COIL_PLUS},
+        'A2': {'type': RelayTerminalType.COIL, 'role': RelayTerminalRole.COIL_MINUS}
+    }
+    
+    # 诊断端子映射
+    DIAGNOSTIC_TERMINAL_MAPPING = {
+        'D1': {'type': RelayTerminalType.DIAGNOSTIC, 'role': RelayTerminalRole.DIAGNOSTIC},
+        'D2': {'type': RelayTerminalType.DIAGNOSTIC, 'role': RelayTerminalRole.DIAGNOSTIC}
+    }
+    
+    # 解析端子ID
     if terminal_id in POWER_TERMINAL_MAPPING:
         return POWER_TERMINAL_MAPPING[terminal_id]
-    
-    # 如果不是电源端子，按之前的逻辑处理
-    prefix = ''.join(c for c in terminal_id if c.isalpha())
-    number = ''.join(c for c in terminal_id if c.isdigit())
-    
-    try:
-        if prefix in TERMINAL_MAPPING:
-            base_props = TERMINAL_MAPPING[prefix].copy()
-            if number:
-                base_props['number'] = int(number)
-                # 线圈端子特殊处理
-                if prefix == 'A':
-                    base_props['role'] = (
-                        RelayTerminalRole.COIL_PLUS if number == '1'
-                        else RelayTerminalRole.COIL_MINUS
-                    )
-            return base_props
-            
-        elif terminal_id.isdigit():
-            num = int(terminal_id)
-            group = num // 10 if num >= 10 else 1
-            contact_type = num % 10
-            
-            return {
-                'type': RelayTerminalType.CONTACT,
-                'group': group,
-                'role': {
-                    1: RelayTerminalRole.COM,
-                    2: RelayTerminalRole.NC,
-                    4: RelayTerminalRole.NO
-                }.get(contact_type, RelayTerminalRole.AUXILIARY)
-            }
-            
-    except (ValueError, AttributeError):
-        pass
-        
-    return {
-        'type': RelayTerminalType.CONTACT,
-        'role': RelayTerminalRole.AUXILIARY
-    }
+    elif terminal_id in COIL_TERMINAL_MAPPING:
+        return COIL_TERMINAL_MAPPING[terminal_id]
+    elif terminal_id in DIAGNOSTIC_TERMINAL_MAPPING:
+        return DIAGNOSTIC_TERMINAL_MAPPING[terminal_id]
+    elif len(terminal_id) == 2 and terminal_id[0] in CONTACT_TERMINAL_MAPPING:
+        return {
+            'type': RelayTerminalType.CONTACT,
+            'role': CONTACT_TERMINAL_MAPPING[terminal_id[0]],
+            'group': int(terminal_id[1])
+        }
+    else:
+        return {
+            'type': RelayTerminalType.CONTACT,
+            'role': RelayTerminalRole.AUXILIARY
+        }
 
 class RelayCoilType:
     """线圈类型定义"""
@@ -944,3 +1117,862 @@ def get_terminal_voltage_state(terminal_type, terminal_role, coil_energized=Fals
         'state': 'unknown',
         'conducting': False
     }
+
+def validate_device_paths_match(source_path, target_path):
+    """验证两个设备路径是否属于同一个继电器
+    Args:
+        source_path: 源设备路径，如 "=A01+K1.H2-Q1"
+        target_path: 目标设备路径，如 "=A01+K1.H2-Q1"
+    Returns:
+        bool: 是否匹配
+    """
+    if not (source_path and target_path):
+        return False
+        
+    # 去除端子部分进行比较
+    source_base = source_path.split(':')[0] if ':' in source_path else source_path
+    target_base = target_path.split(':')[0] if ':' in target_path else target_path
+    
+    return source_base == target_base
+
+def create_relay_connection(source_device, target_device, connection_type, properties=None):
+    """创建继电器连接关系
+    Args:
+        source_device: 源设备完整标识符，如 "=A02+K1.B1-K20:34"
+        target_device: 目标设备完整标识符，如 "=A01+K1.H2-K1:A1"
+        connection_type: 连接类型
+        properties: 连接属性
+    Returns:
+        dict: 关系配置
+    """
+    # 解析设备信息
+    validator = DevicePathValidator()
+    source_info = validator.extract_device_info(source_device)
+    target_info = validator.extract_device_info(target_device)
+    
+    if not (source_info and target_info):
+        raise ValueError("设备标识符解析失败")
+        
+    # 验证连接有效性
+    is_valid, message = validate_relay_connection(source_device, target_device)
+    if not is_valid:
+        raise ValueError(f"无效的连接: {message}")
+    
+    # 确定连接类型
+    if source_info['sub_terminal'] and source_info['sub_terminal'].startswith('B'):
+        connection_type = 'CONTROL_CONNECTION'
+    elif target_info['sub_terminal'] and target_info['sub_terminal'].startswith('H'):
+        connection_type = 'AUXILIARY_CONNECTION'
+    elif source_info['terminal'].startswith('A') or target_info['terminal'].startswith('A'):
+        connection_type = 'COIL_CONNECTION'
+    elif source_info['terminal'].isdigit() and target_info['terminal'].isdigit():
+        connection_type = 'CONTACT_CONNECTION'
+    else:
+        connection_type = 'GENERIC_CONNECTION'
+    
+    # 基本关系属性
+    relationship = {
+        'from': source_device,
+        'to': target_device,
+        'type': connection_type,
+        'properties': {
+            'source_path': source_info['normalized_path'],
+            'target_path': target_info['normalized_path'],
+            'source_terminal': source_info['terminal'],
+            'target_terminal': target_info['terminal'],
+            'source_location': source_info['location'],
+            'target_location': target_info['location'],
+            'source_device_id': source_info['device_id'],
+            'target_device_id': target_info['device_id'],
+            'connection_type': connection_type
+        }
+    }
+    
+    # 添加特殊端子信息
+    if source_info['sub_terminal']:
+        relationship['properties']['source_sub_terminal'] = source_info['sub_terminal']
+    if target_info['sub_terminal']:
+        relationship['properties']['target_sub_terminal'] = target_info['sub_terminal']
+    
+    # 添加设备引用信息
+    if source_info['reference']:
+        relationship['properties']['source_reference'] = source_info['reference']
+    if target_info['reference']:
+        relationship['properties']['target_reference'] = target_info['reference']
+    
+    # 添加其他传入的属性
+    if properties:
+        relationship['properties'].update(properties)
+    
+    return relationship
+
+def create_internal_relay_connections(device_path, config):
+    """创建继电器内部连接
+    Args:
+        device_path: 设备完整路径
+        config: 继电器配置
+    Returns:
+        list: 内部连接列表
+    """
+    connections = []
+    
+    # 创建线圈内部连接
+    coil_terminals = ['A1', 'A2']
+    if config['type'] == RelayType.TIME_RELAY:
+        coil_terminals.append('B1')
+        
+    for i in range(len(coil_terminals)-1):
+        connections.append(create_relay_connection(
+            create_terminal_id(device_path, coil_terminals[i]),
+            create_terminal_id(device_path, coil_terminals[i+1]),
+            'INTERNAL_CONNECTION',
+            {'connection_type': 'COIL_CIRCUIT'}
+        ))
+    
+    # 创建触点内部连接
+    if 'contacts' in config:
+        for contact_config in config['contacts']:
+            for i in range(contact_config['count']):
+                group = i + 1
+                # 根据触点类型创建连接
+                if contact_config['type'] == ContactType.CO:
+                    # 转换触点的内部连接 (COM-NC, COM-NO)
+                    com_terminal = create_terminal_id(device_path, f"{group}1")
+                    nc_terminal = create_terminal_id(device_path, f"{group}2")
+                    no_terminal = create_terminal_id(device_path, f"{group}4")
+                    
+                    connections.extend([
+                        create_relay_connection(
+                            com_terminal, nc_terminal,
+                            'INTERNAL_CONNECTION',
+                            {'connection_type': 'CONTACT_NC', 'contact_group': group}
+                        ),
+                        create_relay_connection(
+                            com_terminal, no_terminal,
+                            'INTERNAL_CONNECTION',
+                            {'connection_type': 'CONTACT_NO', 'contact_group': group}
+                        )
+                    ])
+                    
+    return connections
+
+class DevicePathValidator:
+    """设备路径验证器"""
+    
+    @staticmethod
+    def parse_reference_part(reference_str):
+        """解析引用部分
+        Args:
+            reference_str: 引用字符串，如 "W5(-P2)"
+        Returns:
+            dict: 解析后的引用信息
+        """
+        references = []
+        current_ref = ""
+        nested_level = 0
+        
+        for char in reference_str:
+            if char == '(':
+                if nested_level > 0:
+                    current_ref += char
+                nested_level += 1
+            elif char == ')':
+                nested_level -= 1
+                if nested_level > 0:
+                    current_ref += char
+                elif nested_level == 0 and current_ref:
+                    references.append(current_ref)
+                    current_ref = ""
+            else:
+                current_ref += char
+                
+        if current_ref:
+            references.append(current_ref)
+            
+        return {
+            'main_reference': references[0] if references else None,
+            'sub_references': references[1:] if len(references) > 1 else []
+        }
+    
+    @staticmethod
+    def parse_terminal_part(terminal_str):
+        """解析端子部分
+        Args:
+            terminal_str: 端子字符串，如 "P2:1"
+        Returns:
+            dict: 解析后的端子信息
+        """
+        parts = terminal_str.split(':')
+        return {
+            'main_terminal': parts[0],
+            'sub_terminals': parts[1:] if len(parts) > 1 else []
+        }
+
+    @staticmethod
+    def extract_device_info(path):
+        """从设备路径中提取设备信息
+        Args:
+            path: 设备路径，如 "=A02+K1.B1-W5(-P2):P2:1"
+        Returns:
+            dict: 设备信息字典
+        """
+        try:
+            # 处理基本部分和端子部分
+            if ':' in path:
+                base_path, *terminal_parts = path.split(':')
+                terminal_info = DevicePathValidator.parse_terminal_part(':'.join(terminal_parts))
+            else:
+                base_path = path
+                terminal_info = {'main_terminal': None, 'sub_terminals': []}
+            
+            # 移除前导等号
+            if base_path.startswith('='):
+                base_path = base_path[1:]
+                
+            # 分解位置和设备部分
+            location, device_part = base_path.split('+')
+            
+            # 处理设备部分
+            if '.' in device_part:
+                device_id, remaining = device_part.split('.', 1)
+            else:
+                device_id = device_part
+                remaining = None
+                
+            # 处理子端子和引用
+            sub_terminal = None
+            reference_info = {'main_reference': None, 'sub_references': []}
+            
+            if remaining:
+                if '-' in remaining:
+                    sub_term, ref_part = remaining.split('-', 1)
+                    sub_terminal = sub_term
+                    reference_info = DevicePathValidator.parse_reference_part(ref_part)
+                else:
+                    sub_terminal = remaining
+            
+            return {
+                'location': location,
+                'device_id': device_id,
+                'sub_terminal': sub_terminal,
+                'reference': reference_info['main_reference'],
+                'sub_references': reference_info['sub_references'],
+                'terminal': terminal_info['main_terminal'],
+                'sub_terminals': terminal_info['sub_terminals'],
+                'original_path': path,
+                'normalized_path': f"{location}+{device_id}"
+            }
+            
+        except Exception as e:
+            raise ValueError(f"无法解析设备路径 '{path}': {str(e)}")
+            
+    @staticmethod
+    def validate_device_path_format(path):
+        """验证设备路径格式是否正确"""
+        try:
+            if not path:
+                return False, "设备路径不能为空"
+                
+            # 检查基本格式
+            if not any(c in path for c in ['=', '+']):
+                return False, "设备路径必须包含 '=' 和 '+'"
+                
+            # 提取并验证各个部分
+            info = DevicePathValidator.extract_device_info(path)
+            
+            # 验证位置格式
+            if not info['location'].startswith('A'):
+                return False, f"无效的位置标识: {info['location']}"
+                
+            # 验证设备ID格式 - 扩展支持的设备类型
+            valid_device_prefixes = ('K', 'Q', 'W', 'P', 'S')
+            if not any(info['device_id'].startswith(prefix) for prefix in valid_device_prefixes):
+                return False, f"无效的设备ID: {info['device_id']}"
+                
+            # 如果有子端子，验证格式（扩展支持的端子类型）
+            if info['sub_terminal']:
+                valid_terminal_prefixes = ('H', 'B', 'D', 'P')
+                if not any(info['sub_terminal'].startswith(prefix) for prefix in valid_terminal_prefixes):
+                    return False, f"无效的子端子标识: {info['sub_terminal']}"
+                    
+            # 如果有引用设备，验证格式
+            if info['reference']:
+                if not any(info['reference'].startswith(prefix) for prefix in valid_device_prefixes):
+                    return False, f"无效的引用设备ID: {info['reference']}"
+                    
+            return True, ""
+        except ValueError as e:
+            return False, str(e)
+            
+    @staticmethod
+    def normalize_device_path(path):
+        """标准化设备路径格式
+        Args:
+            path: 设备路径，如 "=A01+K1.H2-Q1" 或 "=A01+K1.H2-Q1:A1"
+        Returns:
+            str: 标准化的设备路径（移除端子部分）
+        """
+        # 移除前导等号（如果存在）
+        if path.startswith('='):
+            path = path[1:]
+            
+        # 移除端子部分（如果存在）
+        base_path = path.split(':')[0]
+        
+        # 确保路径格式正确
+        parts = base_path.split('+')
+        if len(parts) != 2:
+            raise ValueError(f"无效的设备路径格式: {path}")
+            
+        location = parts[0]
+        device_part = parts[1]
+        
+        # 处理设备部分
+        device_parts = device_part.split('.')
+        if len(device_parts) > 1:
+            device_id = device_parts[0]
+            sub_parts = device_parts[1].split('-')
+            sub_terminal = sub_parts[0]
+            reference = sub_parts[1] if len(sub_parts) > 1 else None
+            
+            # 重建标准化路径
+            if reference:
+                return f"{location}+{device_id}.{sub_terminal}-{reference}"
+            else:
+                return f"{location}+{device_id}.{sub_terminal}"
+        else:
+            return f"{location}+{device_part}"
+    
+    @staticmethod
+    def is_same_device(path1, path2):
+        """判断两个路径是否指向同一个设备
+        Args:
+            path1: 第一个设备路径
+            path2: 第二个设备路径
+        Returns:
+            bool: 是否是同一个设备
+        """
+        try:
+            norm1 = DevicePathValidator.normalize_device_path(path1)
+            norm2 = DevicePathValidator.normalize_device_path(path2)
+            return norm1 == norm2
+        except ValueError:
+            return False
+            
+    @staticmethod
+    def validate_connection(source_path, target_path, expected_same_device=False):
+        """验证连接的有效性
+        Args:
+            source_path: 源设备路径
+            target_path: 目标设备路径
+            expected_same_device: 是否期望为同一设备的连接
+        Returns:
+            tuple: (是否有效, 错误信息)
+        """
+        try:
+            is_same = DevicePathValidator.is_same_device(source_path, target_path)
+            
+            if expected_same_device and not is_same:
+                return False, "内部连接必须在同一个设备内"
+            elif not expected_same_device and is_same:
+                return False, "外部连接不能在同一个设备内"
+                
+            return True, ""
+        except ValueError as e:
+            return False, str(e)
+            
+    @staticmethod
+    def extract_device_info(path):
+        """从设备路径中提取设备信息
+        Args:
+            path: 设备路径
+        Returns:
+            dict: 设备信息字典
+        """
+        try:
+            # 处理端子部分
+            base_path, *terminal_part = path.split(':')
+            terminal = terminal_part[0] if terminal_part else None
+            
+            # 移除前导等号
+            if base_path.startswith('='):
+                base_path = base_path[1:]
+                
+            # 分解位置和设备部分
+            location, device_part = base_path.split('+')
+            
+            # 处理设备部分
+            device_parts = device_part.split('.')
+            device_id = device_parts[0]
+            
+            if len(device_parts) > 1:
+                sub_parts = device_parts[1].split('-')
+                sub_terminal = sub_parts[0]
+                reference = sub_parts[1] if len(sub_parts) > 1 else None
+            else:
+                sub_terminal = None
+                reference = None
+                
+            return {
+                'location': location,
+                'device_id': device_id,
+                'sub_terminal': sub_terminal,
+                'reference': reference,
+                'terminal': terminal,
+                'original_path': path,
+                'normalized_path': DevicePathValidator.normalize_device_path(base_path)
+            }
+        except Exception as e:
+            raise ValueError(f"无法解析设备路径 '{path}': {str(e)}")
+            
+    @staticmethod
+    def validate_device_path_format(path):
+        """验证设备路径格式是否正确
+        Args:
+            path: 设备路径
+        Returns:
+            tuple: (是否有效, 错误信息)
+        """
+        try:
+            if not path:
+                return False, "设备路径不能为空"
+                
+            # 检查基本格式
+            if not any(c in path for c in ['=', '+']):
+                return False, "设备路径必须包含 '=' 和 '+'"
+                
+            # 提取并验证各个部分
+            info = DevicePathValidator.extract_device_info(path)
+            
+            # 验证位置格式
+            if not info['location'].startswith('A'):
+                return False, f"无效的位置标识: {info['location']}"
+                
+            # 验证设备ID格式
+            if not info['device_id'].startswith(('K', 'Q')):
+                return False, f"无效的设备ID: {info['device_id']}"
+                
+            # 如果有子端子，验证格式
+            if info['sub_terminal']:
+                if not info['sub_terminal'].startswith(('H', 'B', 'D')):
+                    return False, f"无效的子端子标识: {info['sub_terminal']}"
+                    
+            # 如果有引用设备，验证格式
+            if info['reference']:
+                if not info['reference'].startswith(('K', 'Q')):
+                    return False, f"无效的引用设备ID: {info['reference']}"
+                    
+            return True, ""
+        except ValueError as e:
+            return False, str(e)
+            
+    @staticmethod
+    def validate_device_paths_match(source_path, target_path):
+        """验证两个设备路径是否属于同一个继电器
+        Args:
+            source_path: 源设备路径，如 "=A01+K1.H2-Q1"
+            target_path: 目标设备路径，如 "=A01+K1.H2-Q1"
+        Returns:
+            bool: 是否匹配
+        """
+        if not (source_path and target_path):
+            return False
+            
+        # 去除端子部分进行比较
+        source_base = source_path.split(':')[0] if ':' in source_path else source_path
+        target_base = target_path.split(':')[0] if ':' in target_path else target_path
+        
+        return source_base == target_base
+
+def validate_connection_between_relays(source_info, target_info):
+    """验证两个继电器之间的连接有效性
+    Args:
+        source_info: 源设备信息字典
+        target_info: 目标设备信息字典
+    Returns:
+        tuple: (是否有效, 错误消息)
+    """
+    # 检查基本设备ID（不包含引用部分）
+    source_base_device = source_info['device_id']
+    target_base_device = target_info['device_id']
+    
+    # 获取引用的设备ID（如果存在）
+    source_ref = source_info.get('reference')
+    target_ref = target_info.get('reference')
+    
+    # 验证主设备和引用设备的关系
+    if source_ref == target_base_device or target_ref == source_base_device:
+        return True, "设备引用关系正确"
+        
+    return False, "设备之间没有有效的引用关系"
+
+def validate_relay_connection(source_device, target_device):
+    """验证继电器连接的有效性
+    Args:
+        source_device: 源设备完整标识符，如 "=A02+K1.B1-K20:34"
+        target_device: 目标设备完整标识符，如 "=A01+K1.H2-K1:A1"
+    Returns:
+        tuple: (是否有效, 错误消息)
+    """
+    validator = DevicePathValidator()
+    
+    # 解析设备信息
+    source_info = validator.extract_device_info(source_device)
+    if not source_info:
+        return False, f"无法解析源设备标识符: {source_device}"
+        
+    target_info = validator.extract_device_info(target_device)
+    if not target_info:
+        return False, f"无法解析目标设备标识符: {target_device}"
+    
+    # 验证设备引用关系
+    is_valid, message = validate_connection_between_relays(source_info, target_info)
+    if not is_valid:
+        return False, message
+    
+    # 验证端子组合的有效性
+    source_terminal = source_info['terminal']
+    target_terminal = target_info['terminal']
+    
+    if source_terminal and target_terminal:
+        # 特殊端子与常规端子的连接规则
+        if source_info['sub_terminal'] and source_info['sub_terminal'].startswith('B'):
+            # B1端子可以连接到其他继电器的线圈端子
+            if not target_terminal.startswith('A'):
+                return False, "B1端子只能连接到线圈端子"
+        elif target_info['sub_terminal'] and target_info['sub_terminal'].startswith('H'):
+            # H2端子可以连接到其他继电器的线圈端子
+            if not source_terminal.isdigit():  # 源端必须是触点端子
+                return False, "H2端子必须从触点端子连接"
+    
+    return True, "连接有效"
+
+def analyze_relay_connection(source_device, target_device):
+    """分析继电器连接类型和属性
+    Args:
+        source_device: 源设备完整标识符
+        target_device: 目标设备完整标识符
+    Returns:
+        dict: 连接分析结果
+    """
+    validator = DevicePathValidator()
+    source_info = validator.extract_device_info(source_device)
+    target_info = validator.extract_device_info(target_device)
+    
+    result = {
+        'source_path': source_info['normalized_path'],
+        'target_path': target_info['normalized_path'],
+        'source_terminal': source_info['terminal'],
+        'target_terminal': target_info['terminal'],
+        'is_same_device': validator.is_same_device(
+            source_info['normalized_path'],
+            target_info['normalized_path']
+        )
+    }
+    
+    # 确定连接类型
+    if source_info['terminal'].startswith('A') or target_info['terminal'].startswith('A'):
+        result['connection_type'] = 'COIL_CONNECTION'
+    elif source_info['terminal'].isdigit() and target_info['terminal'].isdigit():
+        result['connection_type'] = 'CONTACT_CONNECTION'
+    elif source_info['terminal'].startswith('H') or target_info['terminal'].startswith('H'):
+        result['connection_type'] = 'AUXILIARY_CONNECTION'
+    else:
+        result['connection_type'] = 'UNKNOWN_CONNECTION'
+    
+    # 添加连接属性
+    result['properties'] = {
+        'source_location': source_info['location'],
+        'target_location': target_info['location'],
+        'source_device': source_info['device_id'],
+        'target_device': target_info['device_id']
+    }
+    
+    # 如果有子端子或引用信息，也添加到属性中
+    if source_info['sub_terminal']:
+        result['properties']['source_sub_terminal'] = source_info['sub_terminal']
+    if source_info['reference']:
+        result['properties']['source_reference'] = source_info['reference']
+    if target_info['sub_terminal']:
+        result['properties']['target_sub_terminal'] = target_info['sub_terminal']
+    if target_info['reference']:
+        result['properties']['target_reference'] = target_info['reference']
+        
+    return result
+
+def extract_relay_info(device_path):
+    """从完整设备路径中提取继电器信息
+    Args:
+        device_path: 完整的设备路径，如 "=A02+K1.B1-K20:34"
+    Returns:
+        dict: 继电器信息，包含：
+            - relay_path: 继电器本体路径 (=A02+K1)
+            - special_terminal: 特殊端子 (B1)
+            - reference: 引用设备 (K20)
+            - terminal: 端子号 (34)
+    """
+    info = {
+        'relay_path': None,
+        'special_terminal': None,
+        'reference': None,
+        'terminal': None
+    }
+    
+    try:
+        # 去掉前导的等号
+        if device_path.startswith('='):
+            device_path = device_path[1:]
+            
+        # 分离端子部分
+        base_path, *terminal_part = device_path.split(':')
+        if terminal_part:
+            info['terminal'] = terminal_part[0]
+            
+        # 分解位置和设备部分
+        parts = base_path.split('+')
+        if len(parts) != 2:
+            raise ValueError(f"无效的设备路径格式: {device_path}")
+            
+        location = parts[0]
+        device_part = parts[1]
+        
+        # 处理设备部分
+        if '.' in device_part:
+            # 有特殊端子
+            device_id, remaining = device_part.split('.', 1)
+            if '-' in remaining:
+                # 有引用设备
+                special_term, reference = remaining.split('-')
+                info['special_terminal'] = special_term
+                info['reference'] = reference
+            else:
+                info['special_terminal'] = remaining
+        else:
+            if '-' in device_part:
+                # 只有引用设备
+                device_id, reference = device_part.split('-')
+                info['reference'] = reference
+            else:
+                device_id = device_part
+                
+        # 构建继电器本体路径
+        info['relay_path'] = f"={location}+{device_id}"
+        
+        return info
+        
+    except Exception as e:
+        raise ValueError(f"解析设备路径失败: {str(e)}")
+
+def get_base_relay_path(device_path):
+    """获取继电器的基本路径（不包含特殊端子和引用）
+    Args:
+        device_path: 完整的设备路径
+    Returns:
+        str: 继电器基本路径
+    """
+    try:
+        info = extract_relay_info(device_path)
+        return info['relay_path']
+    except ValueError:
+        return device_path
+
+def create_relay_node(device_path, config):
+    """创建继电器节点
+    Args:
+        device_path: 完整的设备路径
+        config: 继电器配置
+    Returns:
+        dict: 节点配置
+    """
+    try:
+        # 解析设备信息
+        info = extract_relay_info(device_path)
+        relay_path = info['relay_path']
+        
+        # 从继电器路径中提取基本信息
+        base_path = relay_path[1:] if relay_path.startswith('=') else relay_path
+        location, device_id = base_path.split('+')
+        
+        node = {
+            'id': relay_path,
+            'labels': ['Component', 'IntComp', 'Relay'],
+            'properties': {
+                'name': relay_path,
+                'location': location,
+                'device_id': device_id,
+                'type': config['type'],
+                'coil_voltage': config['coil_voltage']
+            }
+        }
+        
+        # 添加特殊端子信息（如果有）
+        if info['special_terminal']:
+            node['properties']['special_terminal'] = info['special_terminal']
+            
+        # 添加引用设备信息（如果有）
+        if info['reference']:
+            node['properties']['reference_device'] = info['reference']
+            
+        return node
+        
+    except Exception as e:
+        raise ValueError(f"创建继电器节点失败: {str(e)}")
+
+def create_relay_terminal(device_path, terminal_id, terminal_type, properties=None):
+    """创建继电器端子节点
+    Args:
+        device_path: 设备完整路径
+        terminal_id: 端子ID
+        terminal_type: 端子类型
+        properties: 额外属性
+    Returns:
+        dict: 端子节点配置
+    """
+    # 获取继电器基本路径
+    relay_path = get_base_relay_path(device_path)
+    
+    # 创建端子的完整标识符
+    terminal_path = f"{relay_path}:{terminal_id}"
+    
+    # 基本属性
+    terminal = {
+        'id': terminal_path,
+        'labels': ['Component', 'Vertex', terminal_type],
+        'properties': {
+            'name': terminal_path,
+            'device_path': relay_path,
+            'terminal': terminal_id
+        }
+    }
+    
+    # 添加额外属性
+    if properties:
+        terminal['properties'].update(properties)
+        
+    return terminal
+
+class RelayInterconnection:
+    """继电器互连类 - 处理跨设备的连接"""
+    
+    def __init__(self, source_device, target_device):
+        self.source = source_device
+        self.target = target_device
+        self.validator = DevicePathValidator()
+        self.source_info = self.validator.extract_device_info(source_device)
+        self.target_info = self.validator.extract_device_info(target_device)
+        
+    def get_connection_type(self):
+        """确定连接类型"""
+        if self.source_info['sub_terminal'] and self.source_info['sub_terminal'].startswith('B'):
+            return 'CONTROL_CONNECTION'  # 控制连接 (如B1到A1)
+        elif self.target_info['sub_terminal'] and self.target_info['sub_terminal'].startswith('H'):
+            return 'AUXILIARY_CONNECTION'  # 辅助连接 (如触点到H2)
+        elif (self.source_info['terminal'] and self.source_info['terminal'].startswith('A')) or \
+             (self.target_info['terminal'] and self.target_info['terminal'].startswith('A')):
+            return 'COIL_CONNECTION'  # 线圈连接
+        elif (self.source_info['terminal'] and self.source_info['terminal'].isdigit()) and \
+             (self.target_info['terminal'] and self.target_info['terminal'].isdigit()):
+            return 'CONTACT_CONNECTION'  # 触点连接
+        return 'GENERIC_CONNECTION'
+        
+    def validate(self):
+        """验证连接的有效性"""
+        if not (self.source_info and self.target_info):
+            return False, "设备标识符解析失败"
+            
+        # 验证引用关系
+        source_ref = self.source_info.get('reference')
+        target_ref = self.target_info.get('reference')
+        
+        # 检查设备引用链
+        if source_ref:
+            # 源设备引用了其他设备
+            if source_ref != self.target_info['device_id']:
+                return False, f"源设备引用 {source_ref} 与目标设备 {self.target_info['device_id']} 不匹配"
+                
+        if target_ref:
+            # 目标设备引用了其他设备
+            if target_ref != self.source_info['device_id']:
+                return False, f"目标设备引用 {target_ref} 与源设备 {self.source_info['device_id']} 不匹配"
+                
+        # 验证特殊端子的连接规则
+        source_terminal = self.source_info['terminal']
+        target_terminal = self.target_info['terminal']
+        
+        if self.source_info['sub_terminal']:
+            if self.source_info['sub_terminal'].startswith('B'):
+                # B1端子只能连接到线圈端子
+                if not target_terminal.startswith('A'):
+                    return False, "B1端子必须连接到线圈端子(A1/A2)"
+                    
+        if self.target_info['sub_terminal']:
+            if self.target_info['sub_terminal'].startswith('H'):
+                # H2端子只能从触点端子连接
+                if not source_terminal.isdigit():
+                    return False, "H2端子必须从触点端子连接"
+                    
+        return True, "连接有效"
+        
+    def create_connection(self, properties=None):
+        """创建连接配置"""
+        # 首先验证连接
+        is_valid, message = self.validate()
+        if not is_valid:
+            raise ValueError(message)
+            
+        connection_type = self.get_connection_type()
+        
+        base_properties = {
+            'source_path': self.source_info['normalized_path'],
+            'target_path': self.target_info['normalized_path'],
+            'source_terminal': self.source_info['terminal'],
+            'target_terminal': self.target_info['terminal'],
+            'source_location': self.source_info['location'],
+            'target_location': self.target_info['location'],
+            'source_device_id': self.source_info['device_id'],
+            'target_device_id': self.target_info['device_id'],
+            'connection_type': connection_type
+        }
+        
+        # 添加特殊端子信息
+        if self.source_info['sub_terminal']:
+            base_properties['source_sub_terminal'] = self.source_info['sub_terminal']
+        if self.target_info['sub_terminal']:
+            base_properties['target_sub_terminal'] = self.target_info['sub_terminal']
+            
+        # 添加设备引用信息
+        if self.source_info['reference']:
+            base_properties['source_reference'] = self.source_info['reference']
+        if self.target_info['reference']:
+            base_properties['target_reference'] = self.target_info['reference']
+            
+        # 合并附加属性
+        if properties:
+            base_properties.update(properties)
+            
+        return {
+            'from': self.source,
+            'to': self.target,
+            'type': connection_type,
+            'properties': base_properties
+        }
+        
+    @staticmethod
+    def create(source_device, target_device, properties=None):
+        """静态工厂方法创建连接
+        Args:
+            source_device: 源设备标识符
+            target_device: 目标设备标识符
+            properties: 额外的连接属性
+        Returns:
+            dict: 连接配置
+        """
+        interconnection = RelayInterconnection(source_device, target_device)
+        return interconnection.create_connection(properties)
+
+# 确保在继电器模型中添加这些端子
+RELAY_CONFIGS['K']['contacts'].append({'type': ContactType.NO, 'count': 1, 'rating': '6A'})
+RELAY_CONFIGS['K']['contacts'].append({'type': ContactType.NC, 'count': 1, 'rating': '6A'})
+RELAY_CONFIGS['K']['contacts'].append({'type': ContactType.CO, 'count': 1, 'rating': '6A'})
+RELAY_CONFIGS['3RT']['auxiliary_contacts'].append({'type': ContactType.NO, 'count': 1, 'rating': '10A'})
+RELAY_CONFIGS['3RT']['auxiliary_contacts'].append({'type': ContactType.NC, 'count': 1, 'rating': '10A'})

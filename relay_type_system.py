@@ -167,3 +167,32 @@ class RelayTypeAnalyzer:
     def get_instances_of_type(self, type_id: str) -> List[str]:
         """获取指定型号的所有实例"""
         return self.relay_instances.get(type_id, [])
+
+if __name__ == "__main__":
+    # Create an instance of RelayTypeAnalyzer
+    analyzer = RelayTypeAnalyzer()
+    
+    # Try to analyze the CSV file from the data directory
+    try:
+        csv_path = "data/SmartWiringzta.csv"
+        print(f"Analyzing CSV file: {csv_path}")
+        analyzer.analyze_csv(csv_path)
+        
+        # Print discovered relay types
+        print("\nDiscovered Relay Types:")
+        for type_id, relay_type in analyzer.relay_types.items():
+            print(f"\nType ID: {type_id}")
+            print(f"Category: {relay_type.category}")
+            print(f"Manufacturer: {relay_type.manufacturer}")
+            print(f"Coil Voltage: {relay_type.coil_voltage}")
+            print(f"Power Rating: {relay_type.power_rating}")
+            print(f"Auxiliary Contact Count: {relay_type.auxiliary_contact_count}")
+            
+            # Print instances of this type
+            instances = analyzer.get_instances_of_type(type_id)
+            print(f"Instances: {', '.join(instances)}")
+            
+    except FileNotFoundError:
+        print("Error: Could not find the CSV file. Please ensure the data file exists in the correct location.")
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
