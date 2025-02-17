@@ -467,10 +467,11 @@ def create_relay_structure(device_id, config):
     
     return structure
 
-def parse_relay_model(device_id):
+def parse_relay_model(device_id, terminals=None):
     """解析继电器型号
     Args:
         device_id: 设备ID，可以是简单形式如 "K1" 或完整形式如 "=A01+K1.H2-Q1"
+        terminals: 可选的端子集合，用于特征分析
     Returns:
         tuple: (继电器类型, 配置字典)
     """
@@ -478,8 +479,14 @@ def parse_relay_model(device_id):
     if any(c in device_id for c in ['=', '+', '.', '-']):
         device_info = parse_device_identifier(device_id)
         if device_info:
-            device_id = device_info['device_id']  # 使用基本设备ID
+            device_id = device_info['device_id']
     
+    # 如果提供了端子信息，使用特征分析
+    if terminals is not None:
+        config = create_relay_config_from_features(device_id, terminals)
+        return config['type'], config
+
+    # 否则使用原有的型号判断逻辑
     # 移除可能存在的设备位置前缀
     device_id = device_id.split('-')[-1]
     
@@ -512,6 +519,113 @@ def parse_relay_model(device_id):
         config['contacts'] = []
         
     return config["type"], config
+
+def analyze_device_features(device_id, terminals):
+    """分析设备的特征
+    Args:
+        device_id: 设备ID，如 "K1" 或完整形式如 "=A01+K1.H2-Q1"
+        terminals: 设备的端子集合
+    Returns:
+        dict: 设备特征字典
+    """
+    features = {
+        'terminal_count': len(terminals),
+        'has_coil': any(t.startswith('A') for t in terminals),
+        'contact_groups': {},
+        'power_terminals': [t for t in terminals if t.startswith(('L', 'T'))],
+        'diagnostic_terminals': [t for t in terminals if t.startswith('D')]
+    }
+
+    # 分析触点组
+    for term in terminals:
+        if term.isdigit() and len(term) == 2:
+            group = int(term[0])
+            type_num = int(term[1])
+            if group not in features['contact_groups']:
+                features['contact_groups'][group] = {}
+            if type_num == 1:
+                features['contact_groups'][group]['com'] = term
+            elif type_num == 2:
+                features['contact_groups'][group]['nc'] = term
+            elif type_num == 4:
+                features['contact_groups'][group]['no'] = term
+
+    return features
+
+def infer_relay_type(features):
+    """根据设备特征推断继电器类型
+    Args:
+        features: 设备特征字典
+    Returns:
+        tuple: (继电器类型, 基本配置)
+    """
+    # 无线圈的设备判定为按钮类型
+    if not features['has_coil']:
+        if len(features['contact_groups']) > 2:
+            return RelayType.BUTTON, RELAY_CONFIGS['S-MULTI'].copy()
+        return RelayType.BUTTON, RELAY_CONFIGS['S'].copy()
+    
+    # 有功率端子的判定为接触器
+    if features['power_terminals']:
+        return RelayType.POWER_RELAY, RELAY_CONFIGS['3RT'].copy()
+        
+    # 根据触点组特征判断继电器类型
+    contact_group_count = len(features['contact_groups'])
+    if contact_group_count >= 4:
+        # 多触点继电器
+        return RelayType.SIGNAL_RELAY, RELAY_CONFIGS['RY']['versions']['extended'].copy()
+    elif contact_group_count >= 2:
+        # 标准继电器
+        return RelayType.SIGNAL_RELAY, RELAY_CONFIGS['RY']['versions']['standard'].copy()
+    else:
+        # 基本继电器
+        return RelayType.SIGNAL_RELAY, RELAY_CONFIGS['K'].copy()
+
+def create_relay_config_from_features(device_id, terminals):
+    """根据设备特征创建继电器配置
+    Args:
+        device_id: 设备ID
+        terminals: 设备的端子集合
+    Returns:
+        dict: 继电器配置
+    """
+    # 分析设备特征
+    features = analyze_device_features(device_id, terminals)
+    
+    # 推断继电器类型
+    relay_type, base_config = infer_relay_type(features)
+    
+    # 更新配置中的触点信息
+    config = base_config.copy()
+    contacts = []
+    
+    for group, terminals in features['contact_groups'].items():
+        if 'com' in terminals and 'nc' in terminals and 'no' in terminals:
+            # 转换触点
+            contacts.append({
+                'type': ContactType.CO,
+                'count': 1,
+                'rating': '6A'
+            })
+        elif 'no' in terminals:
+            # 常开触点
+            contacts.append({
+                'type': ContactType.NO,
+                'count': 1,
+                'rating': '6A'
+            })
+        elif 'nc' in terminals:
+            # 常闭触点
+            contacts.append({
+                'type': ContactType.NC,
+                'count': 1,
+                'rating': '6A'
+            })
+    
+    if contacts:
+        config['contacts'] = contacts
+    
+    return config
 
 class RelayCoil:
     """继电器线圈类"""

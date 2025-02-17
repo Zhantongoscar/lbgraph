@@ -9,7 +9,8 @@ class RelayImporter:
         self.driver = driver
         self.created_relays = set()  # 跟踪已创建的继电器
         self._ensure_indices()  # 创建必要的索引
-        
+        self.device_terminals = {}  # 存储设备及其端子信息
+
     def _ensure_indices(self):
         """确保必要的索引存在"""
         with self.driver.session() as session:
@@ -27,55 +28,46 @@ class RelayImporter:
                 except Exception as e:
                     print(f"Warning: Failed to create index: {str(e)}")
 
+    def collect_device_terminals(self, device_id, terminal_id):
+        """收集设备的端子信息
+        Args:
+            device_id: 设备ID
+            terminal_id: 端子ID
+        """
+        if device_id not in self.device_terminals:
+            self.device_terminals[device_id] = set()
+        self.device_terminals[device_id].add(terminal_id)
+
     def process_relay(self, device_id):
         """处理继电器，如果需要则创建完整结构"""
         if device_id in self.created_relays:
             return
-            
-        # 获取继电器配置
-        relay_type, config = parse_relay_model(device_id)
-        
-        # 创建继电器结构
-        structure = create_relay_structure(device_id, config)
-        
-        # 在数据库中创建节点和关系
-        with self.driver.session() as session:
-            try:
-                # 1. 创建继电器本体
-                relay_node = structure['nodes'][0]  # 第一个节点总是继电器本体
-                labels = ':'.join(relay_node['labels'])
-                query = (
-                    f"MERGE (n:{labels} {{name: $name}}) "
-                    "SET n += $properties "
-                    "RETURN n"
-                )
-                result = session.run(query, 
-                    name=relay_node['id'], 
-                    properties=relay_node['properties']
-                )
-                if not result.single():
-                    raise Exception(f"Failed to create relay node: {relay_node['id']}")
+
+        try:
+            with self.driver.session() as session:
+                # 使用收集的端子信息进行特征分析
+                terminals = self.device_terminals.get(device_id, set())
+                relay_type, config = parse_relay_model(device_id, terminals)
                 
-                # 2. 创建端子节点
-                for node in structure['nodes'][1:]:  # 跳过继电器本体
-                    labels = ':'.join(node['labels'])
+                # 创建继电器结构
+                structure = create_relay_structure(device_id, config)
+                
+                # 创建节点
+                for node in structure['nodes']:
                     query = (
-                        f"MERGE (n:{labels} {{name: $name}}) "
+                        "MERGE (n:%s {name: $name}) "
                         "SET n += $properties "
-                        "RETURN n"
+                        "RETURN n" % ':'.join(node['labels'])
                     )
-                    result = session.run(query,
+                    session.run(query,
                         name=node['id'],
                         properties=node['properties']
                     )
-                    if not result.single():
-                        print(f"Warning: Failed to create terminal node: {node['id']}")
                 
-                # 3. 创建关系
+                # 创建关系
                 for rel in structure['relationships']:
                     query = (
-                        "MATCH (a {name: $source_name}) "
-                        "MATCH (b {name: $target_name}) "
+                        "MATCH (a {name: $source_name}), (b {name: $target_name}) "
                         f"MERGE (a)-[r:{rel['type']}]->(b) "
                         "SET r += $properties "
                         "RETURN r"
@@ -90,10 +82,10 @@ class RelayImporter:
                         
                 self.created_relays.add(device_id)
                         
-            except Exception as e:
-                print(f"Error creating relay structure for {device_id}: {str(e)}")
-                self._diagnose_relay_creation(session, device_id, structure)
-                
+        except Exception as e:
+            print(f"Error creating relay structure for {device_id}: {str(e)}")
+            self._diagnose_relay_creation(session, device_id, structure)
+
     def _diagnose_relay_creation(self, session, device_id, structure):
         """诊断继电器创建问题"""
         print("\nDiagnosing relay creation issues:")
