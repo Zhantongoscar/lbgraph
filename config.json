@@ -13,5 +13,9 @@
         "user": "root",
         "password": "13701033228",
         "database": "lbfat"
+    },
+    "files": {
+        "csv_path": "data/SmartWiringzta.csv",
+        "project_number": "PROJECT_001"
     }
 }
