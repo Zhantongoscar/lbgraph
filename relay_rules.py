@@ -1459,7 +1459,7 @@ class DevicePathValidator:
                 terminal_info = {'main_terminal': None, 'sub_terminals': []}
             
             # 移除前导等号
-            if base_path.startswith('=')):
+            if base_path.startswith('='):
                 base_path = base_path[1:]
                 
             # 分解位置和设备部分
