@@ -1,0 +1,17 @@
+{
+    "neo4j": {
+        "uri": "neo4j://192.168.35.10:7687",
+        "user": "neo4j",
+        "password": "13701033228",
+        "config": {
+            "max_connection_pool_size": 10,
+            "connection_timeout": 5
+        }
+    },
+    "mysql": {
+        "host": "192.168.35.10",
+        "user": "root",
+        "password": "13701033228",
+        "database": "lbfat"
+    }
+}
