@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <windows.h>
 #include "C:/clib/mysql/include/mysql.h"
@@ -42,8 +43,10 @@ class PanelDeviceTable {
 private:
     MYSQL* conn;
     std::string tableName;
+    std::string typesTableName;  // 添加类型表名
     std::string csvPath;
     std::string projectNumber;
+    int typeCounter;  // 用于生成唯一的类型名
 
     // 从config.json读取配置
     bool loadConfig(std::string& host, std::string& user, std::string& password, std::string& database) {
@@ -222,8 +225,128 @@ private:
         return mysql_query(conn, query.c_str()) == 0;
     }
 
+    // 初始化类型表
+    bool initializeTypesTable() {
+        std::cout << "初始化类型表..." << std::endl;
+        
+        // 检查表是否存在
+        std::string checkTable = "SHOW TABLES LIKE '" + typesTableName + "'";
+        if (mysql_query(conn, checkTable.c_str())) {
+            std::cerr << "检查类型表失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        bool tableExists = (mysql_num_rows(result) > 0);
+        mysql_free_result(result);
+
+        if (!tableExists) {
+            std::cout << "创建类型表..." << std::endl;
+            std::string createTable = "CREATE TABLE " + typesTableName + " ("
+                "id INT PRIMARY KEY AUTO_INCREMENT, "
+                "type VARCHAR(255) NOT NULL UNIQUE, "
+                "terminal_list JSON, "
+                "inner_conn_list JSON"
+                ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
+
+            if (mysql_query(conn, createTable.c_str())) {
+                std::cerr << "创建类型表失败: " << mysql_error(conn) << std::endl;
+                return false;
+            }
+        }
+
+        // 获取当前最大的类型编号
+        std::string getMaxType = "SELECT MAX(CAST(SUBSTRING(type, 5) AS UNSIGNED)) FROM " + typesTableName + 
+                                " WHERE type REGEXP '^TYPE[0-9]+$'";
+        if (mysql_query(conn, getMaxType.c_str())) {
+            std::cerr << "获取最大类型编号失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(result);
+        typeCounter = row[0] ? std::stoi(row[0]) : 0;
+        mysql_free_result(result);
+
+        return true;
+    }
+
+    // 查找匹配的类型
+    std::string findMatchingType(const std::string& terminalList) {
+        std::string query = "SELECT type FROM " + typesTableName + 
+                          " WHERE terminal_list = '" + escapeString(terminalList) + "'";
+        
+        if (mysql_query(conn, query.c_str())) {
+            std::cerr << "查询类型失败: " << mysql_error(conn) << std::endl;
+            return "";
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return "";
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(result);
+        std::string type = row ? row[0] : "";
+        mysql_free_result(result);
+        
+        return type;
+    }
+
+    // 创建新类型
+    std::string createNewType(const std::string& terminalList) {
+        typeCounter++;
+        std::string newType = "TYPE" + std::to_string(typeCounter);
+        
+        std::string query = "INSERT INTO " + typesTableName + 
+                          " (type, terminal_list, inner_conn_list) VALUES ("
+                          "'" + escapeString(newType) + "', "
+                          "'" + escapeString(terminalList) + "', "
+                          "'{}')"
+                          " ON DUPLICATE KEY UPDATE type = type";  // 防止类型名重复
+
+        if (mysql_query(conn, query.c_str())) {
+            std::cerr << "创建新类型失败: " << mysql_error(conn) << std::endl;
+            return "";
+        }
+
+        return newType;
+    }
+
+    // 更新设备类型
+    bool updateDeviceType(const std::string& deviceId, const std::string& type) {
+        std::string query = "UPDATE " + tableName + 
+                          " SET type = '" + escapeString(type) + "'" +
+                          " WHERE device = '" + escapeString(deviceId) + "'";
+
+        return mysql_query(conn, query.c_str()) == 0;
+    }
+
+    // 计算设备的端子数量
+    int countDevicePorts(const std::string& terminalList) {
+        int count = 0;
+        size_t pos = 0;
+        while ((pos = terminalList.find("\"port\":", pos)) != std::string::npos) {
+            count++;
+            pos += 6;  // 移动到"port":后面
+        }
+        return count;
+    }
+
 public:
-    PanelDeviceTable(const std::string& table) : tableName(table) {
+    PanelDeviceTable(const std::string& table) 
+        : tableName(table), typesTableName("panel_types"), typeCounter(0) {
         std::cout << "初始化MySQL客户端..." << std::endl;
         conn = mysql_init(NULL);
         if (conn == NULL) {
@@ -300,6 +423,12 @@ public:
         std::cout << "----------------------------------------\n" << std::endl;
         
         mysql_free_result(result);
+
+        // 初始化类型表
+        if (!initializeTypesTable()) {
+            std::cerr << "初始化类型表失败" << std::endl;
+            return;
+        }
     }
 
     ~PanelDeviceTable() {
@@ -344,7 +473,22 @@ public:
             "'" + escapeString(device.inner_list.empty() ? "{}" : device.inner_list) + "'"
             ")";
 
-        return mysql_query(conn, query.c_str()) == 0;
+        bool success = mysql_query(conn, query.c_str()) == 0;
+
+        // 如果添加成功，尝试更新类型
+        if (success) {
+            std::string matchedType = findMatchingType(device.terminal_list);
+            if (matchedType.empty()) {
+                matchedType = createNewType(device.terminal_list);
+                if (!matchedType.empty()) {
+                    updateDeviceType(device.device, matchedType);
+                }
+            } else {
+                updateDeviceType(device.device, matchedType);
+            }
+        }
+
+        return success;
     }
 
     // 显示所有设备类型的简化输出
@@ -454,7 +598,6 @@ public:
 
         std::cout << "开始批量插入..." << std::endl;
 
-        // 开始事务
         if (mysql_query(conn, "START TRANSACTION")) {
             std::cerr << "开始事务失败: " << mysql_error(conn) << std::endl;
             return false;
@@ -462,49 +605,32 @@ public:
 
         bool success = true;
         for (size_t i = 0; i < devices.size(); i++) {
-            const auto& device = devices[i];
-            
-            // Debug output for each record
-            std::cout << "\n处理第 " << (i + 1) << " 条记录:" << std::endl;
-            std::cout << "Device: " << device.device << std::endl;
-            std::cout << "Function: " << device.function << std::endl;
-            std::cout << "Location: " << device.location << std::endl;
-            std::cout << "Terminal List: " << device.terminal_list << std::endl;
-
-            if (!addDeviceType(device)) {
-                std::cerr << "\n插入第 " << (i + 1) << " 条记录失败" << std::endl;
-                std::cerr << "MySQL错误码: " << mysql_errno(conn) << std::endl;
+            if (!addDeviceType(devices[i])) {
+                std::cerr << "数据插入失败" << std::endl;
                 std::cerr << "MySQL错误: " << mysql_error(conn) << std::endl;
                 success = false;
                 break;
             }
             
-            if (i > 0 && i % 100 == 0) {
-                std::cout << "已成功处理 " << i << " 条记录" << std::endl;
+            if ((i + 1) % 100 == 0) {
+                std::cout << "已处理 " << (i + 1) << "/" << devices.size() << " 条记录" << std::endl;
             }
         }
 
         if (success) {
-            std::cout << "提交事务..." << std::endl;
             if (mysql_query(conn, "COMMIT")) {
                 std::cerr << "提交事务失败: " << mysql_error(conn) << std::endl;
-                std::cerr << "MySQL错误码: " << mysql_errno(conn) << std::endl;
-                std::cerr << "MySQL错误: " << mysql_error(conn) << std::endl;
                 success = false;
             }
         }
 
         if (!success) {
-            std::cout << "执行回滚..." << std::endl;
             if (mysql_query(conn, "ROLLBACK")) {
                 std::cerr << "回滚事务失败: " << mysql_error(conn) << std::endl;
-                std::cerr << "MySQL错误码: " << mysql_errno(conn) << std::endl;
-                std::cerr << "MySQL错误: " << mysql_error(conn) << std::endl;
-            } else {
-                std::cerr << "导入失败，已回滚事务" << std::endl;
             }
         }
 
+        std::cout << "数据导入" << (success ? "成功" : "失败") << std::endl;
         return success;
     }
 
@@ -518,34 +644,30 @@ public:
         }
 
         std::vector<DeviceType> devices;
+        std::map<std::string, std::set<std::string>> devicePorts;
         std::string line;
         int lineNum = 0;
         int processedLines = 0;
-        const int MAX_LINES = 2000; // 限制处理前30行
+        const int MAX_LINES = 2000;
 
         // 跳过标题行
         std::getline(file, line);
-        std::cout << "标题行: " << line << std::endl;
         
         while (std::getline(file, line) && processedLines < MAX_LINES) {
             lineNum++;
             try {
-                if (line.empty()) {
-                    std::cout << "跳过空行 " << lineNum << std::endl;
-                    continue;
-                }
+                if (line.empty()) continue;
 
                 std::vector<std::string> fields;
                 std::string field;
                 bool inQuotes = false;
                 std::stringstream fieldValue;
 
-                // 手动解析CSV字段，处理引号内的逗号和换行符
+                // 手动解析CSV字段，处理引号内的逗号
                 for (char c : line) {
                     if (c == '\"') {
                         inQuotes = !inQuotes;
                     } else if (c == ',' && !inQuotes) {
-                        // 移除前后的空格
                         std::string trimmed = fieldValue.str();
                         while (!trimmed.empty() && isspace(trimmed.front())) trimmed.erase(0, 1);
                         while (!trimmed.empty() && isspace(trimmed.back())) trimmed.pop_back();
@@ -556,60 +678,76 @@ public:
                         fieldValue << c;
                     }
                 }
-                // 添加最后一个字段（同样去除空格）
+                
                 std::string trimmed = fieldValue.str();
                 while (!trimmed.empty() && isspace(trimmed.front())) trimmed.erase(0, 1);
                 while (!trimmed.empty() && isspace(trimmed.back())) trimmed.pop_back();
                 fields.push_back(trimmed);
 
-                // 输出解析后的字段用于调试
-                std::cout << "\n第 " << lineNum << " 行解析结果:" << std::endl;
-                for (size_t i = 0; i < fields.size(); ++i) {
-                    std::cout << "字段 " << i << ": [" << fields[i] << "]" << std::endl;
-                }
-
                 if (fields.size() < 8) {
-                    std::cout << "跳过无效行 " << lineNum << ": 字段数不足" << std::endl;
                     continue;
                 }
 
                 std::string source = fields[7];
                 std::string target = fields[8];
 
-                // 处理source设备
-                if (!source.empty()) {
-                    DeviceType device;
-                    device.project_number = projectNumber;
-                    parseDeviceInfo(source, device);
-                    if (!device.device.empty()) {
-                        devices.push_back(device);
+                auto processField = [&](const std::string& field) {
+                    if (!field.empty()) {
+                        DeviceType device;
+                        device.project_number = projectNumber;
+                        parseDeviceInfo(field, device);
+                        if (!device.device.empty()) {
+                            size_t pos = device.terminal_list.find("\"port\": \"");
+                            size_t endPos = device.terminal_list.find("\"}", pos);
+                            if (pos != std::string::npos && endPos != std::string::npos) {
+                                std::string port = device.terminal_list.substr(pos + 9, endPos - (pos + 9));
+                                devicePorts[device.device].insert(port);
+                            }
+                        }
                     }
-                }
+                };
 
-                // 处理target设备
-                if (!target.empty()) {
-                    DeviceType device;
-                    device.project_number = projectNumber;
-                    parseDeviceInfo(target, device);
-                    if (!device.device.empty()) {
-                        devices.push_back(device);
-                    }
-                }
+                processField(source);
+                processField(target);
 
                 processedLines++;
-                if (processedLines % 10 == 0) {
-                    std::cout << "已处理 " << processedLines << " 行数据..." << std::endl;
+                if (processedLines % 100 == 0) {
+                    std::cout << "已处理 " << processedLines << " 行数据" << std::endl;
                 }
             }
             catch (const std::exception& e) {
                 std::cerr << "处理第 " << lineNum << " 行时发生错误: " << e.what() << std::endl;
-                std::cerr << "行内容: " << line << std::endl;
                 continue;
             }
         }
 
         file.close();
-        std::cout << "读取了 " << devices.size() << " 条记录，开始导入..." << std::endl;
+
+        // 处理有效设备（具有2个或更多唯一端口的设备）
+        int validDeviceCount = 0;
+        for (const auto& [deviceId, ports] : devicePorts) {
+            if (ports.size() >= 2) {
+                DeviceType device;
+                device.device = deviceId;
+                device.project_number = projectNumber;
+
+                std::string terminalList = "{\"terminals\": [";
+                bool first = true;
+                for (const auto& port : ports) {
+                    if (!first) terminalList += ",";
+                    terminalList += "{\"port\": \"" + port + "\"}";
+                    first = false;
+                }
+                terminalList += "]}";
+                
+                device.terminal_list = terminalList;
+                devices.push_back(device);
+                validDeviceCount++;
+            }
+        }
+
+        std::cout << "总计处理 " << processedLines << " 行数据" << std::endl;
+        std::cout << "找到 " << validDeviceCount << " 个有效设备（具有2个或更多端口）" << std::endl;
         
         if (devices.empty()) {
             std::cerr << "没有有效的记录可导入" << std::endl;
@@ -617,6 +755,58 @@ public:
         }
 
         return batchInsert(devices);
+    }
+
+    // 处理设备类型匹配
+    bool processDeviceTypes() {
+        std::string query = "SELECT device, terminal_list FROM " + tableName;
+        if (mysql_query(conn, query.c_str())) {
+            std::cerr << "查询设备失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        bool success = true;
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(result))) {
+            std::string device = row[0];
+            std::string terminalList = row[1];
+
+            // 确保设备至少有2个端口
+            if (countDevicePorts(terminalList) < 2) {
+                std::cout << "跳过设备 " << device << " (端口数量不足2个)" << std::endl;
+                continue;
+            }
+
+            // 查找匹配的类型
+            std::string matchedType = findMatchingType(terminalList);
+            if (matchedType.empty()) {
+                // 没有找到匹配的类型，创建新类型
+                matchedType = createNewType(terminalList);
+                if (matchedType.empty()) {
+                    success = false;
+                    break;
+                }
+                std::cout << "为设备 " << device << " 创建新类型: " << matchedType << std::endl;
+            } else {
+                std::cout << "设备 " << device << " 匹配到类型: " << matchedType << std::endl;
+            }
+
+            // 更新设备的类型
+            if (!updateDeviceType(device, matchedType)) {
+                std::cerr << "更新设备 " << device << " 的类型失败" << std::endl;
+                success = false;
+                break;
+            }
+        }
+
+        mysql_free_result(result);
+        return success;
     }
 };
 
@@ -633,7 +823,16 @@ int main() {
     std::cout << "\n尝试从CSV导入数据..." << std::endl;
     if (table.importFromCSV(table.getCsvPath(), table.getProjectNumber())) {
         std::cout << "数据导入成功" << std::endl;
-        // 使用新的显示函数
+        
+        // 处理设备类型匹配
+        std::cout << "\n处理设备类型匹配..." << std::endl;
+        if (table.processDeviceTypes()) {
+            std::cout << "设备类型处理成功" << std::endl;
+        } else {
+            std::cout << "设备类型处理失败" << std::endl;
+        }
+        
+        // 显示结果
         table.displayDevicePorts();
     } else {
         std::cout << "数据导入失败" << std::endl;
