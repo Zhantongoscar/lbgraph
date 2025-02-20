@@ -31,6 +31,7 @@ struct DeviceType {
     int id;
     std::string device;         // 设备标识符（现在是第二个字段）
     std::string project_number;  // 项目编号
+    std::string type;           // 设备类型
     std::string function;       // = 和 + 之间的内容
     std::string location;       // + 和第一个 - 之间的内容
     std::string terminal_list;  // JSON格式的终端列表
@@ -265,6 +266,7 @@ public:
             "id INT PRIMARY KEY AUTO_INCREMENT, "
             "device VARCHAR(255) NOT NULL, "
             "project_number VARCHAR(255) NOT NULL, "
+            "type VARCHAR(255), "
             "function TEXT, "
             "location TEXT, "
             "terminal_list JSON, "
@@ -332,9 +334,10 @@ public:
 
         // 设备不存在，添加新设备
         std::string query = "INSERT INTO " + tableName +
-            " (device, project_number, function, location, terminal_list, inner_list) VALUES ("
+            " (device, project_number, type, function, location, terminal_list, inner_list) VALUES ("
             "'" + escapeString(device.device) + "', "
             "'" + escapeString(device.project_number) + "', "
+            "'" + escapeString(device.type) + "', "
             "'" + escapeString(device.function) + "', "
             "'" + escapeString(device.location) + "', "
             "'" + escapeString(device.terminal_list) + "', "
@@ -372,7 +375,7 @@ public:
 
     // 显示简化的设备端口列表
     void displayDevicePorts() {
-        std::string query = "SELECT device, terminal_list FROM " + tableName + " ORDER BY device";
+        std::string query = "SELECT device, type, terminal_list FROM " + tableName + " ORDER BY device";
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "查询失败: " << mysql_error(conn) << std::endl;
             return;
@@ -390,7 +393,8 @@ public:
         MYSQL_ROW row;
         while ((row = mysql_fetch_row(result))) {
             std::string device = row[0];
-            std::string terminalList = row[1];
+            std::string type = row[1] ? row[1] : "";
+            std::string terminalList = row[2];
             
             // 提取所有端口
             std::vector<std::string> ports;
@@ -403,8 +407,13 @@ public:
                 }
             }
             
-            // 输出设备和端口列表
-            std::cout << device << ": ";
+            // 输出设备、类型和端口列表
+            std::cout << device;
+            if (!type.empty()) {
+                std::cout << " [Type: " << type << "]";
+            }
+            std::cout << ": ";
+            
             for (size_t i = 0; i < ports.size(); ++i) {
                 if (i > 0) std::cout << ", ";
                 std::cout << ports[i];
