@@ -116,41 +116,60 @@ private:
 
     // 从字符串中提取设备标识符和端口号
     std::pair<std::string, std::string> extractDeviceAndPort(const std::string& str) {
-        // 去除开头的等号
-        size_t startPos = (str[0] == '=') ? 1 : 0;
-        std::string deviceStr = str.substr(startPos);
-        
         // 查找冒号位置
-        size_t colonPos = deviceStr.find(":");
+        size_t colonPos = str.find(":");
         if (colonPos == std::string::npos) {
-            return std::make_pair(deviceStr, "1"); // 如果没有冒号，返回默认端口号"1"
+            return std::make_pair(str, "1"); // 如果没有冒号，返回默认端口号"1"
         }
 
         return std::make_pair(
-            deviceStr.substr(0, colonPos),        // 设备标识符（不包含开头的=）
-            deviceStr.substr(colonPos + 1)        // 端口号
+            str.substr(0, colonPos),        // 设备标识符（保留开头的=）
+            str.substr(colonPos + 1)        // 端口号
         );
     }
 
     // 解析设备信息
     void parseDeviceInfo(const std::string& str, DeviceType& device) {
+        std::cout << "\n解析设备信息: " << str << std::endl;
+        
         // 提取设备标识符和端口号
         auto [deviceId, port] = extractDeviceAndPort(str);
-        device.device = deviceId;
+        std::cout << "原始设备ID: " << deviceId << ", 端口: " << port << std::endl;
         
-        // 提取 function 和 location（如果需要的话）
-        if (deviceId.find("+") != std::string::npos) {
-            size_t plusPos = deviceId.find("+");
-            device.function = deviceId.substr(0, plusPos);
-            
-            size_t nextMinusPos = deviceId.find("-", plusPos);
-            if (nextMinusPos != std::string::npos) {
-                device.location = deviceId.substr(plusPos + 1, nextMinusPos - (plusPos + 1));
+        // 提取 function 和 location
+        size_t equalPos = deviceId.find("=");
+        if (equalPos != std::string::npos) {
+            size_t plusPos = deviceId.find("+", equalPos);
+            if (plusPos != std::string::npos) {
+                // 提取 function (= 到第一个 + 之间的内容)
+                device.function = deviceId.substr(equalPos + 1, plusPos - (equalPos + 1));
+                std::cout << "提取到 function: " << device.function << std::endl;
+                
+                // 提取 location (第一个 + 到第一个 - 之间的内容)
+                size_t minusPos = deviceId.find("-", plusPos);
+                if (minusPos != std::string::npos) {
+                    device.location = deviceId.substr(plusPos + 1, minusPos - (plusPos + 1));
+                    std::cout << "提取到 location: " << device.location << std::endl;
+                    // 设备ID是去掉等号后的完整字符串
+                    device.device = deviceId.substr(1);  // 去掉开头的等号
+                } else {
+                    std::cout << "未找到 '-' 符号，无法提取 location" << std::endl;
+                    device.device = deviceId.substr(1);  // 去掉开头的等号
+                }
+            } else {
+                std::cout << "未找到 '+' 符号，无法提取 function 和 location" << std::endl;
+                device.device = deviceId.substr(1);  // 去掉开头的等号
             }
+        } else {
+            std::cout << "未找到 '=' 符号，无法提取 function 和 location" << std::endl;
+            device.device = deviceId;  // 没有等号，使用原始ID
         }
+
+        std::cout << "最终设备ID: " << device.device << std::endl;
 
         // 创建只包含端口号的 terminal_list
         device.terminal_list = "{\"terminals\": [{\"port\": \"" + port + "\"}]}";
+        std::cout << "生成的 terminal_list: " << device.terminal_list << std::endl;
     }
 
     // 检查设备是否存在
@@ -644,17 +663,19 @@ public:
         }
 
         std::vector<DeviceType> devices;
-        std::map<std::string, std::set<std::string>> devicePorts;
+        std::map<std::string, DeviceType> deviceMap;  // 使用map存储设备信息
         std::string line;
         int lineNum = 0;
         int processedLines = 0;
-        const int MAX_LINES = 2000;
+        const int MAX_LINES = 10;  // 修改为10行用于测试
 
         // 跳过标题行
         std::getline(file, line);
+        std::cout << "跳过标题行: " << line << std::endl;
         
         while (std::getline(file, line) && processedLines < MAX_LINES) {
             lineNum++;
+            std::cout << "\n处理第 " << lineNum << " 行: " << line << std::endl;
             try {
                 if (line.empty()) continue;
 
@@ -697,11 +718,41 @@ public:
                         device.project_number = projectNumber;
                         parseDeviceInfo(field, device);
                         if (!device.device.empty()) {
+                            // 使用设备ID作为键，保存或更新设备信息
+                            auto& existingDevice = deviceMap[device.device];
+                            if (existingDevice.device.empty()) {
+                                // 新设备，保存所有信息
+                                existingDevice = device;
+                            }
+                            // 添加端口到现有设备的端口列表
                             size_t pos = device.terminal_list.find("\"port\": \"");
                             size_t endPos = device.terminal_list.find("\"}", pos);
                             if (pos != std::string::npos && endPos != std::string::npos) {
                                 std::string port = device.terminal_list.substr(pos + 9, endPos - (pos + 9));
-                                devicePorts[device.device].insert(port);
+                                
+                                // 解析现有的terminal_list
+                                std::set<std::string> ports;
+                                std::string terminalList = existingDevice.terminal_list;
+                                pos = 0;
+                                while ((pos = terminalList.find("\"port\": \"", pos)) != std::string::npos) {
+                                    pos += 9;
+                                    endPos = terminalList.find("\"", pos);
+                                    if (endPos != std::string::npos) {
+                                        ports.insert(terminalList.substr(pos, endPos - pos));
+                                    }
+                                }
+                                ports.insert(port);
+
+                                // 重建terminal_list
+                                terminalList = "{\"terminals\": [";
+                                bool first = true;
+                                for (const auto& p : ports) {
+                                    if (!first) terminalList += ",";
+                                    terminalList += "{\"port\": \"" + p + "\"}";
+                                    first = false;
+                                }
+                                terminalList += "]}";
+                                existingDevice.terminal_list = terminalList;
                             }
                         }
                     }
@@ -723,31 +774,16 @@ public:
 
         file.close();
 
-        // 处理有效设备（具有2个或更多唯一端口的设备）
-        int validDeviceCount = 0;
-        for (const auto& [deviceId, ports] : devicePorts) {
-            if (ports.size() >= 2) {
-                DeviceType device;
-                device.device = deviceId;
-                device.project_number = projectNumber;
-
-                std::string terminalList = "{\"terminals\": [";
-                bool first = true;
-                for (const auto& port : ports) {
-                    if (!first) terminalList += ",";
-                    terminalList += "{\"port\": \"" + port + "\"}";
-                    first = false;
-                }
-                terminalList += "]}";
-                
-                device.terminal_list = terminalList;
+        // 将map中的设备转换为vector
+        for (const auto& [deviceId, device] : deviceMap) {
+            if (device.terminal_list.find("\"port\"") != std::string::npos) {
                 devices.push_back(device);
-                validDeviceCount++;
             }
         }
 
+        int validDeviceCount = devices.size();
         std::cout << "总计处理 " << processedLines << " 行数据" << std::endl;
-        std::cout << "找到 " << validDeviceCount << " 个有效设备（具有2个或更多端口）" << std::endl;
+        std::cout << "找到 " << validDeviceCount << " 个有效设备" << std::endl;
         
         if (devices.empty()) {
             std::cerr << "没有有效的记录可导入" << std::endl;
