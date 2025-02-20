@@ -477,10 +477,30 @@ public:
         std::string existingTerminalList;
         if (deviceExists(device.device, existingTerminalList)) {
             // 设备存在，更新端口列表
-            return updateDeviceTerminals(device.device, port);
+            bool updated = updateDeviceTerminals(device.device, port);
+            if (updated) {
+                // 重新获取更新后的端口列表
+                deviceExists(device.device, existingTerminalList);
+                // 检查端口数量
+                if (countDevicePorts(existingTerminalList) < 2) {
+                    // 如果端口数量小于2，从数据库中删除该设备
+                    std::string deleteQuery = "DELETE FROM " + tableName + 
+                                           " WHERE device = '" + escapeString(device.device) + "'";
+                    mysql_query(conn, deleteQuery.c_str());
+                    std::cout << "设备 " << device.device << " 端口数量不足2个，已从数据库中删除" << std::endl;
+                    return true;
+                }
+            }
+            return updated;
         }
 
-        // 设备不存在，添加新设备
+        // 检查新设备的端口数量是否不足2个
+        if (countDevicePorts(device.terminal_list) < 2) {
+            std::cout << "设备 " << device.device << " 端口数量不足2个，跳过添加" << std::endl;
+            return true;  // 返回true表示处理成功（跳过）
+        }
+
+        // 设备不存在且端口数量足够，添加新设备
         std::string query = "INSERT INTO " + tableName +
             " (device, project_number, type, function, location, terminal_list, inner_list) VALUES ("
             "'" + escapeString(device.device) + "', "
@@ -667,13 +687,12 @@ public:
         std::string line;
         int lineNum = 0;
         int processedLines = 0;
-        const int MAX_LINES = 10;  // 修改为10行用于测试
 
         // 跳过标题行
         std::getline(file, line);
         std::cout << "跳过标题行: " << line << std::endl;
         
-        while (std::getline(file, line) && processedLines < MAX_LINES) {
+        while (std::getline(file, line)) {  // 删除行数限制，处理所有行
             lineNum++;
             std::cout << "\n处理第 " << lineNum << " 行: " << line << std::endl;
             try {
@@ -814,8 +833,15 @@ public:
             std::string terminalList = row[1];
 
             // 确保设备至少有2个端口
-            if (countDevicePorts(terminalList) < 2) {
-                std::cout << "跳过设备 " << device << " (端口数量不足2个)" << std::endl;
+            int portCount = countDevicePorts(terminalList);
+            if (portCount < 2) {
+                std::cout << "删除设备 " << device << " (端口数量: " << portCount << " < 2)" << std::endl;
+                // 删除不符合要求的设备
+                std::string deleteQuery = "DELETE FROM " + tableName + 
+                                       " WHERE device = '" + escapeString(device) + "'";
+                if (mysql_query(conn, deleteQuery.c_str()) != 0) {
+                    std::cerr << "删除设备失败: " << mysql_error(conn) << std::endl;
+                }
                 continue;
             }
 
