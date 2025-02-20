@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <windows.h>
 #include "C:/clib/mysql/include/mysql.h"
 
@@ -28,12 +29,10 @@ std::string getValueFromJson(const std::string& jsonStr, const std::string& key)
 // 设备类型结构体
 struct DeviceType {
     int id;
+    std::string device;         // 设备标识符（现在是第二个字段）
     std::string project_number;  // 项目编号
-    std::string source;         // 源设备
-    std::string target;         // 目标设备
     std::string function;       // = 和 + 之间的内容
     std::string location;       // + 和第一个 - 之间的内容
-    std::string device;         // 第一个 - 和第一个: 之间的内容
     std::string terminal_list;  // JSON格式的终端列表
     std::string inner_list;     // JSON格式的内部连接列表
 };
@@ -111,24 +110,115 @@ private:
         return str.substr(startPos, endPos - startPos);
     }
 
+    // 从字符串中提取设备标识符和端口号
+    std::pair<std::string, std::string> extractDeviceAndPort(const std::string& str) {
+        // 去除开头的等号
+        size_t startPos = (str[0] == '=') ? 1 : 0;
+        std::string deviceStr = str.substr(startPos);
+        
+        // 查找冒号位置
+        size_t colonPos = deviceStr.find(":");
+        if (colonPos == std::string::npos) {
+            return std::make_pair(deviceStr, "1"); // 如果没有冒号，返回默认端口号"1"
+        }
+
+        return std::make_pair(
+            deviceStr.substr(0, colonPos),        // 设备标识符（不包含开头的=）
+            deviceStr.substr(colonPos + 1)        // 端口号
+        );
+    }
+
     // 解析设备信息
     void parseDeviceInfo(const std::string& str, DeviceType& device) {
-        device.function = extractBetween(str, "=", "+");
-        device.location = extractBetween(str, "+", "-");
+        // 提取设备标识符和端口号
+        auto [deviceId, port] = extractDeviceAndPort(str);
+        device.device = deviceId;
         
-        // 提取设备名称（第一个-和第一个:之间的内容）
-        size_t dashPos = str.find("-");
-        size_t colonPos = str.find(":");
-        if (dashPos != std::string::npos && colonPos != std::string::npos) {
-            device.device = str.substr(dashPos + 1, colonPos - dashPos - 1);
-            // 提取终端信息（冒号后的所有内容）
-            std::string terminal = str.substr(colonPos + 1);
-            if (terminal.empty()) {
-                device.terminal_list = "{\"terminals\": []}";
-            } else {
-                device.terminal_list = "{\"terminals\": [\"" + escapeString(terminal) + "\"]}";
+        // 提取 function 和 location（如果需要的话）
+        if (deviceId.find("+") != std::string::npos) {
+            size_t plusPos = deviceId.find("+");
+            device.function = deviceId.substr(0, plusPos);
+            
+            size_t nextMinusPos = deviceId.find("-", plusPos);
+            if (nextMinusPos != std::string::npos) {
+                device.location = deviceId.substr(plusPos + 1, nextMinusPos - (plusPos + 1));
             }
         }
+
+        // 创建只包含端口号的 terminal_list
+        device.terminal_list = "{\"terminals\": [{\"port\": \"" + port + "\"}]}";
+    }
+
+    // 检查设备是否存在
+    bool deviceExists(const std::string& deviceId, std::string& existingTerminalList) {
+        std::string query = "SELECT terminal_list FROM " + tableName + 
+                          " WHERE device = '" + escapeString(deviceId) + "'";
+        
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "查询设备失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(result);
+        if (row) {
+            existingTerminalList = row[0] ? row[0] : ""; 
+            mysql_free_result(result);
+            return true;
+        }
+
+        mysql_free_result(result);
+        return false;
+    }
+
+    // 更新设备的端口列表
+    bool updateDeviceTerminals(const std::string& deviceId, const std::string& newPort) {
+        std::string existingTerminalList;
+        if (!deviceExists(deviceId, existingTerminalList)) {
+            return false;
+        }
+
+        // 解析现有的 terminal_list
+        std::vector<std::string> ports;
+        size_t pos = 0;
+        while ((pos = existingTerminalList.find("\"port\": \"", pos)) != std::string::npos) {
+            pos += 9; // 跳过 "port": "
+            size_t endPos = existingTerminalList.find("\"", pos);
+            if (endPos != std::string::npos) {
+                std::string port = existingTerminalList.substr(pos, endPos - pos);
+                // 使用 find_if 和 lambda 函数来检查端口是否存在
+                if (std::find_if(ports.begin(), ports.end(),
+                    [&port](const std::string& p) { return p == port; }) == ports.end()) {
+                    ports.push_back(port);
+                }
+            }
+        }
+
+        // 检查新端口是否已存在
+        if (std::find_if(ports.begin(), ports.end(),
+            [&newPort](const std::string& p) { return p == newPort; }) == ports.end()) {
+            ports.push_back(newPort);
+        }
+
+        // 构建新的 terminal_list
+        std::string newTerminalList = "{\"terminals\": [";
+        for (size_t i = 0; i < ports.size(); ++i) {
+            if (i > 0) newTerminalList += ",";
+            newTerminalList += "{\"port\": \"" + ports[i] + "\"}";
+        }
+        newTerminalList += "]}";
+
+        // 更新数据库
+        std::string query = "UPDATE " + tableName + 
+                          " SET terminal_list = '" + escapeString(newTerminalList) + "'" +
+                          " WHERE device = '" + escapeString(deviceId) + "'";
+
+        return mysql_query(conn, query.c_str()) == 0;
     }
 
 public:
@@ -170,15 +260,13 @@ public:
         }
         std::cout << "已删除旧表（如果存在）" << std::endl;
 
-        // 创建新表
+        // 创建新表，调整字段顺序
         std::string createTable = "CREATE TABLE " + tableName + " ("
             "id INT PRIMARY KEY AUTO_INCREMENT, "
+            "device VARCHAR(255) NOT NULL, "
             "project_number VARCHAR(255) NOT NULL, "
-            "source VARCHAR(255) NOT NULL, "
-            "target VARCHAR(255) NOT NULL, "
             "function TEXT, "
             "location TEXT, "
-            "device VARCHAR(255), "
             "terminal_list JSON, "
             "inner_list JSON"
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
@@ -228,51 +316,63 @@ public:
         return projectNumber;
     }
 
-    // 添加新设备类型
+    // 添加新设备类型，调整字段顺序和处理 terminal_list
     bool addDeviceType(const DeviceType& device) {
-        // Debug output for values
-        std::cout << "添加设备类型，值：" << std::endl;
-        std::cout << "Project Number: [" << device.project_number << "]" << std::endl;
-        std::cout << "Source: [" << device.source << "]" << std::endl;
-        std::cout << "Target: [" << device.target << "]" << std::endl;
-        std::cout << "Function: [" << device.function << "]" << std::endl;
-        std::cout << "Location: [" << device.location << "]" << std::endl;
-        std::cout << "Device: [" << device.device << "]" << std::endl;
-        std::cout << "Terminal List: [" << device.terminal_list << "]" << std::endl;
-        std::cout << "Inner List: [" << device.inner_list << "]" << std::endl;
+        // 提取端口号
+        size_t pos = device.terminal_list.find("\"port\": \"");
+        size_t endPos = device.terminal_list.find("\"}", pos);
+        std::string port = device.terminal_list.substr(pos + 9, endPos - (pos + 9));
 
-        // 确保terminal_list是有效的JSON
-        std::string terminal_list = device.terminal_list.empty() ? "{\"terminals\": []}" : device.terminal_list;
-        // 确保inner_list是有效的JSON
-        std::string inner_list = device.inner_list.empty() ? "{}" : device.inner_list;
-        
-        // 构建SQL查询
+        // 检查设备是否已存在
+        std::string existingTerminalList;
+        if (deviceExists(device.device, existingTerminalList)) {
+            // 设备存在，更新端口列表
+            return updateDeviceTerminals(device.device, port);
+        }
+
+        // 设备不存在，添加新设备
         std::string query = "INSERT INTO " + tableName +
-            " (project_number, source, target, function, location, device, terminal_list, inner_list) VALUES ("
+            " (device, project_number, function, location, terminal_list, inner_list) VALUES ("
+            "'" + escapeString(device.device) + "', "
             "'" + escapeString(device.project_number) + "', "
-            "'" + escapeString(device.source) + "', "
-            "'" + escapeString(device.target) + "', "
             "'" + escapeString(device.function) + "', "
             "'" + escapeString(device.location) + "', "
-            "'" + escapeString(device.device) + "', "
-            "'" + escapeString(terminal_list) + "', "
-            "'" + escapeString(inner_list) + "'"
+            "'" + escapeString(device.terminal_list) + "', "
+            "'" + escapeString(device.inner_list.empty() ? "{}" : device.inner_list) + "'"
             ")";
 
-        // 执行查询并输出详细错误信息
-        if (mysql_query(conn, query.c_str()) != 0) {
-            std::cerr << "SQL查询失败：" << std::endl;
-            std::cerr << "错误码: " << mysql_errno(conn) << std::endl;
-            std::cerr << "错误信息: " << mysql_error(conn) << std::endl;
-            std::cerr << "执行的SQL: " << query << std::endl;
-            return false;
-        }
-        return true;
+        return mysql_query(conn, query.c_str()) == 0;
     }
 
-    // 显示所有设备类型
+    // 显示所有设备类型的简化输出
     void displayAll() {
         std::string query = "SELECT * FROM " + tableName;
+        if (mysql_query(conn, query.c_str())) {
+            return;
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return;
+        }
+
+        std::cout << "\n设备端口列表：" << std::endl;
+        std::cout << "----------------------------------------" << std::endl;
+
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(result))) {
+            std::cout << "Device: " << row[1] << std::endl;
+            std::cout << "Ports: " << row[5] << std::endl;  // terminal_list
+            std::cout << "----------------------------------------" << std::endl;
+        }
+
+        mysql_free_result(result);
+    }
+
+    // 显示简化的设备端口列表
+    void displayDevicePorts() {
+        std::string query = "SELECT device, terminal_list FROM " + tableName + " ORDER BY device";
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "查询失败: " << mysql_error(conn) << std::endl;
             return;
@@ -284,21 +384,32 @@ public:
             return;
         }
 
-        std::cout << "\n设备类型列表：" << std::endl;
+        std::cout << "\n设备端口列表：" << std::endl;
         std::cout << "----------------------------------------" << std::endl;
 
         MYSQL_ROW row;
         while ((row = mysql_fetch_row(result))) {
-            std::cout << "ID: " << row[0] << std::endl;
-            std::cout << "项目编号: " << row[1] << std::endl;
-            std::cout << "Source: " << row[2] << std::endl;
-            std::cout << "Target: " << row[3] << std::endl;
-            std::cout << "Function: " << row[4] << std::endl;
-            std::cout << "Location: " << row[5] << std::endl;
-            std::cout << "Device: " << row[6] << std::endl;
-            std::cout << "Terminal List: " << row[7] << std::endl;
-            std::cout << "Inner List: " << row[8] << std::endl;
-            std::cout << "----------------------------------------" << std::endl;
+            std::string device = row[0];
+            std::string terminalList = row[1];
+            
+            // 提取所有端口
+            std::vector<std::string> ports;
+            size_t pos = 0;
+            while ((pos = terminalList.find("\"port\": \"", pos)) != std::string::npos) {
+                pos += 9;
+                size_t endPos = terminalList.find("\"", pos);
+                if (endPos != std::string::npos) {
+                    ports.push_back(terminalList.substr(pos, endPos - pos));
+                }
+            }
+            
+            // 输出设备和端口列表
+            std::cout << device << ": ";
+            for (size_t i = 0; i < ports.size(); ++i) {
+                if (i > 0) std::cout << ", ";
+                std::cout << ports[i];
+            }
+            std::cout << std::endl;
         }
 
         mysql_free_result(result);
@@ -346,11 +457,9 @@ public:
             
             // Debug output for each record
             std::cout << "\n处理第 " << (i + 1) << " 条记录:" << std::endl;
-            std::cout << "Source: " << device.source << std::endl;
-            std::cout << "Target: " << device.target << std::endl;
+            std::cout << "Device: " << device.device << std::endl;
             std::cout << "Function: " << device.function << std::endl;
             std::cout << "Location: " << device.location << std::endl;
-            std::cout << "Device: " << device.device << std::endl;
             std::cout << "Terminal List: " << device.terminal_list << std::endl;
 
             if (!addDeviceType(device)) {
@@ -402,12 +511,14 @@ public:
         std::vector<DeviceType> devices;
         std::string line;
         int lineNum = 0;
+        int processedLines = 0;
+        const int MAX_LINES = 2000; // 限制处理前30行
 
         // 跳过标题行
         std::getline(file, line);
         std::cout << "标题行: " << line << std::endl;
         
-        while (std::getline(file, line)) {
+        while (std::getline(file, line) && processedLines < MAX_LINES) {
             lineNum++;
             try {
                 if (line.empty()) {
@@ -415,27 +526,70 @@ public:
                     continue;
                 }
 
-                std::stringstream ss(line);
-                std::string cell;
-                DeviceType device;
-                device.project_number = projectNumber;
-                
-                // 解析CSV行
-                if (std::getline(ss, cell, ',')) {  // source
-                    device.source = cell;
+                std::vector<std::string> fields;
+                std::string field;
+                bool inQuotes = false;
+                std::stringstream fieldValue;
+
+                // 手动解析CSV字段，处理引号内的逗号和换行符
+                for (char c : line) {
+                    if (c == '\"') {
+                        inQuotes = !inQuotes;
+                    } else if (c == ',' && !inQuotes) {
+                        // 移除前后的空格
+                        std::string trimmed = fieldValue.str();
+                        while (!trimmed.empty() && isspace(trimmed.front())) trimmed.erase(0, 1);
+                        while (!trimmed.empty() && isspace(trimmed.back())) trimmed.pop_back();
+                        fields.push_back(trimmed);
+                        fieldValue.str("");
+                        fieldValue.clear();
+                    } else {
+                        fieldValue << c;
+                    }
                 }
-                if (std::getline(ss, cell, ',')) {  // target
-                    device.target = cell;
-                    parseDeviceInfo(cell, device);
+                // 添加最后一个字段（同样去除空格）
+                std::string trimmed = fieldValue.str();
+                while (!trimmed.empty() && isspace(trimmed.front())) trimmed.erase(0, 1);
+                while (!trimmed.empty() && isspace(trimmed.back())) trimmed.pop_back();
+                fields.push_back(trimmed);
+
+                // 输出解析后的字段用于调试
+                std::cout << "\n第 " << lineNum << " 行解析结果:" << std::endl;
+                for (size_t i = 0; i < fields.size(); ++i) {
+                    std::cout << "字段 " << i << ": [" << fields[i] << "]" << std::endl;
                 }
 
-                // 初始化空的inner_list
-                device.inner_list = "{}";
-                
-                devices.push_back(device);
-                
-                if (lineNum % 100 == 0) {
-                    std::cout << "已读取 " << lineNum << " 行..." << std::endl;
+                if (fields.size() < 8) {
+                    std::cout << "跳过无效行 " << lineNum << ": 字段数不足" << std::endl;
+                    continue;
+                }
+
+                std::string source = fields[7];
+                std::string target = fields[8];
+
+                // 处理source设备
+                if (!source.empty()) {
+                    DeviceType device;
+                    device.project_number = projectNumber;
+                    parseDeviceInfo(source, device);
+                    if (!device.device.empty()) {
+                        devices.push_back(device);
+                    }
+                }
+
+                // 处理target设备
+                if (!target.empty()) {
+                    DeviceType device;
+                    device.project_number = projectNumber;
+                    parseDeviceInfo(target, device);
+                    if (!device.device.empty()) {
+                        devices.push_back(device);
+                    }
+                }
+
+                processedLines++;
+                if (processedLines % 10 == 0) {
+                    std::cout << "已处理 " << processedLines << " 行数据..." << std::endl;
                 }
             }
             catch (const std::exception& e) {
@@ -464,19 +618,17 @@ int main() {
     setbuf(stdout, NULL);
 
     std::cout << "程序开始执行..." << std::endl;
-    PanelDeviceTable table("panel_device_types");
+    PanelDeviceTable table("panel_device_inner");
 
     // 从CSV导入数据，使用配置文件中的路径和项目编号
     std::cout << "\n尝试从CSV导入数据..." << std::endl;
     if (table.importFromCSV(table.getCsvPath(), table.getProjectNumber())) {
         std::cout << "数据导入成功" << std::endl;
+        // 使用新的显示函数
+        table.displayDevicePorts();
     } else {
         std::cout << "数据导入失败" << std::endl;
     }
-
-    // 显示导入后的设备列表
-    std::cout << "\n导入后的设备列表：" << std::endl;
-    table.displayAll();
 
     std::cout << "\n程序执行完成" << std::endl;
     return 0;
