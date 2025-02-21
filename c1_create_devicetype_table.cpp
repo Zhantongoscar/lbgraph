@@ -266,6 +266,7 @@ private:
 
         if (!tableExists) {
             std::cout << "创建类型表..." << std::endl;
+            // 创建表时先不添加唯一约束，我们通过程序逻辑来确保唯一性
             std::string createTable = "CREATE TABLE " + typesTableName + " ("
                 "id INT PRIMARY KEY AUTO_INCREMENT, "
                 "type VARCHAR(255) NOT NULL UNIQUE, "
@@ -276,6 +277,25 @@ private:
             if (mysql_query(conn, createTable.c_str())) {
                 std::cerr << "创建类型表失败: " << mysql_error(conn) << std::endl;
                 return false;
+            }
+            std::cout << "成功创建类型表" << std::endl;
+
+            // 创建一个触发器来防止重复的terminal_list
+            std::string createTrigger = "CREATE TRIGGER prevent_duplicate_terminal_list "
+                                      "BEFORE INSERT ON " + typesTableName + " "
+                                      "FOR EACH ROW "
+                                      "BEGIN "
+                                      "    IF EXISTS (SELECT 1 FROM " + typesTableName + " WHERE terminal_list = NEW.terminal_list) THEN "
+                                      "        SIGNAL SQLSTATE '45000' "
+                                      "        SET MESSAGE_TEXT = 'Duplicate terminal_list is not allowed'; "
+                                      "    END IF; "
+                                      "END;";
+
+            if (mysql_query(conn, createTrigger.c_str())) {
+                std::cerr << "创建触发器失败: " << mysql_error(conn) << std::endl;
+                // 即使触发器创建失败，我们也继续执行，因为我们还有程序层面的检查
+            } else {
+                std::cout << "成功创建防重复触发器" << std::endl;
             }
         }
 
@@ -325,15 +345,42 @@ private:
 
     // 创建新类型
     std::string createNewType(const std::string& terminalList) {
+        // 首先检查是否已存在相同的 terminal_list 特征
+        std::string query = "SELECT type FROM " + typesTableName + 
+                          " WHERE terminal_list = '" + escapeString(terminalList) + "'";
+        
+        if (mysql_query(conn, query.c_str())) {
+            std::cerr << "查询类型特征失败: " << mysql_error(conn) << std::endl;
+            return "";
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (result == NULL) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return "";
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(result);
+        if (row) {
+            // 已存在相同特征的类型，直接返回该类型
+            std::string existingType = row[0];
+            mysql_free_result(result);
+            std::cout << "找到已存在的相同特征类型: " << existingType << std::endl;
+            return existingType;
+        }
+        mysql_free_result(result);
+
+        // 如果不存在相同特征，创建新类型
         typeCounter++;
         std::string newType = "TYPE" + std::to_string(typeCounter);
+        std::cout << "创建新特征类型: " << newType << std::endl;
         
-        std::string query = "INSERT INTO " + typesTableName + 
-                          " (type, terminal_list, inner_conn_list) VALUES ("
-                          "'" + escapeString(newType) + "', "
-                          "'" + escapeString(terminalList) + "', "
-                          "'{}')"
-                          " ON DUPLICATE KEY UPDATE type = type";  // 防止类型名重复
+        query = "INSERT INTO " + typesTableName + 
+                " (type, terminal_list, inner_conn_list) VALUES ("
+                "'" + escapeString(newType) + "', "
+                "'" + escapeString(terminalList) + "', "
+                "'{}')"
+                " ON DUPLICATE KEY UPDATE type = type";  // 防止类型名重复
 
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "创建新类型失败: " << mysql_error(conn) << std::endl;
