@@ -150,7 +150,6 @@ private:
                 if (minusPos != std::string::npos) {
                     device.location = deviceId.substr(plusPos + 1, minusPos - (plusPos + 1));
                     std::cout << "提取到 location: " << device.location << std::endl;
-                    // 设备ID是去掉等号后的完整字符串
                     device.device = deviceId.substr(1);  // 去掉开头的等号
                 } else {
                     std::cout << "未找到 '-' 符号，无法提取 location" << std::endl;
@@ -167,8 +166,8 @@ private:
 
         std::cout << "最终设备ID: " << device.device << std::endl;
 
-        // 创建只包含端口号的 terminal_list
-        device.terminal_list = "{\"terminals\": [{\"port\": \"" + port + "\"}]}";
+        // 创建简化的 terminal_list（使用JSON数组）
+        device.terminal_list = "[\"" + port + "\"]";
         std::cout << "生成的 terminal_list: " << device.terminal_list << std::endl;
     }
 
@@ -206,35 +205,34 @@ private:
             return false;
         }
 
-        // 解析现有的 terminal_list
+        // 解析现有的 terminal_list（数组格式）
         std::vector<std::string> ports;
         size_t pos = 0;
-        while ((pos = existingTerminalList.find("\"port\": \"", pos)) != std::string::npos) {
-            pos += 9; // 跳过 "port": "
+        while ((pos = existingTerminalList.find("\"", pos)) != std::string::npos) {
+            pos++; // 跳过开头的引号
             size_t endPos = existingTerminalList.find("\"", pos);
             if (endPos != std::string::npos) {
                 std::string port = existingTerminalList.substr(pos, endPos - pos);
-                // 使用 find_if 和 lambda 函数来检查端口是否存在
-                if (std::find_if(ports.begin(), ports.end(),
-                    [&port](const std::string& p) { return p == port; }) == ports.end()) {
+                if (std::find(ports.begin(), ports.end(), port) == ports.end()) {
                     ports.push_back(port);
                 }
+                pos = endPos + 1;
             }
         }
 
         // 检查新端口是否已存在
-        if (std::find_if(ports.begin(), ports.end(),
-            [&newPort](const std::string& p) { return p == newPort; }) == ports.end()) {
+        auto it = std::find(ports.begin(), ports.end(), newPort);
+        if (it == ports.end()) {
             ports.push_back(newPort);
         }
 
-        // 构建新的 terminal_list
-        std::string newTerminalList = "{\"terminals\": [";
+        // 构建新的 terminal_list（简单数组格式）
+        std::string newTerminalList = "[";
         for (size_t i = 0; i < ports.size(); ++i) {
             if (i > 0) newTerminalList += ",";
-            newTerminalList += "{\"port\": \"" + ports[i] + "\"}";
+            newTerminalList += "\"" + ports[i] + "\"";
         }
-        newTerminalList += "]}";
+        newTerminalList += "]";
 
         // 更新数据库
         std::string query = "UPDATE " + tableName + 
@@ -403,11 +401,12 @@ private:
     int countDevicePorts(const std::string& terminalList) {
         int count = 0;
         size_t pos = 0;
-        while ((pos = terminalList.find("\"port\":", pos)) != std::string::npos) {
+        while ((pos = terminalList.find("\"", pos)) != std::string::npos) {
             count++;
-            pos += 6;  // 移动到"port":后面
+            pos = terminalList.find("\"", pos + 1);
+            if (pos != std::string::npos) pos++;
         }
-        return count;
+        return count / 2; // 因为每个端口有两个引号
     }
 
 public:
@@ -515,10 +514,18 @@ public:
 
     // 添加新设备类型，调整字段顺序和处理 terminal_list
     bool addDeviceType(const DeviceType& device) {
-        // 提取端口号
-        size_t pos = device.terminal_list.find("\"port\": \"");
-        size_t endPos = device.terminal_list.find("\"}", pos);
-        std::string port = device.terminal_list.substr(pos + 9, endPos - (pos + 9));
+        // Extract port number from the JSON array format ["port"]
+        size_t pos = device.terminal_list.find("\"");
+        if (pos == std::string::npos) {
+            std::cerr << "Invalid terminal_list format: " << device.terminal_list << std::endl;
+            return false; // Or handle the error appropriately
+        }
+        size_t endPos = device.terminal_list.find("\"", pos + 1);
+        if (endPos == std::string::npos) {
+            std::cerr << "Invalid terminal_list format: " << device.terminal_list << std::endl;
+            return false; // Or handle the error appropriately
+        }
+        std::string port = device.terminal_list.substr(pos + 1, endPos - (pos + 1));
 
         // 检查设备是否已存在
         std::string existingTerminalList;
@@ -629,11 +636,12 @@ public:
             // 提取所有端口
             std::vector<std::string> ports;
             size_t pos = 0;
-            while ((pos = terminalList.find("\"port\": \"", pos)) != std::string::npos) {
-                pos += 9;
+            while ((pos = terminalList.find("\"", pos)) != std::string::npos) {
+                pos++;
                 size_t endPos = terminalList.find("\"", pos);
                 if (endPos != std::string::npos) {
                     ports.push_back(terminalList.substr(pos, endPos - pos));
+                    pos = endPos + 1;
                 }
             }
             
@@ -790,35 +798,39 @@ public:
                                 // 新设备，保存所有信息
                                 existingDevice = device;
                             }
-                            // 添加端口到现有设备的端口列表
-                            size_t pos = device.terminal_list.find("\"port\": \"");
-                            size_t endPos = device.terminal_list.find("\"}", pos);
-                            if (pos != std::string::npos && endPos != std::string::npos) {
-                                std::string port = device.terminal_list.substr(pos + 9, endPos - (pos + 9));
-                                
-                                // 解析现有的terminal_list
-                                std::set<std::string> ports;
-                                std::string terminalList = existingDevice.terminal_list;
-                                pos = 0;
-                                while ((pos = terminalList.find("\"port\": \"", pos)) != std::string::npos) {
-                                    pos += 9;
-                                    endPos = terminalList.find("\"", pos);
-                                    if (endPos != std::string::npos) {
-                                        ports.insert(terminalList.substr(pos, endPos - pos));
+                            // 从terminal_list（现在是JSON数组格式）中提取端口
+                            size_t pos = device.terminal_list.find("\"");
+                            if (pos != std::string::npos) {
+                                pos++; // 跳过第一个引号
+                                size_t endPos = device.terminal_list.find("\"", pos);
+                                if (endPos != std::string::npos) {
+                                    std::string newPort = device.terminal_list.substr(pos, endPos - pos);
+                                    
+                                    // 解析现有的terminal_list
+                                    std::set<std::string> ports;
+                                    std::string terminalList = existingDevice.terminal_list;
+                                    pos = 0;
+                                    while ((pos = terminalList.find("\"", pos)) != std::string::npos) {
+                                        pos++; // 跳过引号
+                                        endPos = terminalList.find("\"", pos);
+                                        if (endPos != std::string::npos) {
+                                            ports.insert(terminalList.substr(pos, endPos - pos));
+                                            pos = endPos + 1;
+                                        }
                                     }
-                                }
-                                ports.insert(port);
+                                    ports.insert(newPort);
 
-                                // 重建terminal_list
-                                terminalList = "{\"terminals\": [";
-                                bool first = true;
-                                for (const auto& p : ports) {
-                                    if (!first) terminalList += ",";
-                                    terminalList += "{\"port\": \"" + p + "\"}";
-                                    first = false;
+                                    // 重建terminal_list为JSON数组格式
+                                    terminalList = "[";
+                                    bool first = true;
+                                    for (const auto& p : ports) {
+                                        if (!first) terminalList += ",";
+                                        terminalList += "\"" + p + "\"";
+                                        first = false;
+                                    }
+                                    terminalList += "]";
+                                    existingDevice.terminal_list = terminalList;
                                 }
-                                terminalList += "]}";
-                                existingDevice.terminal_list = terminalList;
                             }
                         }
                     }
@@ -842,7 +854,8 @@ public:
 
         // 将map中的设备转换为vector
         for (const auto& [deviceId, device] : deviceMap) {
-            if (device.terminal_list.find("\"port\"") != std::string::npos) {
+            auto it = device.terminal_list.find("\"");
+            if (it != std::string::npos) {
                 devices.push_back(device);
             }
         }
@@ -917,6 +930,161 @@ public:
         mysql_free_result(result);
         return success;
     }
+
+    // 更新内部连接列表
+    bool updateInnerConnections() {
+        std::cout << "\n开始更新内部连接列表..." << std::endl;
+        
+        // 获取所有带有type的记录
+        std::string query = "SELECT type, terminal_list, inner_conn_list FROM " + typesTableName + 
+                          " WHERE type IS NOT NULL";
+        
+        if (mysql_query(conn, query.c_str())) {
+            std::cerr << "查询类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (!result) {
+            std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        // 加载连接规则
+        std::ifstream rulesFile("conn_rules.json");
+        if (!rulesFile.is_open()) {
+            std::cerr << "无法打开conn_rules.json文件" << std::endl;
+            mysql_free_result(result);
+            return false;
+        }
+
+        std::string jsonStr((std::istreambuf_iterator<char>(rulesFile)),
+                           std::istreambuf_iterator<char>());
+        rulesFile.close();
+
+        bool success = true;
+        MYSQL_ROW row;
+        while ((row = mysql_fetch_row(result))) {
+            std::string type = row[0];
+            std::string terminalList = row[1];
+            std::string innerList = row[2] ? row[2] : "{}";
+
+            std::cout << "\n处理类型: " << type << std::endl;
+            std::cout << "当前terminal_list: " << terminalList << std::endl;
+            std::cout << "当前inner_list: " << innerList << std::endl;
+
+            // 检查是否需要更新
+            if (innerList != "{}") {
+                std::cout << "inner_list已存在，跳过处理" << std::endl;
+                continue;
+            }
+
+            // 提取terminal_list中的端口
+            std::vector<std::string> ports;
+            size_t pos = 0;
+            while ((pos = terminalList.find("\"", pos)) != std::string::npos) {
+                pos++; // 跳过开头的引号
+                size_t endPos = terminalList.find("\"", pos);
+                if (endPos != std::string::npos) {
+                    std::string port = terminalList.substr(pos, endPos - pos);
+                    ports.push_back(port);
+                    std::cout << "找到端口: " << port << std::endl;
+                    pos = endPos + 1;
+                }
+            }
+
+            // 检查是否有匹配的规则
+            bool hasMatch = false;
+            std::string newInnerList = "{\"connections\":[";
+
+            // 在rules数组中查找匹配的规则
+            size_t rulesStart = jsonStr.find("[");
+            size_t rulesEnd = jsonStr.find_last_of("]");
+            if (rulesStart != std::string::npos && rulesEnd != std::string::npos) {
+                std::string rulesStr = jsonStr.substr(rulesStart + 1, rulesEnd - rulesStart - 1);
+                std::istringstream ruleStream(rulesStr);
+                std::string rule;
+                
+                while (std::getline(ruleStream, rule, '}')) {
+                    if (rule.find("{") != std::string::npos) {
+                        // 提取规则中的端口
+                        size_t portsStart = rule.find("\"ports\"");
+                        if (portsStart != std::string::npos) {
+                            size_t arrayStart = rule.find("[", portsStart);
+                            size_t arrayEnd = rule.find("]", arrayStart);
+                            if (arrayStart != std::string::npos && arrayEnd != std::string::npos) {
+                                std::string portsStr = rule.substr(arrayStart + 1, arrayEnd - arrayStart - 1);
+                                std::vector<std::string> rulePorts;
+                                
+                                // 解析规则端口
+                                std::istringstream portStream(portsStr);
+                                std::string rulePort;
+                                while (std::getline(portStream, rulePort, ',')) {
+                                    // 移除引号和空格
+                                    rulePort.erase(std::remove_if(rulePort.begin(), rulePort.end(), 
+                                                 [](char c) { return c == '"' || c == ' '; }), rulePort.end());
+                                    rulePorts.push_back(rulePort);
+                                    std::cout << "规则端口: " << rulePort << std::endl;
+                                }
+
+                                // 检查是否所有规则端口都存在于设备端口中
+                                bool allPortsFound = true;
+                                for (const auto& rulePort : rulePorts) {
+                                    auto it = std::find(ports.begin(), ports.end(), rulePort);
+                                    if (it == ports.end()) {
+                                        allPortsFound = false;
+                                        std::cout << "规则端口 " << rulePort << " 不存在于设备端口中" << std::endl;
+                                        break;
+                                    }
+                                }
+
+                                if (allPortsFound && rulePorts.size() >= 2) {
+                                    std::cout << "找到匹配的端口规则" << std::endl;
+                                    // 提取属性和方向
+                                    std::string property = getValueFromJson(rule, "property");
+                                    std::string direction = getValueFromJson(rule, "direction");
+
+                                    if (!hasMatch) {
+                                        hasMatch = true;
+                                    } else {
+                                        newInnerList += ",";
+                                    }
+
+                                    // 添加连接
+                                    newInnerList += "{\"from\":\"" + rulePorts[0] + 
+                                                  "\",\"to\":\"" + rulePorts[1] + 
+                                                  "\",\"property\":\"" + property + 
+                                                  "\",\"direction\":\"" + direction + "\"}";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            newInnerList += "]}";
+
+            // 如果找到匹配的规则，更新数据库
+            if (hasMatch) {
+                std::string updateQuery = "UPDATE " + typesTableName + 
+                                       " SET inner_conn_list = '" + escapeString(newInnerList) + "'" +
+                                       " WHERE type = '" + escapeString(type) + "'";
+                
+                if (mysql_query(conn, updateQuery.c_str())) {
+                    std::cerr << "更新inner_list失败: " << mysql_error(conn) << std::endl;
+                    success = false;
+                    break;
+                }
+                std::cout << "更新inner_list为: " << newInnerList << std::endl;
+            } else {
+                std::cout << "没有找到匹配的规则" << std::endl;
+            }
+        }
+
+        mysql_free_result(result);
+        return success;
+    }
+
 };
 
 int main() {
@@ -937,6 +1105,14 @@ int main() {
         std::cout << "\n处理设备类型匹配..." << std::endl;
         if (table.processDeviceTypes()) {
             std::cout << "设备类型处理成功" << std::endl;
+            
+            // 更新内部连接列表
+            std::cout << "\n处理内部连接..." << std::endl;
+            if (table.updateInnerConnections()) {
+                std::cout << "内部连接更新成功" << std::endl;
+            } else {
+                std::cout << "内部连接更新失败" << std::endl;
+            }
         } else {
             std::cout << "设备类型处理失败" << std::endl;
         }
