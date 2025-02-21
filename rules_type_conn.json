@@ -1,0 +1,1416 @@
+{
+  "types": [
+    {
+      "type": "TYPE1",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE2",
+      "connections": [
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE3",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE4",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE5",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE6",
+      "connections": [
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE7",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE8",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE9",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE10",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE11",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE12",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE13",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE14",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE15",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE16",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE17",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE18",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE19",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE20",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"33","to":"34","type":"contact_connection","description":"触点组3连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"53","to":"54","type":"contact_connection","description":"触点组5连接"},
+      {"from":"63","to":"64","type":"contact_connection","description":"触点组6连接"},
+      {"from":"71","to":"72","type":"contact_connection","description":"触点组7连接"}
+    ]
+    },
+    {
+      "type": "TYPE21",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"33","to":"34","type":"contact_connection","description":"触点组3连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"71","to":"72","type":"contact_connection","description":"触点组7连接"}
+    ]
+    },
+    {
+      "type": "TYPE22",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"71","to":"72","type":"contact_connection","description":"触点组7连接"}
+    ]
+    },
+    {
+      "type": "TYPE23",
+      "connections": [
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"53","to":"54","type":"contact_connection","description":"触点组5连接"},
+      {"from":"63","to":"64","type":"contact_connection","description":"触点组6连接"}
+    ]
+    },
+    {
+      "type": "TYPE24",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE25",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE26",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE27",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE28",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE32",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE34",
+      "connections": [
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE36",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE40",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE46",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE47",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE48",
+      "connections": [
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE52",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE54",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"23","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE56",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE58",
+      "connections": [
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"20","to":"21","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"20","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"},
+      {"from":"21","to":"23","type":"contact_connection","description":"触点组2连接"},
+      {"from":"22","to":"23","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE60",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE61",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE62",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE63",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE64",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE65",
+      "connections": [
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE66",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE68",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE69",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE70",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE71",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"23","to":"25","type":"contact_connection","description":"触点组2连接"},
+      {"from":"24","to":"25","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE74",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"21","to":"22","type":"contact_connection","description":"触点组2连接"}
+    ]
+    },
+    {
+      "type": "TYPE77",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"23","to":"24","type":"contact_connection","description":"触点组2连接"},
+      {"from":"33","to":"34","type":"contact_connection","description":"触点组3连接"},
+      {"from":"53","to":"54","type":"contact_connection","description":"触点组5连接"},
+      {"from":"63","to":"64","type":"contact_connection","description":"触点组6连接"}
+    ]
+    },
+    {
+      "type": "TYPE78",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE79",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE80",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE81",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE82",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE83",
+      "connections": [
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"41","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE85",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"41","to":"42","type":"contact_connection","description":"触点组4连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE86",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE87",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE88",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE89",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE90",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE91",
+      "connections": [
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE92",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE93",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE94",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE95",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE96",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE97",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE98",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE99",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE100",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE102",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE103",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE104",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE105",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE107",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE108",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE109",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE110",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE111",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE112",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE113",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE114",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE115",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE117",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE120",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE122",
+      "connections": [
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE126",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE127",
+      "connections": [
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE131",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE132",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE133",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE134",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE137",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE138",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE140",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE141",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE142",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE145",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE147",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE149",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE151",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE155",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE156",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE157",
+      "connections": [
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE158",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE159",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE162",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE163",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE169",
+      "connections": [
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE173",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE174",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE176",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE177",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE178",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE179",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE180",
+      "connections": [
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE181",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE182",
+      "connections": [
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"17","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"16","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"18","type":"contact_connection","description":"触点组1连接"},
+      {"from":"17","to":"19","type":"contact_connection","description":"触点组1连接"},
+      {"from":"18","to":"19","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE184",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE185",
+      "connections": [
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE186",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE189",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE190",
+      "connections": [
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE191",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE192",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE193",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE198",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE199",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE202",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE203",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE204",
+      "connections": [
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE212",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE213",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE216",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE218",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE219",
+      "connections": [
+      {"from":"10","to":"11","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"10","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"12","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"11","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"13","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"12","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"13","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"15","type":"contact_connection","description":"触点组1连接"},
+      {"from":"14","to":"16","type":"contact_connection","description":"触点组1连接"},
+      {"from":"15","to":"16","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE222",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE230",
+      "connections": [
+      {"from":"33","to":"34","type":"contact_connection","description":"触点组3连接"},
+      {"from":"43","to":"44","type":"contact_connection","description":"触点组4连接"},
+      {"from":"53","to":"54","type":"contact_connection","description":"触点组5连接"}
+    ]
+    },
+    {
+      "type": "TYPE236",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE237",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE238",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE239",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE241",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE244",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"},
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE248",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE249",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE253",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE255",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE261",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE262",
+      "connections": [
+      {"from":"13","to":"14","type":"contact_connection","description":"触点组1连接"}
+    ]
+    },
+    {
+      "type": "TYPE263",
+      "connections": [
+    ]
+    },
+    {
+      "type": "TYPE264",
+      "connections": [
+      {"from":"A1","to":"A2","type":"coil_connection","description":"线圈连接"}
+    ]
+    },
+    {
+      "type": "TYPE266",
+      "connections": [
+    ]
+    }
+  ]
+}
