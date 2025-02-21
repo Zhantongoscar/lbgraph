@@ -1,0 +1,7 @@
+[
+  {
+    "ports": ["A1", "A2"],
+    "property": "control",
+    "direction": "bidirectional"
+  }
+]
