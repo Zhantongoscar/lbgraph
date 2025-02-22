@@ -219,16 +219,16 @@ public:
         mysql_free_result(result);
 
         // 保存到文件
-        std::ofstream rulesFile("rules_type_conn.json");
+        std::ofstream rulesFile("c2_rules_type_conn.json");
         if (!rulesFile.is_open()) {
-            std::cerr << "无法创建rules_type_conn.json文件" << std::endl;
+            std::cerr << "无法创建c2_rules_type_conn.json文件" << std::endl;
             return false;
         }
 
         rulesFile << allRules.str();
         rulesFile.close();
 
-        std::cout << "连接规则已生成并保存到rules_type_conn.json" << std::endl;
+        std::cout << "连接规则已生成并保存到c2_rules_type_conn.json" << std::endl;
         return true;
     }
 };
