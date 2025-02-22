@@ -207,7 +207,7 @@ public:
                 connection["to"] = conn.second;
                 if (conn.first == "A1" || conn.first == "A2" || conn.second == "A1" || conn.second == "A2") {
                     connection["type"] = "coil_connection";
-                    connection["description"] = u8"线圈连接";
+                    // connection["description"] = u8"线圈连接";
                 } else {
                     std::string groupName;
                     if (isdigit(conn.first[0])) {
@@ -218,7 +218,7 @@ public:
                         groupName = conn.first[0] == 'L' ? "L" : "T";
                     }
                     connection["type"] = "contact_connection";
-                    connection["description"] = u8"触点组" + groupName + u8"连接";
+                    // connection["description"] = u8"触点组" + groupName + u8"连接";
                 }
                 connections.push_back(connection);
             }
