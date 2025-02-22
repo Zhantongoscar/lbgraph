@@ -1,15 +1,29 @@
-#include <mysql.h>
+#include "C:/clib/mysql/include/mysql.h"
 #include <iostream>
 #include <string>
 #include <vector>
 #include <set>
 #include <fstream>
 #include <sstream>
+#include "nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 class TypeConnAnalyzer {
 private:
     MYSQL* conn;
     std::string typesTableName;
+    json rules;
+
+    // 从预定义规则中找到合适的连接
+    bool checkRulesForType(const std::string& type, const std::vector<std::string>& terminals, std::set<std::pair<std::string, std::string>>& conn_list) {
+        if (terminals.size() != 2) {
+            std::cerr << "类型 " << type << " 的终端数不为2" << std::endl;
+            return false;
+        }
+        // 其他规则检查...
+        return true;
+    }
 
     bool loadConfig(std::string& host, std::string& user, std::string& password, std::string& database) {
         std::ifstream configFile("config.json");
@@ -18,122 +32,34 @@ private:
             return false;
         }
 
-        std::string line;
-        std::string jsonStr;
-        while (std::getline(configFile, line)) {
-            jsonStr += line;
-        }
+        json config;
+        configFile >> config;
         configFile.close();
 
-        // 先定位mysql部分
-        size_t mysqlStart = jsonStr.find("\"mysql\"");
-        if (mysqlStart == std::string::npos) {
+        if (!config.contains("mysql")) {
             std::cerr << "配置文件中未找到MySQL配置" << std::endl;
             return false;
         }
-        
-        // 找到mysql对象的结束位置
-        size_t mysqlEnd = jsonStr.find("}", mysqlStart);
-        if (mysqlEnd == std::string::npos) {
-            std::cerr << "MySQL配置格式错误" << std::endl;
-            return false;
-        }
-        
-        // 只在mysql部分中查找配置
-        std::string mysqlConfig = jsonStr.substr(mysqlStart, mysqlEnd - mysqlStart);
 
-        size_t pos = mysqlConfig.find("\"host\"");
-        if (pos != std::string::npos) {
-            size_t start = mysqlConfig.find("\"", pos + 6) + 1;
-            size_t end = mysqlConfig.find("\"", start);
-            host = mysqlConfig.substr(start, end - start);
-        }
-
-        pos = mysqlConfig.find("\"user\"");
-        if (pos != std::string::npos) {
-            size_t start = mysqlConfig.find("\"", pos + 6) + 1;
-            size_t end = mysqlConfig.find("\"", start);
-            user = mysqlConfig.substr(start, end - start);
-        }
-
-        pos = mysqlConfig.find("\"password\"");
-        if (pos != std::string::npos) {
-            size_t start = mysqlConfig.find("\"", pos + 10) + 1;
-            size_t end = mysqlConfig.find("\"", start);
-            password = mysqlConfig.substr(start, end - start);
-        }
-
-        pos = mysqlConfig.find("\"database\"");
-        if (pos != std::string::npos) {
-            size_t start = mysqlConfig.find("\"", pos + 10) + 1;
-            size_t end = mysqlConfig.find("\"", start);
-            database = mysqlConfig.substr(start, end - start);
-        }
-
+        auto& mysql = config["mysql"];
+        host = mysql["host"];
+        user = mysql["user"];
+        password = mysql["password"];
+        database = mysql["database"];
         return true;
-    }
-
-    std::string escapeString(const std::string& str) {
-        char* escaped = new char[str.length() * 2 + 1];
-        mysql_real_escape_string(conn, escaped, str.c_str(), str.length());
-        std::string result(escaped);
-        delete[] escaped;
-        return result;
-    }
-
-    // 分析端子列表查找可能的连接
-    std::string analyzeTerminals(const std::vector<std::string>& terminals) {
-        std::stringstream connections;
-        std::set<std::string> processedPairs;
-        bool firstConn = true;
-
-        connections << "[";
-
-        for (size_t i = 0; i < terminals.size(); i++) {
-            for (size_t j = i + 1; j < terminals.size(); j++) {
-                const std::string& t1 = terminals[i];
-                const std::string& t2 = terminals[j];
-
-                // 检查A1-A2配对
-                if ((t1 == "A1" && t2 == "A2") || (t1 == "A2" && t2 == "A1")) {
-                    std::string pair = t1 < t2 ? t1 + "-" + t2 : t2 + "-" + t1;
-                    if (processedPairs.find(pair) == processedPairs.end()) {
-                        if (!firstConn) connections << ",";
-                        connections << "\n      {";
-                        connections << "\"from\":\"" << t1 << "\",";
-                        connections << "\"to\":\"" << t2 << "\",";
-                        connections << "\"type\":\"coil_connection\",";
-                        connections << "\"description\":\"线圈连接\"";
-                        connections << "}";
-                        processedPairs.insert(pair);
-                        firstConn = false;
-                    }
-                }
-                // 检查触点组连接（如11-12-14）
-                else if (t1.length() == 2 && t2.length() == 2 && 
-                         t1[0] == t2[0] && std::isdigit(t1[0])) {
-                    std::string pair = t1 < t2 ? t1 + "-" + t2 : t2 + "-" + t1;
-                    if (processedPairs.find(pair) == processedPairs.end()) {
-                        if (!firstConn) connections << ",";
-                        connections << "\n      {";
-                        connections << "\"from\":\"" << t1 << "\",";
-                        connections << "\"to\":\"" << t2 << "\",";
-                        connections << "\"type\":\"contact_connection\",";
-                        connections << "\"description\":\"触点组" << t1[0] << "连接\"";
-                        connections << "}";
-                        processedPairs.insert(pair);
-                        firstConn = false;
-                    }
-                }
-            }
-        }
-
-        connections << "\n    ]";
-        return connections.str();
     }
 
 public:
     TypeConnAnalyzer() : typesTableName("panel_types") {
+        // 加载预定义的连接规则
+        std::ifstream rulesFile("c2_rules_type_conn.json");
+        if (!rulesFile.is_open()) {
+            std::cerr << "无法打开c2_rules_type_conn.json文件" << std::endl;
+            return;
+        }
+        rulesFile >> rules;
+        rulesFile.close();
+
         std::cout << "开始初始化MySQL..." << std::endl;
         conn = mysql_init(NULL);
         if (conn == NULL) {
@@ -152,7 +78,7 @@ public:
         std::cout << "正在连接到MySQL数据库: " << host << ", 数据库: " << database << std::endl;
 
         if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(), 
-                               database.c_str(), 0, NULL, 0)) {
+                             database.c_str(), 0, NULL, 0)) {
             std::cerr << "连接MySQL失败: " << mysql_error(conn) << std::endl;
             return;
         }
@@ -165,78 +91,74 @@ public:
         }
     }
 
-    bool generateConnectionRules() {
-        std::cout << "开始生成连接规则..." << std::endl;
+    bool processConnections() {
+        std::cout << "开始处理连接..." << std::endl;
         std::string query = "SELECT type, terminal_list FROM " + typesTableName;
-        std::cout << "执行查询: " << query << std::endl;
         
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "查询失败: " << mysql_error(conn) << std::endl;
             return false;
         }
-        std::cout << "查询执行成功" << std::endl;
 
         MYSQL_RES* result = mysql_store_result(conn);
         if (!result) {
             std::cerr << "获取结果失败: " << mysql_error(conn) << std::endl;
             return false;
         }
-        std::cout << "成功获取查询结果" << std::endl;
 
-        // 开始构建JSON字符串
-        std::stringstream allRules;
-        allRules << "{\n  \"types\": [";
-        bool firstType = true;
-
+        std::set<std::pair<std::string, std::string>> inner_conn_list;
         MYSQL_ROW row;
         while ((row = mysql_fetch_row(result))) {
             std::string type = row[0];
-            std::string terminalListStr = row[1];
-
-            // 解析terminal_list（JSON数组格式）
-            std::vector<std::string> terminals;
-            size_t pos = 0;
-            while ((pos = terminalListStr.find("\"", pos)) != std::string::npos) {
-                pos++; // 跳过开头的引号
-                size_t endPos = terminalListStr.find("\"", pos);
-                if (endPos != std::string::npos) {
-                    terminals.push_back(terminalListStr.substr(pos, endPos - pos));
-                    pos = endPos + 1;
-                }
+            json terminals = json::parse(row[1]);
+            std::vector<std::string> terminal_vec = terminals.get<std::vector<std::string>>();
+            
+            if (!checkRulesForType(type, terminal_vec, inner_conn_list)) {
+                std::cerr << "处理类型 " << type << " 失败" << std::endl;
+                continue;
             }
-
-            if (!firstType) allRules << ",";
-            allRules << "\n    {\n";
-            allRules << "      \"type\": \"" << type << "\",\n";
-            allRules << "      \"connections\": ";
-            allRules << analyzeTerminals(terminals);
-            allRules << "\n    }";
-            firstType = false;
+            
+            std::cout << "处理类型: " << type 
+                      << ", 终端数: " << terminal_vec.size() 
+                      << ", 原始JSON: " << row[1] << std::endl;
         }
-
-        allRules << "\n  ]\n}";
 
         mysql_free_result(result);
 
-        // 保存到文件
-        std::ofstream rulesFile("c2_rules_type_conn.json");
-        if (!rulesFile.is_open()) {
-            std::cerr << "无法创建c2_rules_type_conn.json文件" << std::endl;
-            return false;
+        // 将结果保存到JSON文件
+        json output;
+        output["connections"] = json::array();
+        for (const auto& conn : inner_conn_list) {
+            json connection;
+            connection["from"] = conn.first;
+            connection["to"] = conn.second;
+            if (conn.first == "A1" || conn.first == "A2") {
+                connection["type"] = "coil_connection";
+                connection["description"] = "线圈连接";
+            } else {
+                connection["type"] = "contact_connection";
+                connection["description"] = "触点组" + std::string(1, conn.first[0]) + "连接";
+            }
+            output["connections"].push_back(connection);
         }
 
-        rulesFile << allRules.str();
-        rulesFile.close();
+        std::ofstream outFile("inner_rules.json");
+        if (!outFile.is_open()) {
+            std::cerr << "无法创建inner_rules.json文件" << std::endl;
+            return false;
+        }
+        outFile << output.dump(2);
+        outFile.close();
 
-        std::cout << "连接规则已生成并保存到c2_rules_type_conn.json" << std::endl;
+        std::cout << "连接规则已保存到inner_rules.json" << std::endl;
         return true;
     }
 };
 
 int main() {
     TypeConnAnalyzer analyzer;
-    if (!analyzer.generateConnectionRules()) {
-        std::cerr << "生成连接规则失败" << std::endl;
+    if (!analyzer.processConnections()) {
+        std::cerr << "处理连接失败" << std::endl;
         return 1;
     }
     return 0;
