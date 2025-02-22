@@ -174,7 +174,7 @@ public:
         mysql_set_character_set(conn, "utf8mb4");
         
         std::cout << "开始处理连接..." << std::endl;
-        std::string query = "SELECT id, terminal_list FROM panel_device_inner";
+        std::string query = "SELECT id, terminal_list FROM panel_types";
         
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "查询失败: " << mysql_error(conn) << std::endl;
@@ -224,7 +224,7 @@ public:
             }
 
             // 更新数据库中的inner_conn_list字段
-            std::string updateQuery = "UPDATE panel_device_inner SET inner_conn_list = ? WHERE id = ?";
+            std::string updateQuery = "UPDATE panel_types SET inner_conn_list = ? WHERE id = ?";
             
             MYSQL_STMT* stmt = mysql_stmt_init(conn);
             if (!stmt) {
