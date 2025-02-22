@@ -14,6 +14,32 @@ private:
     MYSQL* conn;
     json rules;
 
+    bool validateRules(const json& rulesJson) {
+        if (!rulesJson.contains("rules")) {
+            std::cerr << "错误：JSON文件缺少'rules'字段" << std::endl;
+            return false;
+        }
+
+        if (!rulesJson["rules"].is_array()) {
+            std::cerr << "错误：'rules'字段不是数组" << std::endl;
+            return false;
+        }
+
+        for (const auto& rule : rulesJson["rules"]) {
+            if (!rule.is_array() || rule.size() != 2) {
+                std::cerr << "错误：规则格式错误，每个规则必须是包含两个元素的数组" << std::endl;
+                return false;
+            }
+            if (!rule[0].is_string() || !rule[1].is_string()) {
+                std::cerr << "错误：规则中的端子必须是字符串" << std::endl;
+                return false;
+            }
+        }
+
+        std::cout << "规则验证通过，共 " << rulesJson["rules"].size() << " 条规则" << std::endl;
+        return true;
+    }
+
     bool checkRulesForDevice(const std::string& deviceId, const std::vector<std::string>& terminals, std::set<std::pair<std::string, std::string>>& conn_list) {
         if (terminals.empty()) {
             std::cerr << "设备 " << deviceId << " 没有终端" << std::endl;
@@ -62,46 +88,74 @@ private:
         return true;
     }
 
+    bool loadRules() {
+        try {
+            std::cout << "开始加载连接规则文件..." << std::endl;
+            std::ifstream rulesFile("c2_rules_type_conn.json");
+            if (!rulesFile.is_open()) {
+                std::cerr << "错误：无法打开c2_rules_type_conn.json文件" << std::endl;
+                return false;
+            }
+
+            std::string jsonContent;
+            std::stringstream buffer;
+            buffer << rulesFile.rdbuf();
+            jsonContent = buffer.str();
+            rulesFile.close();
+
+            std::cout << "文件内容读取完成，开始解析JSON..." << std::endl;
+            rules = json::parse(jsonContent);
+            
+            std::cout << "JSON解析成功，开始验证规则格式..." << std::endl;
+            if (!validateRules(rules)) {
+                return false;
+            }
+
+            return true;
+        } catch (const json::parse_error& e) {
+            std::cerr << "JSON解析错误: " << e.what() << std::endl;
+            std::cerr << "错误位置: 行 " << e.byte << std::endl;
+            return false;
+        } catch (const std::exception& e) {
+            std::cerr << "加载规则时发生错误: " << e.what() << std::endl;
+            return false;
+        }
+    }
+
 public:
     TypeConnAnalyzer() {
-        // 加载预定义的连接规则
-        std::ifstream rulesFile("c2_rules_type_conn.json");
-        if (!rulesFile.is_open()) {
-            std::cerr << "无法打开c2_rules_type_conn.json文件" << std::endl;
-            return;
-        }
-        rulesFile >> rules;
-        rulesFile.close();
-
-        std::cout << "开始初始化MySQL..." << std::endl;
+        std::cout << "正在初始化TypeConnAnalyzer..." << std::endl;
+        
         conn = mysql_init(NULL);
         if (conn == NULL) {
-            std::cerr << "MySQL初始化失败" << std::endl;
-            return;
+            throw std::runtime_error("MySQL初始化失败");
         }
         std::cout << "MySQL初始化成功" << std::endl;
 
         std::string host, user, password, database;
-        std::cout << "加载配置文件..." << std::endl;
+        std::cout << "加载数据库配置文件..." << std::endl;
         if (!loadConfig(host, user, password, database)) {
-            std::cerr << "加载配置失败" << std::endl;
-            return;
+            throw std::runtime_error("加载数据库配置失败");
         }
         std::cout << "配置加载成功" << std::endl;
-        std::cout << "正在连接到MySQL数据库: " << host << ", 数据库: " << database << std::endl;
 
         if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(), 
                              database.c_str(), 0, NULL, 0)) {
-            std::cerr << "连接MySQL失败: " << mysql_error(conn) << std::endl;
-            return;
+            std::string error = mysql_error(conn);
+            throw std::runtime_error("连接MySQL失败: " + error);
         }
         
-        // 设置 MySQL 连接的字符集为 UTF-8
         if (mysql_set_character_set(conn, "utf8mb4")) {
-            std::cerr << "设置字符集失败: " << mysql_error(conn) << std::endl;
-            return;
+            std::string error = mysql_error(conn);
+            throw std::runtime_error("设置字符集失败: " + error);
         }
         std::cout << "成功连接到MySQL数据库，字符集设置为 utf8mb4" << std::endl;
+
+        // 数据库连接成功后再加载规则
+        if (!loadRules()) {
+            throw std::runtime_error("规则加载失败");
+        }
+        std::cout << "规则加载成功" << std::endl;
     }
 
     ~TypeConnAnalyzer() {
@@ -111,6 +165,11 @@ public:
     }
 
     bool processConnections() {
+        if (!conn || !rules.contains("rules")) {
+            std::cerr << "数据库连接或规则未正确初始化" << std::endl;
+            return false;
+        }
+
         // 设置 MySQL 连接的字符集为 UTF-8
         mysql_set_character_set(conn, "utf8mb4");
         
@@ -213,10 +272,15 @@ public:
 };
 
 int main() {
-    TypeConnAnalyzer analyzer;
-    if (!analyzer.processConnections()) {
-        std::cerr << "处理连接失败" << std::endl;
+    try {
+        TypeConnAnalyzer analyzer;
+        if (!analyzer.processConnections()) {
+            std::cerr << "处理连接失败" << std::endl;
+            return 1;
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "程序执行发生错误: " << e.what() << std::endl;
         return 1;
     }
-    return 0;
 }
