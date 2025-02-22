@@ -10,7 +10,7 @@ echo 当前目录: %PROJ_DIR%
 echo Include目录: %INCLUDE_DIR%
 echo MySQL Include目录: %MYSQL_INC%
 
-set COMPILE_CMD=g++ c2_init_type_conn.cpp -o type_conn.exe -I"%MYSQL_INC%" -I. -I"%INCLUDE_DIR%" -L"%MYSQL_LIB%" -g -Wall "%MYSQL_LIB%\libmysql.lib" -lwsock32 -lws2_32
+set COMPILE_CMD=g++ -o type_conn.exe c2_init_type_conn.cpp -I"%MYSQL_INC%" -I. -I"%INCLUDE_DIR%" -L"%MYSQL_LIB%" -g -Wall "%MYSQL_LIB%\libmysql.lib" -lwsock32 -lws2_32
 
 echo 编译命令:
 echo %COMPILE_CMD%

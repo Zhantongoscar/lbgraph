@@ -12,16 +12,29 @@ using json = nlohmann::json;
 class TypeConnAnalyzer {
 private:
     MYSQL* conn;
-    std::string typesTableName;
     json rules;
 
-    // 从预定义规则中找到合适的连接
-    bool checkRulesForType(const std::string& type, const std::vector<std::string>& terminals, std::set<std::pair<std::string, std::string>>& conn_list) {
-        if (terminals.size() != 2) {
-            std::cerr << "类型 " << type << " 的终端数不为2" << std::endl;
+    bool checkRulesForDevice(const std::string& deviceId, const std::vector<std::string>& terminals, std::set<std::pair<std::string, std::string>>& conn_list) {
+        if (terminals.empty()) {
+            std::cerr << "设备 " << deviceId << " 没有终端" << std::endl;
             return false;
         }
-        // 其他规则检查...
+
+        // 遍历规则，只添加规则中定义的连接
+        for (const auto& rule : rules["rules"]) {
+            std::string term1 = rule[0];
+            std::string term2 = rule[1];
+            
+            // 检查这个设备是否有规则中的两个端子
+            bool hasFirst = std::find(terminals.begin(), terminals.end(), term1) != terminals.end();
+            bool hasSecond = std::find(terminals.begin(), terminals.end(), term2) != terminals.end();
+            
+            // 如果设备有这两个端子，添加连接
+            if (hasFirst && hasSecond) {
+                conn_list.insert(std::make_pair(term1, term2));
+                std::cout << "设备 " << deviceId << " 添加连接: " << term1 << " -> " << term2 << std::endl;
+            }
+        }
         return true;
     }
 
@@ -50,7 +63,7 @@ private:
     }
 
 public:
-    TypeConnAnalyzer() : typesTableName("panel_types") {
+    TypeConnAnalyzer() {
         // 加载预定义的连接规则
         std::ifstream rulesFile("c2_rules_type_conn.json");
         if (!rulesFile.is_open()) {
@@ -82,7 +95,13 @@ public:
             std::cerr << "连接MySQL失败: " << mysql_error(conn) << std::endl;
             return;
         }
-        std::cout << "成功连接到MySQL数据库" << std::endl;
+        
+        // 设置 MySQL 连接的字符集为 UTF-8
+        if (mysql_set_character_set(conn, "utf8mb4")) {
+            std::cerr << "设置字符集失败: " << mysql_error(conn) << std::endl;
+            return;
+        }
+        std::cout << "成功连接到MySQL数据库，字符集设置为 utf8mb4" << std::endl;
     }
 
     ~TypeConnAnalyzer() {
@@ -92,8 +111,11 @@ public:
     }
 
     bool processConnections() {
+        // 设置 MySQL 连接的字符集为 UTF-8
+        mysql_set_character_set(conn, "utf8mb4");
+        
         std::cout << "开始处理连接..." << std::endl;
-        std::string query = "SELECT type, terminal_list FROM " + typesTableName;
+        std::string query = "SELECT id, terminal_list FROM panel_device_inner";
         
         if (mysql_query(conn, query.c_str())) {
             std::cerr << "查询失败: " << mysql_error(conn) << std::endl;
@@ -106,51 +128,86 @@ public:
             return false;
         }
 
-        std::set<std::pair<std::string, std::string>> inner_conn_list;
         MYSQL_ROW row;
         while ((row = mysql_fetch_row(result))) {
-            std::string type = row[0];
+            std::string id = row[0];
             json terminals = json::parse(row[1]);
             std::vector<std::string> terminal_vec = terminals.get<std::vector<std::string>>();
             
-            if (!checkRulesForType(type, terminal_vec, inner_conn_list)) {
-                std::cerr << "处理类型 " << type << " 失败" << std::endl;
+            std::set<std::pair<std::string, std::string>> inner_conn_list;
+            if (!checkRulesForDevice(id, terminal_vec, inner_conn_list)) {
+                std::cerr << "处理设备 " << id << " 失败" << std::endl;
                 continue;
             }
             
-            std::cout << "处理类型: " << type 
-                      << ", 终端数: " << terminal_vec.size() 
-                      << ", 原始JSON: " << row[1] << std::endl;
+            // 将连接信息转换为JSON格式
+            json connections = json::array();
+            for (const auto& conn : inner_conn_list) {
+                json connection;
+                connection["from"] = conn.first;
+                connection["to"] = conn.second;
+                if (conn.first == "A1" || conn.first == "A2" || conn.second == "A1" || conn.second == "A2") {
+                    connection["type"] = "coil_connection";
+                    connection["description"] = u8"线圈连接";
+                } else {
+                    std::string groupName;
+                    if (isdigit(conn.first[0])) {
+                        groupName = std::string(1, conn.first[0]);
+                    } else if (isdigit(conn.second[0])) {
+                        groupName = std::string(1, conn.second[0]);
+                    } else {
+                        groupName = conn.first[0] == 'L' ? "L" : "T";
+                    }
+                    connection["type"] = "contact_connection";
+                    connection["description"] = u8"触点组" + groupName + u8"连接";
+                }
+                connections.push_back(connection);
+            }
+
+            // 更新数据库中的inner_conn_list字段
+            std::string updateQuery = "UPDATE panel_device_inner SET inner_conn_list = ? WHERE id = ?";
+            
+            MYSQL_STMT* stmt = mysql_stmt_init(conn);
+            if (!stmt) {
+                std::cerr << "mysql_stmt_init() failed" << std::endl;
+                continue;
+            }
+
+            if (mysql_stmt_prepare(stmt, updateQuery.c_str(), updateQuery.length())) {
+                std::cerr << "mysql_stmt_prepare() failed: " << mysql_stmt_error(stmt) << std::endl;
+                mysql_stmt_close(stmt);
+                continue;
+            }
+
+            std::string connectionsJson = connections.dump();
+            
+            MYSQL_BIND bind[2];
+            memset(bind, 0, sizeof(bind));
+            
+            bind[0].buffer_type = MYSQL_TYPE_STRING;
+            bind[0].buffer = (void*)connectionsJson.c_str();
+            bind[0].buffer_length = connectionsJson.length();
+            
+            bind[1].buffer_type = MYSQL_TYPE_STRING;
+            bind[1].buffer = (void*)id.c_str();
+            bind[1].buffer_length = id.length();
+
+            if (mysql_stmt_bind_param(stmt, bind)) {
+                std::cerr << "mysql_stmt_bind_param() failed: " << mysql_stmt_error(stmt) << std::endl;
+                mysql_stmt_close(stmt);
+                continue;
+            }
+
+            if (mysql_stmt_execute(stmt)) {
+                std::cerr << "mysql_stmt_execute() failed: " << mysql_stmt_error(stmt) << std::endl;
+            } else {
+                std::cout << "已更新设备 " << id << " 的连接信息" << std::endl;
+            }
+
+            mysql_stmt_close(stmt);
         }
 
         mysql_free_result(result);
-
-        // 将结果保存到JSON文件
-        json output;
-        output["connections"] = json::array();
-        for (const auto& conn : inner_conn_list) {
-            json connection;
-            connection["from"] = conn.first;
-            connection["to"] = conn.second;
-            if (conn.first == "A1" || conn.first == "A2") {
-                connection["type"] = "coil_connection";
-                connection["description"] = "线圈连接";
-            } else {
-                connection["type"] = "contact_connection";
-                connection["description"] = "触点组" + std::string(1, conn.first[0]) + "连接";
-            }
-            output["connections"].push_back(connection);
-        }
-
-        std::ofstream outFile("inner_rules.json");
-        if (!outFile.is_open()) {
-            std::cerr << "无法创建inner_rules.json文件" << std::endl;
-            return false;
-        }
-        outFile << output.dump(2);
-        outFile.close();
-
-        std::cout << "连接规则已保存到inner_rules.json" << std::endl;
         return true;
     }
 };
