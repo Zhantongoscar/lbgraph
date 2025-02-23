@@ -1,7 +1,7 @@
 {
     "neo4j": {
-        "uri": "neo4j://192.168.35.10:7687",
-        "user": "neo4j",
+        "uri": "http://192.168.35.10:7474",
+        "username": "neo4j",
         "password": "13701033228",
         "config": {
             "max_connection_pool_size": 10,
