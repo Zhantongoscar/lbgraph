@@ -183,7 +183,7 @@ def main():
     try:
         if not syncer.connect_mysql():
             return
-
+        print ("1 仿真设备及单元\n")
         device_types, devices, points = syncer.fetch_simulation_data()
         syncer.sync_to_neo4j(device_types, devices, points)
         print("\n提示: 在Neo4j浏览器中可以使用以下查询来分析节点:")
