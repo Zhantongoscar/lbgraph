@@ -1,8 +1,19 @@
-
 import argparse
+import logging
 from neo4j import GraphDatabase
 import pymysql
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD, NEO4J_CONFIG, MYSQL_CONFIG
+from datetime import datetime
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('import_sim.log'),
+        logging.StreamHandler()
+    ]
+)
 
 class SimulationSyncer:
     def __init__(self, mysql_config=None, neo4j_uri=None, neo4j_user=None, neo4j_password=None):
@@ -13,40 +24,76 @@ class SimulationSyncer:
             auth=(neo4j_user or NEO4J_USER, neo4j_password or NEO4J_PASSWORD),
             **NEO4J_CONFIG
         )
+        self.logger = logging.getLogger(__name__)
 
     def connect_mysql(self):
         try:
-            print(f"尝试连接MySQL,配置信息: {self.mysql_config}")
+            self.logger.info(f"尝试连接MySQL,配置信息: {self.mysql_config}")
             self.mysql_conn = pymysql.connect(**self.mysql_config)
-            print("MySQL连接成功!")
+            self.logger.info("MySQL连接成功!")
             return True
         except pymysql.Error as e:
-            print(f"连接MySQL失败,错误详情: {e}")
-            print(f"错误代码: {e.args[0]}")
-            print(f"错误消息: {e.args[1]}")
+            self.logger.error(f"连接MySQL失败,错误详情: {e}")
+            self.logger.error(f"错误代码: {e.args[0]}")
+            self.logger.error(f"错误消息: {e.args[1]}")
             return False
 
     def fetch_simulation_data(self):
         cursor = self.mysql_conn.cursor(pymysql.cursors.DictCursor)
         
-        # 获取设备类型
-        cursor.execute("SELECT * FROM device_types")
-        device_types = cursor.fetchall()
-           
-        # 获取设备
-        cursor.execute("SELECT * FROM devices")
-        devices = cursor.fetchall()
+        try:
+            # 获取设备类型
+            self.logger.info("正在获取设备类型数据...")
+            cursor.execute("SELECT * FROM device_types")
+            device_types = cursor.fetchall()
+            self.logger.info(f"获取到{len(device_types)}个设备类型")
+                
+            # 获取设备
+            self.logger.info("正在获取设备数据...")
+            cursor.execute("SELECT * FROM devices")
+            devices = cursor.fetchall()
+            self.logger.info(f"获取到{len(devices)}个设备")
 
-        # 获取设备类型点位配置
-        cursor.execute("""
-            SELECT dtp.*, dt.type_name
-            FROM device_type_points dtp
-            JOIN device_types dt ON dtp.device_type_id = dt.id
-        """)
-        points = cursor.fetchall()
+            # 获取设备类型点位配置
+            self.logger.info("正在获取点位配置数据...")
+            cursor.execute("""
+                SELECT dtp.*, dt.type_name
+                FROM device_type_points dtp
+                JOIN device_types dt ON dtp.device_type_id = dt.id
+            """)
+            points = cursor.fetchall()
+            self.logger.info(f"获取到{len(points)}个点位配置")
+
+            # 数据验证
+            self._validate_data(device_types, devices, points)
+            
+            cursor.close()
+            return device_types, devices, points
+            
+        except pymysql.Error as e:
+            self.logger.error(f"获取数据时发生错误: {e}")
+            if cursor:
+                cursor.close()
+            raise
+
+    def _validate_data(self, device_types, devices, points):
+        """验证数据的完整性和有效性"""
+        self.logger.info("开始验证数据...")
         
-        cursor.close()
-        return device_types, devices, points
+        # 验证设备类型引用
+        type_ids = {dt['id'] for dt in device_types}
+        invalid_devices = [d for d in devices if d['type_id'] not in type_ids]
+        if invalid_devices:
+            self.logger.warning(f"发现{len(invalid_devices)}个设备引用了不存在的设备类型")
+            for dev in invalid_devices:
+                self.logger.warning(f"设备ID {dev['id']} 引用了不存在的类型ID {dev['type_id']}")
+
+        # 验证点位配置
+        invalid_points = [p for p in points if p['device_type_id'] not in type_ids]
+        if invalid_points:
+            self.logger.warning(f"发现{len(invalid_points)}个点位配置引用了不存在的设备类型")
+
+        self.logger.info("数据验证完成")
 
     def sync_to_neo4j(self, device_types, devices, points):
         # 首先确保约束存在
@@ -54,10 +101,15 @@ class SimulationSyncer:
         
         with self.neo4j_driver.session() as session:
             # 创建仿真设备节点
+            self.logger.info("开始创建仿真节点...")
             session.execute_write(self._create_simulation_vertices, devices, points)
             
+            # 创建节点间的连接关系
+            self.logger.info("开始创建节点间连接关系...")
+            session.execute_write(self._create_connections, devices, points)
+            
             # 查询并显示节点信息
-            print("\n已创建的节点信息:")
+            self.logger.info("\n已创建的节点信息:")
             result = session.run("""
                 MATCH (v:Vertex)
                 RETURN v.name as name, v.UnitType as unit_type, 
@@ -70,8 +122,8 @@ class SimulationSyncer:
             for record in result:
                 if current_layer != record["layer"]:
                     current_layer = record["layer"]
-                    print(f"\n{current_layer}层节点:")
-                print(f"  - {record['name']}: {record['unit_type']}类型单元 (设备{record['device']}, 索引: {record['point']}, 类型: {record['type']})")
+                    self.logger.info(f"\n{current_layer}层节点:")
+                self.logger.info(f"  - {record['name']}: {record['unit_type']}类型单元 (设备{record['device']}, 索引: {record['point']}, 类型: {record['type']})")
             
             # 显示节点统计信息
             stats = session.run("""
@@ -81,9 +133,19 @@ class SimulationSyncer:
                 ORDER BY unit_type
             """)
             
-            print("\n节点统计:")
+            self.logger.info("\n节点统计:")
             for record in stats:
-                print(f"- {record['unit_type']}类型节点 ({record['type']}): {record['count']}个")
+                self.logger.info(f"- {record['unit_type']}类型节点 ({record['type']}): {record['count']}个")
+
+            # 显示连接关系统计（修改后的查询）
+            conn_stats = session.run("""
+                MATCH ()-[r]->()
+                RETURN type(r) as rel_type, count(r) as count
+            """)
+            
+            self.logger.info("\n连接关系统计:")
+            for record in conn_stats:
+                self.logger.info(f"- {record['rel_type']}类型关系: {record['count']}个")
 
     def ensure_constraints(self):
         """确保必要的约束存在"""
@@ -119,7 +181,8 @@ class SimulationSyncer:
                         Voltage: $initial_voltage,
                         NodeLayer: 'Simulation',
                         type: 'sim',
-                        IsEnabled: true
+                        IsEnabled: true,
+                        LastUpdate: $last_update
                     })
                 """, {
                     'name': f"SIM_{device['project_name']}+{device['module_type']}-{device['id']}:{point['point_index']}",
@@ -130,8 +193,38 @@ class SimulationSyncer:
                     'unit_type': unit_type,
                     'device_id': device['id'],
                     'point_index': point['point_index'],
-                    'initial_voltage': 0.0
+                    'initial_voltage': 0.0,
+                    'last_update': datetime.now().isoformat()
                 })
+
+    @staticmethod
+    def _create_connections(tx, devices, points):
+        """创建节点间的连接关系"""
+        # 创建同一设备内部点位之间的连接（优化后的查询）
+        tx.run("""
+            MATCH (v1:Vertex {type: 'sim'})
+            MATCH (v2:Vertex {type: 'sim'})
+            WHERE v1.DeviceId = v2.DeviceId 
+              AND v1.PointIndex < v2.PointIndex
+              AND id(v1) < id(v2)
+            CREATE (v1)-[:INTERNAL_CONNECTION {
+                type: 'internal',
+                created_at: $timestamp
+            }]->(v2)
+        """, {'timestamp': datetime.now().isoformat()})
+
+        # 创建相邻设备之间的连接（优化后的查询）
+        tx.run("""
+            MATCH (v1:Vertex {type: 'sim'})
+            MATCH (v2:Vertex {type: 'sim'})
+            WHERE v1.DeviceId < v2.DeviceId 
+              AND abs(v1.DeviceId - v2.DeviceId) = 1
+              AND id(v1) < id(v2)
+            CREATE (v1)-[:ADJACENT_CONNECTION {
+                type: 'adjacent',
+                created_at: $timestamp
+            }]->(v2)
+        """, {'timestamp': datetime.now().isoformat()})
 
     def close(self):
         if hasattr(self, 'mysql_conn'):
@@ -146,7 +239,7 @@ def main():
     parser.add_argument('--mysql_host', default=MYSQL_CONFIG['host'],
                        help='MySQL主机地址')
     parser.add_argument('--mysql_user', default=MYSQL_CONFIG['user'],
-                       help='MySQL用户名')
+                       help='MySQL密码')
     parser.add_argument('--mysql_password', default=MYSQL_CONFIG['password'],
                        help='MySQL密码')
     parser.add_argument('--mysql_db', default=MYSQL_CONFIG['database'],
@@ -169,9 +262,10 @@ def main():
         'database': args.mysql_db
     }
 
-    print("开始同步仿真数据...")
-    print(f"MySQL连接: {args.mysql_host}")
-    print(f"Neo4j连接: {args.neo4j_uri}")
+    logger = logging.getLogger(__name__)
+    logger.info("开始同步仿真数据...")
+    logger.info(f"MySQL连接: {args.mysql_host}")
+    logger.info(f"Neo4j连接: {args.neo4j_uri}")
 
     syncer = SimulationSyncer(
         mysql_config=mysql_config,
@@ -183,11 +277,11 @@ def main():
     try:
         if not syncer.connect_mysql():
             return
-        print ("1 仿真设备及单元\n")
+        logger.info("1. 仿真设备及单元\n")
         device_types, devices, points = syncer.fetch_simulation_data()
         syncer.sync_to_neo4j(device_types, devices, points)
-        print("\n提示: 在Neo4j浏览器中可以使用以下查询来分析节点:")
-        print("""
+        logger.info("\n提示: 在Neo4j浏览器中可以使用以下查询来分析节点:")
+        logger.info("""
 1. 查看所有仿真节点:
 MATCH (v:Vertex {type: 'sim'})
 RETURN v
@@ -201,6 +295,20 @@ ORDER BY unit_type
 3. 查看启用的仿真节点:
 MATCH (v:Vertex {type: 'sim'})
 WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
 RETURN v
         """)
     finally:
