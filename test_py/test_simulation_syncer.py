@@ -1,6 +1,7 @@
 import unittest
 import logging
 from unittest.mock import Mock, patch
+import json
 from c4_import_mysql_sim import SimulationSyncer
 
 class TestSimulationSyncer(unittest.TestCase):
@@ -25,6 +26,18 @@ class TestSimulationSyncer(unittest.TestCase):
             {'device_type_id': 2, 'point_type': 'DO', 'point_index': 1}
         ]
 
+        # 新增面板连接测试数据
+        self.test_panel_connections = [
+            {
+                'device_id': 1,
+                'panel_id': 'P1',
+                'connections': json.dumps([
+                    {"from": "21", "to": "22", "type": "contact_connection"},
+                    {"from": "A1", "to": "A2", "type": "coil_connection"}
+                ])
+            }
+        ]
+
     def test_data_validation_success(self):
         """测试数据验证成功的情况"""
         syncer = SimulationSyncer()
@@ -43,6 +56,40 @@ class TestSimulationSyncer(unittest.TestCase):
             syncer._validate_data(self.test_device_types, invalid_devices, self.test_points)
             self.assertIn('引用了不存在的设备类型', log.output[0])
 
+    def test_process_panel_connections(self):
+        """测试面板连接数据处理"""
+        syncer = SimulationSyncer()
+        processed = syncer.process_panel_connections(self.test_panel_connections)
+        
+        self.assertEqual(len(processed), 2)  # 应该有两个连接
+        
+        # 验证第一个连接（触点连接）
+        self.assertEqual(processed[0]['from_terminal'], '21')
+        self.assertEqual(processed[0]['to_terminal'], '22')
+        self.assertEqual(processed[0]['connection_type'], 'contact_connection')
+        
+        # 验证第二个连接（线圈连接）
+        self.assertEqual(processed[1]['from_terminal'], 'A1')
+        self.assertEqual(processed[1]['to_terminal'], 'A2')
+        self.assertEqual(processed[1]['connection_type'], 'coil_connection')
+
+    def test_process_panel_connections_invalid_json(self):
+        """测试处理无效JSON数据"""
+        syncer = SimulationSyncer()
+        invalid_connections = [
+            {
+                'device_id': 1,
+                'panel_id': 'P1',
+                'connections': 'invalid json'
+            }
+        ]
+        
+        # 验证错误日志
+        with self.assertLogs(level='ERROR') as log:
+            processed = syncer.process_panel_connections(invalid_connections)
+            self.assertEqual(len(processed), 0)
+            self.assertIn('解析连接数据时发生错误', log.output[0])
+
     @patch('neo4j.GraphDatabase.driver')
     @patch('pymysql.connect')
     def test_sync_process(self, mock_mysql, mock_neo4j):
@@ -52,7 +99,8 @@ class TestSimulationSyncer(unittest.TestCase):
         mock_cursor.fetchall.side_effect = [
             self.test_device_types,
             self.test_devices,
-            self.test_points
+            self.test_points,
+            self.test_panel_connections
         ]
         mock_mysql.return_value.cursor.return_value = mock_cursor
         
@@ -67,13 +115,14 @@ class TestSimulationSyncer(unittest.TestCase):
         self.assertTrue(syncer.connect_mysql())
         
         # 测试数据获取
-        device_types, devices, points = syncer.fetch_simulation_data()
+        device_types, devices, points, panel_connections = syncer.fetch_simulation_data()
         self.assertEqual(len(device_types), len(self.test_device_types))
         self.assertEqual(len(devices), len(self.test_devices))
         self.assertEqual(len(points), len(self.test_points))
+        self.assertEqual(len(panel_connections), len(self.test_panel_connections))
         
         # 测试Neo4j同步
-        syncer.sync_to_neo4j(device_types, devices, points)
+        syncer.sync_to_neo4j(device_types, devices, points, panel_connections)
         
         # 验证Neo4j操作
         self.assertTrue(mock_session.execute_write.called)

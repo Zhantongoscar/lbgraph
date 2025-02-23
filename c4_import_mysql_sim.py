@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 from neo4j import GraphDatabase
 import pymysql
@@ -64,17 +65,56 @@ class SimulationSyncer:
             points = cursor.fetchall()
             self.logger.info(f"获取到{len(points)}个点位配置")
 
+            # 获取面板设备内部连接数据
+            self.logger.info("正在获取面板设备内部连接数据...")
+            cursor.execute("SELECT * FROM panel_device_inner")
+            panel_connections = cursor.fetchall()
+            self.logger.info(f"获取到{len(panel_connections)}个面板连接配置")
+
             # 数据验证
             self._validate_data(device_types, devices, points)
             
             cursor.close()
-            return device_types, devices, points
+            return device_types, devices, points, panel_connections
             
         except pymysql.Error as e:
             self.logger.error(f"获取数据时发生错误: {e}")
             if cursor:
                 cursor.close()
             raise
+
+    def process_panel_connections(self, panel_connections):
+        """处理面板设备内部连接数据"""
+        processed_connections = []
+        for conn in panel_connections:
+            try:
+                # 解析JSON数据
+                connections = json.loads(conn['connections']) if isinstance(conn['connections'], str) else conn['connections']
+                for connection in connections:
+                    if not isinstance(connection, dict):
+                        self.logger.warning(f"跳过无效的连接数据: {connection}")
+                        continue
+                        
+                    if 'from' not in connection or 'to' not in connection or 'type' not in connection:
+                        self.logger.warning(f"连接数据缺少必要字段: {connection}")
+                        continue
+                        
+                    processed_connections.append({
+                        'from_terminal': connection['from'],
+                        'to_terminal': connection['to'],
+                        'connection_type': connection['type'],
+                        'device_id': conn.get('device_id'),
+                        'panel_id': conn.get('panel_id')
+                    })
+            except json.JSONDecodeError as e:
+                self.logger.error(f"解析连接数据时发生错误: {e}")
+                self.logger.error(f"原始数据: {conn['connections']}")
+                continue
+            except Exception as e:
+                self.logger.error(f"处理连接数据时发生未知错误: {e}")
+                continue
+                
+        return processed_connections
 
     def _validate_data(self, device_types, devices, points):
         """验证数据的完整性和有效性"""
@@ -95,7 +135,7 @@ class SimulationSyncer:
 
         self.logger.info("数据验证完成")
 
-    def sync_to_neo4j(self, device_types, devices, points):
+    def sync_to_neo4j(self, device_types, devices, points, panel_connections):
         # 首先确保约束存在
         self.ensure_constraints()
         
@@ -107,6 +147,13 @@ class SimulationSyncer:
             # 创建节点间的连接关系
             self.logger.info("开始创建节点间连接关系...")
             session.execute_write(self._create_connections, devices, points)
+            
+            # 处理并创建面板设备内部连接
+            self.logger.info("开始处理面板设备内部连接...")
+            processed_connections = self.process_panel_connections(panel_connections)
+            if processed_connections:
+                self.logger.info(f"创建{len(processed_connections)}个面板内部连接...")
+                session.execute_write(self._create_panel_connections, processed_connections)
             
             # 查询并显示节点信息
             self.logger.info("\n已创建的节点信息:")
@@ -137,7 +184,7 @@ class SimulationSyncer:
             for record in stats:
                 self.logger.info(f"- {record['unit_type']}类型节点 ({record['type']}): {record['count']}个")
 
-            # 显示连接关系统计（修改后的查询）
+            # 显示连接关系统计（包括面板内部连接）
             conn_stats = session.run("""
                 MATCH ()-[r]->()
                 RETURN type(r) as rel_type, count(r) as count
@@ -146,6 +193,28 @@ class SimulationSyncer:
             self.logger.info("\n连接关系统计:")
             for record in conn_stats:
                 self.logger.info(f"- {record['rel_type']}类型关系: {record['count']}个")
+
+    @staticmethod
+    def _create_panel_connections(tx, connections):
+        """创建面板设备内部连接"""
+        for conn in connections:
+            # 创建面板内部连接关系
+            tx.run("""
+                MATCH (v1:Vertex {DeviceId: $device_id, Terminal: $from_terminal}),
+                      (v2:Vertex {DeviceId: $device_id, Terminal: $to_terminal})
+                CREATE (v1)-[r:PANEL_CONNECTION {
+                    type: $connection_type,
+                    created_at: $timestamp,
+                    panel_id: $panel_id
+                }]->(v2)
+            """, {
+                'device_id': conn['device_id'],
+                'from_terminal': conn['from_terminal'],
+                'to_terminal': conn['to_terminal'],
+                'connection_type': conn['connection_type'],
+                'panel_id': conn['panel_id'],
+                'timestamp': datetime.now().isoformat()
+            })
 
     def ensure_constraints(self):
         """确保必要的约束存在"""
@@ -278,8 +347,8 @@ def main():
         if not syncer.connect_mysql():
             return
         logger.info("1. 仿真设备及单元\n")
-        device_types, devices, points = syncer.fetch_simulation_data()
-        syncer.sync_to_neo4j(device_types, devices, points)
+        device_types, devices, points, panel_connections = syncer.fetch_simulation_data()
+        syncer.sync_to_neo4j(device_types, devices, points, panel_connections)
         logger.info("\n提示: 在Neo4j浏览器中可以使用以下查询来分析节点:")
         logger.info("""
 1. 查看所有仿真节点:
@@ -298,7 +367,7 @@ WHERE v.IsEnabled = true
 RETURN v
 
 4. 查看节点间的连接关系:
-MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION]->()
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
 RETURN p LIMIT 100
 
 5. 按设备分组查看连接关系:
@@ -310,6 +379,16 @@ ORDER BY device
 MATCH (v:Vertex)
 WHERE NOT (v)-[]-()
 RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
         """)
     finally:
         syncer.close()

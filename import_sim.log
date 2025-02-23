@@ -363,3 +363,2133 @@ MATCH (v:Vertex)
 WHERE NOT (v)-[]-()
 RETURN v
         
+2025-02-23 19:42:16,858 - INFO - 开始同步仿真数据...
+2025-02-23 19:42:16,859 - INFO - MySQL连接: 192.168.35.10
+2025-02-23 19:42:16,859 - INFO - Neo4j连接: bolt://192.168.35.10:7687
+2025-02-23 19:42:16,859 - INFO - 尝试连接MySQL,配置信息: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+2025-02-23 19:42:16,894 - INFO - MySQL连接成功!
+2025-02-23 19:42:16,895 - INFO - 1. 仿真设备及单元
+
+2025-02-23 19:42:16,895 - INFO - 正在获取设备类型数据...
+2025-02-23 19:42:16,905 - INFO - 获取到18个设备类型
+2025-02-23 19:42:16,905 - INFO - 正在获取设备数据...
+2025-02-23 19:42:16,915 - INFO - 获取到4个设备
+2025-02-23 19:42:16,915 - INFO - 正在获取点位配置数据...
+2025-02-23 19:42:16,935 - INFO - 获取到194个点位配置
+2025-02-23 19:42:16,936 - INFO - 正在获取面板设备内部连接数据...
+2025-02-23 19:42:16,968 - INFO - 获取到266个面板连接配置
+2025-02-23 19:42:16,968 - INFO - 开始验证数据...
+2025-02-23 19:42:16,968 - INFO - 数据验证完成
+2025-02-23 19:42:16,991 - INFO - 开始创建仿真节点...
+2025-02-23 19:42:17,616 - INFO - 开始创建节点间连接关系...
+2025-02-23 19:42:17,633 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 209} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:42:17,633 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 200} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:42:17,649 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 205} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:42:17,649 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 214} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:42:17,669 - INFO - 开始处理面板设备内部连接...
+2025-02-23 19:42:17,670 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,670 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,670 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,671 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,672 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,672 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,672 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,672 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,672 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,673 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,674 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,675 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,675 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,675 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,675 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,675 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,676 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,677 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,678 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,679 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,680 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,680 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,681 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,681 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,681 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,681 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,681 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,682 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,682 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,682 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,682 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,682 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,683 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,684 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,684 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,684 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,684 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,684 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,685 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,685 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,685 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,685 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,685 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,686 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,687 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,688 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,689 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,690 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,691 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,692 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,693 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,694 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,695 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,696 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,697 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,697 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,697 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,697 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,697 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,698 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,698 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,698 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,698 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,698 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,699 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,699 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,699 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,700 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,700 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,700 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,700 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,700 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,701 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,702 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,703 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,704 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,705 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,706 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,707 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,708 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:42:17,709 - INFO - 
+已创建的节点信息:
+2025-02-23 19:42:17,719 - INFO - 
+Simulation层节点:
+2025-02-23 19:42:17,720 - INFO -   - SIM_lb_test+EBD-1:0: B类型单元 (设备1, 索引: 0, 类型: sim)
+2025-02-23 19:42:17,720 - INFO -   - SIM_lb_test+EBD-1:1: B类型单元 (设备1, 索引: 1, 类型: sim)
+2025-02-23 19:42:17,721 - INFO -   - SIM_lb_test+EBD-1:2: B类型单元 (设备1, 索引: 2, 类型: sim)
+2025-02-23 19:42:17,721 - INFO -   - SIM_lb_test+EBD-1:3: B类型单元 (设备1, 索引: 3, 类型: sim)
+2025-02-23 19:42:17,721 - INFO -   - SIM_lb_test+EBD-1:4: B类型单元 (设备1, 索引: 4, 类型: sim)
+2025-02-23 19:42:17,721 - INFO -   - SIM_lb_test+EBD-1:5: B类型单元 (设备1, 索引: 5, 类型: sim)
+2025-02-23 19:42:17,721 - INFO -   - SIM_lb_test+EBD-1:6: B类型单元 (设备1, 索引: 6, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:7: B类型单元 (设备1, 索引: 7, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:8: D类型单元 (设备1, 索引: 8, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:9: D类型单元 (设备1, 索引: 9, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:10: D类型单元 (设备1, 索引: 10, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:11: D类型单元 (设备1, 索引: 11, 类型: sim)
+2025-02-23 19:42:17,722 - INFO -   - SIM_lb_test+EBD-1:12: B类型单元 (设备1, 索引: 12, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:13: B类型单元 (设备1, 索引: 13, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:14: B类型单元 (设备1, 索引: 14, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:15: B类型单元 (设备1, 索引: 15, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:16: B类型单元 (设备1, 索引: 16, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:17: B类型单元 (设备1, 索引: 17, 类型: sim)
+2025-02-23 19:42:17,723 - INFO -   - SIM_lb_test+EBD-1:18: B类型单元 (设备1, 索引: 18, 类型: sim)
+2025-02-23 19:42:17,724 - INFO -   - SIM_lb_test+EBD-1:19: B类型单元 (设备1, 索引: 19, 类型: sim)
+2025-02-23 19:42:17,724 - INFO -   - SIM_lb_test+EDB-2:0: D类型单元 (设备2, 索引: 0, 类型: sim)
+2025-02-23 19:42:17,724 - INFO -   - SIM_lb_test+EDB-2:1: D类型单元 (设备2, 索引: 1, 类型: sim)
+2025-02-23 19:42:17,724 - INFO -   - SIM_lb_test+EDB-2:2: D类型单元 (设备2, 索引: 2, 类型: sim)
+2025-02-23 19:42:17,725 - INFO -   - SIM_lb_test+EDB-2:3: D类型单元 (设备2, 索引: 3, 类型: sim)
+2025-02-23 19:42:17,725 - INFO -   - SIM_lb_test+EDB-2:4: D类型单元 (设备2, 索引: 4, 类型: sim)
+2025-02-23 19:42:17,725 - INFO -   - SIM_lb_test+EDB-2:5: D类型单元 (设备2, 索引: 5, 类型: sim)
+2025-02-23 19:42:17,725 - INFO -   - SIM_lb_test+EDB-2:6: D类型单元 (设备2, 索引: 6, 类型: sim)
+2025-02-23 19:42:17,725 - INFO -   - SIM_lb_test+EDB-2:7: B类型单元 (设备2, 索引: 7, 类型: sim)
+2025-02-23 19:42:17,726 - INFO -   - SIM_lb_test+EDB-2:8: B类型单元 (设备2, 索引: 8, 类型: sim)
+2025-02-23 19:42:17,726 - INFO -   - SIM_lb_test+EDB-2:9: B类型单元 (设备2, 索引: 9, 类型: sim)
+2025-02-23 19:42:17,726 - INFO -   - SIM_lb_test+EDB-2:10: D类型单元 (设备2, 索引: 10, 类型: sim)
+2025-02-23 19:42:17,726 - INFO -   - SIM_lb_test+EDB-2:11: D类型单元 (设备2, 索引: 11, 类型: sim)
+2025-02-23 19:42:17,726 - INFO -   - SIM_lb_test+EDB-2:12: D类型单元 (设备2, 索引: 12, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:13: D类型单元 (设备2, 索引: 13, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:14: D类型单元 (设备2, 索引: 14, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:15: D类型单元 (设备2, 索引: 15, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:16: D类型单元 (设备2, 索引: 16, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:17: D类型单元 (设备2, 索引: 17, 类型: sim)
+2025-02-23 19:42:17,727 - INFO -   - SIM_lb_test+EDB-2:18: D类型单元 (设备2, 索引: 18, 类型: sim)
+2025-02-23 19:42:17,728 - INFO -   - SIM_lb_test+EDB-2:19: D类型单元 (设备2, 索引: 19, 类型: sim)
+2025-02-23 19:42:17,728 - INFO -   - SIM_lb_test+EDB-3:0: D类型单元 (设备3, 索引: 0, 类型: sim)
+2025-02-23 19:42:17,728 - INFO -   - SIM_lb_test+EDB-3:1: D类型单元 (设备3, 索引: 1, 类型: sim)
+2025-02-23 19:42:17,728 - INFO -   - SIM_lb_test+EDB-3:2: D类型单元 (设备3, 索引: 2, 类型: sim)
+2025-02-23 19:42:17,728 - INFO -   - SIM_lb_test+EDB-3:3: D类型单元 (设备3, 索引: 3, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:4: D类型单元 (设备3, 索引: 4, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:5: D类型单元 (设备3, 索引: 5, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:6: D类型单元 (设备3, 索引: 6, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:7: B类型单元 (设备3, 索引: 7, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:8: B类型单元 (设备3, 索引: 8, 类型: sim)
+2025-02-23 19:42:17,729 - INFO -   - SIM_lb_test+EDB-3:9: B类型单元 (设备3, 索引: 9, 类型: sim)
+2025-02-23 19:42:17,730 - INFO -   - SIM_lb_test+EDB-3:10: D类型单元 (设备3, 索引: 10, 类型: sim)
+2025-02-23 19:42:17,730 - INFO -   - SIM_lb_test+EDB-3:11: D类型单元 (设备3, 索引: 11, 类型: sim)
+2025-02-23 19:42:17,730 - INFO -   - SIM_lb_test+EDB-3:12: D类型单元 (设备3, 索引: 12, 类型: sim)
+2025-02-23 19:42:17,730 - INFO -   - SIM_lb_test+EDB-3:13: D类型单元 (设备3, 索引: 13, 类型: sim)
+2025-02-23 19:42:17,731 - INFO -   - SIM_lb_test+EDB-3:14: D类型单元 (设备3, 索引: 14, 类型: sim)
+2025-02-23 19:42:17,731 - INFO -   - SIM_lb_test+EDB-3:15: D类型单元 (设备3, 索引: 15, 类型: sim)
+2025-02-23 19:42:17,731 - INFO -   - SIM_lb_test+EDB-3:16: D类型单元 (设备3, 索引: 16, 类型: sim)
+2025-02-23 19:42:17,731 - INFO -   - SIM_lb_test+EDB-3:17: D类型单元 (设备3, 索引: 17, 类型: sim)
+2025-02-23 19:42:17,732 - INFO -   - SIM_lb_test+EDB-3:18: D类型单元 (设备3, 索引: 18, 类型: sim)
+2025-02-23 19:42:17,732 - INFO -   - SIM_lb_test+EDB-3:19: D类型单元 (设备3, 索引: 19, 类型: sim)
+2025-02-23 19:42:17,732 - INFO -   - SIM_lb_test+EBD-4:0: B类型单元 (设备4, 索引: 0, 类型: sim)
+2025-02-23 19:42:17,732 - INFO -   - SIM_lb_test+EBD-4:1: B类型单元 (设备4, 索引: 1, 类型: sim)
+2025-02-23 19:42:17,733 - INFO -   - SIM_lb_test+EBD-4:2: B类型单元 (设备4, 索引: 2, 类型: sim)
+2025-02-23 19:42:17,733 - INFO -   - SIM_lb_test+EBD-4:3: B类型单元 (设备4, 索引: 3, 类型: sim)
+2025-02-23 19:42:17,733 - INFO -   - SIM_lb_test+EBD-4:4: B类型单元 (设备4, 索引: 4, 类型: sim)
+2025-02-23 19:42:17,734 - INFO -   - SIM_lb_test+EBD-4:5: B类型单元 (设备4, 索引: 5, 类型: sim)
+2025-02-23 19:42:17,734 - INFO -   - SIM_lb_test+EBD-4:6: B类型单元 (设备4, 索引: 6, 类型: sim)
+2025-02-23 19:42:17,734 - INFO -   - SIM_lb_test+EBD-4:7: B类型单元 (设备4, 索引: 7, 类型: sim)
+2025-02-23 19:42:17,734 - INFO -   - SIM_lb_test+EBD-4:8: D类型单元 (设备4, 索引: 8, 类型: sim)
+2025-02-23 19:42:17,735 - INFO -   - SIM_lb_test+EBD-4:9: D类型单元 (设备4, 索引: 9, 类型: sim)
+2025-02-23 19:42:17,735 - INFO -   - SIM_lb_test+EBD-4:10: D类型单元 (设备4, 索引: 10, 类型: sim)
+2025-02-23 19:42:17,735 - INFO -   - SIM_lb_test+EBD-4:11: D类型单元 (设备4, 索引: 11, 类型: sim)
+2025-02-23 19:42:17,735 - INFO -   - SIM_lb_test+EBD-4:12: B类型单元 (设备4, 索引: 12, 类型: sim)
+2025-02-23 19:42:17,736 - INFO -   - SIM_lb_test+EBD-4:13: B类型单元 (设备4, 索引: 13, 类型: sim)
+2025-02-23 19:42:17,736 - INFO -   - SIM_lb_test+EBD-4:14: B类型单元 (设备4, 索引: 14, 类型: sim)
+2025-02-23 19:42:17,736 - INFO -   - SIM_lb_test+EBD-4:15: B类型单元 (设备4, 索引: 15, 类型: sim)
+2025-02-23 19:42:17,736 - INFO -   - SIM_lb_test+EBD-4:16: B类型单元 (设备4, 索引: 16, 类型: sim)
+2025-02-23 19:42:17,736 - INFO -   - SIM_lb_test+EBD-4:17: B类型单元 (设备4, 索引: 17, 类型: sim)
+2025-02-23 19:42:17,737 - INFO -   - SIM_lb_test+EBD-4:18: B类型单元 (设备4, 索引: 18, 类型: sim)
+2025-02-23 19:42:17,737 - INFO -   - SIM_lb_test+EBD-4:19: B类型单元 (设备4, 索引: 19, 类型: sim)
+2025-02-23 19:42:17,742 - INFO - 
+节点统计:
+2025-02-23 19:42:17,743 - INFO - - B类型节点 (sim): 38个
+2025-02-23 19:42:17,743 - INFO - - D类型节点 (sim): 42个
+2025-02-23 19:42:17,749 - INFO - 
+连接关系统计:
+2025-02-23 19:42:17,751 - INFO - - INTERNAL_CONNECTION类型关系: 760个
+2025-02-23 19:42:17,751 - INFO - - ADJACENT_CONNECTION类型关系: 1200个
+2025-02-23 19:42:17,751 - INFO - - TERMINATES_AT类型关系: 64个
+2025-02-23 19:42:17,752 - INFO - - CONNECTED_TO类型关系: 16个
+2025-02-23 19:42:17,752 - INFO - 
+提示: 在Neo4j浏览器中可以使用以下查询来分析节点:
+2025-02-23 19:42:17,752 - INFO - 
+1. 查看所有仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+RETURN v
+
+2. 按类型统计节点:
+MATCH (v:Vertex)
+WITH v.UnitType as unit_type, v.type as type, count(*) as count
+RETURN unit_type, type, count
+ORDER BY unit_type
+
+3. 查看启用的仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
+RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
+        
+2025-02-23 19:45:55,398 - INFO - 开始同步仿真数据...
+2025-02-23 19:45:55,399 - INFO - MySQL连接: 192.168.35.10
+2025-02-23 19:45:55,399 - INFO - Neo4j连接: bolt://192.168.35.10:7687
+2025-02-23 19:45:55,400 - INFO - 尝试连接MySQL,配置信息: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+2025-02-23 19:45:55,429 - INFO - MySQL连接成功!
+2025-02-23 19:45:55,430 - INFO - 1. 仿真设备及单元
+
+2025-02-23 19:45:55,430 - INFO - 正在获取设备类型数据...
+2025-02-23 19:45:55,438 - INFO - 获取到18个设备类型
+2025-02-23 19:45:55,439 - INFO - 正在获取设备数据...
+2025-02-23 19:45:55,446 - INFO - 获取到4个设备
+2025-02-23 19:45:55,447 - INFO - 正在获取点位配置数据...
+2025-02-23 19:45:55,466 - INFO - 获取到194个点位配置
+2025-02-23 19:45:55,466 - INFO - 正在获取面板设备内部连接数据...
+2025-02-23 19:45:55,501 - INFO - 获取到266个面板连接配置
+2025-02-23 19:45:55,501 - INFO - 开始验证数据...
+2025-02-23 19:45:55,501 - INFO - 数据验证完成
+2025-02-23 19:45:55,524 - INFO - 开始创建仿真节点...
+2025-02-23 19:45:56,177 - INFO - 开始创建节点间连接关系...
+2025-02-23 19:45:56,200 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 209} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:45:56,201 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 200} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:45:56,215 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 205} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:45:56,216 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 214} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:45:56,235 - INFO - 开始处理面板设备内部连接...
+2025-02-23 19:45:56,236 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,236 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,237 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,237 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,237 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,237 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,238 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,238 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,238 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,238 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,239 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,239 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,239 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,239 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,240 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,241 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,242 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,242 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,242 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,242 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,242 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,243 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,243 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,243 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,243 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,243 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,244 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,245 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,246 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,247 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,248 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,249 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,250 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,251 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,252 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,253 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,254 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,255 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,256 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,257 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,258 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,259 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,260 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,260 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,260 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,260 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,260 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,261 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,262 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,262 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,262 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,262 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,262 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,263 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,263 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,263 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,263 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,264 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,265 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,266 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,267 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,268 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,269 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,270 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,271 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,272 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,273 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,274 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,274 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:45:56,274 - INFO - 
+已创建的节点信息:
+2025-02-23 19:45:56,285 - INFO - 
+Simulation层节点:
+2025-02-23 19:45:56,285 - INFO -   - SIM_lb_test+EBD-1:0: B类型单元 (设备1, 索引: 0, 类型: sim)
+2025-02-23 19:45:56,286 - INFO -   - SIM_lb_test+EBD-1:1: B类型单元 (设备1, 索引: 1, 类型: sim)
+2025-02-23 19:45:56,286 - INFO -   - SIM_lb_test+EBD-1:2: B类型单元 (设备1, 索引: 2, 类型: sim)
+2025-02-23 19:45:56,286 - INFO -   - SIM_lb_test+EBD-1:3: B类型单元 (设备1, 索引: 3, 类型: sim)
+2025-02-23 19:45:56,287 - INFO -   - SIM_lb_test+EBD-1:4: B类型单元 (设备1, 索引: 4, 类型: sim)
+2025-02-23 19:45:56,287 - INFO -   - SIM_lb_test+EBD-1:5: B类型单元 (设备1, 索引: 5, 类型: sim)
+2025-02-23 19:45:56,287 - INFO -   - SIM_lb_test+EBD-1:6: B类型单元 (设备1, 索引: 6, 类型: sim)
+2025-02-23 19:45:56,287 - INFO -   - SIM_lb_test+EBD-1:7: B类型单元 (设备1, 索引: 7, 类型: sim)
+2025-02-23 19:45:56,287 - INFO -   - SIM_lb_test+EBD-1:8: D类型单元 (设备1, 索引: 8, 类型: sim)
+2025-02-23 19:45:56,288 - INFO -   - SIM_lb_test+EBD-1:9: D类型单元 (设备1, 索引: 9, 类型: sim)
+2025-02-23 19:45:56,288 - INFO -   - SIM_lb_test+EBD-1:10: D类型单元 (设备1, 索引: 10, 类型: sim)
+2025-02-23 19:45:56,288 - INFO -   - SIM_lb_test+EBD-1:11: D类型单元 (设备1, 索引: 11, 类型: sim)
+2025-02-23 19:45:56,288 - INFO -   - SIM_lb_test+EBD-1:12: B类型单元 (设备1, 索引: 12, 类型: sim)
+2025-02-23 19:45:56,288 - INFO -   - SIM_lb_test+EBD-1:13: B类型单元 (设备1, 索引: 13, 类型: sim)
+2025-02-23 19:45:56,289 - INFO -   - SIM_lb_test+EBD-1:14: B类型单元 (设备1, 索引: 14, 类型: sim)
+2025-02-23 19:45:56,289 - INFO -   - SIM_lb_test+EBD-1:15: B类型单元 (设备1, 索引: 15, 类型: sim)
+2025-02-23 19:45:56,289 - INFO -   - SIM_lb_test+EBD-1:16: B类型单元 (设备1, 索引: 16, 类型: sim)
+2025-02-23 19:45:56,289 - INFO -   - SIM_lb_test+EBD-1:17: B类型单元 (设备1, 索引: 17, 类型: sim)
+2025-02-23 19:45:56,289 - INFO -   - SIM_lb_test+EBD-1:18: B类型单元 (设备1, 索引: 18, 类型: sim)
+2025-02-23 19:45:56,290 - INFO -   - SIM_lb_test+EBD-1:19: B类型单元 (设备1, 索引: 19, 类型: sim)
+2025-02-23 19:45:56,290 - INFO -   - SIM_lb_test+EDB-2:0: D类型单元 (设备2, 索引: 0, 类型: sim)
+2025-02-23 19:45:56,290 - INFO -   - SIM_lb_test+EDB-2:1: D类型单元 (设备2, 索引: 1, 类型: sim)
+2025-02-23 19:45:56,290 - INFO -   - SIM_lb_test+EDB-2:2: D类型单元 (设备2, 索引: 2, 类型: sim)
+2025-02-23 19:45:56,291 - INFO -   - SIM_lb_test+EDB-2:3: D类型单元 (设备2, 索引: 3, 类型: sim)
+2025-02-23 19:45:56,291 - INFO -   - SIM_lb_test+EDB-2:4: D类型单元 (设备2, 索引: 4, 类型: sim)
+2025-02-23 19:45:56,291 - INFO -   - SIM_lb_test+EDB-2:5: D类型单元 (设备2, 索引: 5, 类型: sim)
+2025-02-23 19:45:56,291 - INFO -   - SIM_lb_test+EDB-2:6: D类型单元 (设备2, 索引: 6, 类型: sim)
+2025-02-23 19:45:56,291 - INFO -   - SIM_lb_test+EDB-2:7: B类型单元 (设备2, 索引: 7, 类型: sim)
+2025-02-23 19:45:56,292 - INFO -   - SIM_lb_test+EDB-2:8: B类型单元 (设备2, 索引: 8, 类型: sim)
+2025-02-23 19:45:56,292 - INFO -   - SIM_lb_test+EDB-2:9: B类型单元 (设备2, 索引: 9, 类型: sim)
+2025-02-23 19:45:56,292 - INFO -   - SIM_lb_test+EDB-2:10: D类型单元 (设备2, 索引: 10, 类型: sim)
+2025-02-23 19:45:56,293 - INFO -   - SIM_lb_test+EDB-2:11: D类型单元 (设备2, 索引: 11, 类型: sim)
+2025-02-23 19:45:56,293 - INFO -   - SIM_lb_test+EDB-2:12: D类型单元 (设备2, 索引: 12, 类型: sim)
+2025-02-23 19:45:56,293 - INFO -   - SIM_lb_test+EDB-2:13: D类型单元 (设备2, 索引: 13, 类型: sim)
+2025-02-23 19:45:56,293 - INFO -   - SIM_lb_test+EDB-2:14: D类型单元 (设备2, 索引: 14, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-2:15: D类型单元 (设备2, 索引: 15, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-2:16: D类型单元 (设备2, 索引: 16, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-2:17: D类型单元 (设备2, 索引: 17, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-2:18: D类型单元 (设备2, 索引: 18, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-2:19: D类型单元 (设备2, 索引: 19, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-3:0: D类型单元 (设备3, 索引: 0, 类型: sim)
+2025-02-23 19:45:56,294 - INFO -   - SIM_lb_test+EDB-3:1: D类型单元 (设备3, 索引: 1, 类型: sim)
+2025-02-23 19:45:56,295 - INFO -   - SIM_lb_test+EDB-3:2: D类型单元 (设备3, 索引: 2, 类型: sim)
+2025-02-23 19:45:56,295 - INFO -   - SIM_lb_test+EDB-3:3: D类型单元 (设备3, 索引: 3, 类型: sim)
+2025-02-23 19:45:56,295 - INFO -   - SIM_lb_test+EDB-3:4: D类型单元 (设备3, 索引: 4, 类型: sim)
+2025-02-23 19:45:56,295 - INFO -   - SIM_lb_test+EDB-3:5: D类型单元 (设备3, 索引: 5, 类型: sim)
+2025-02-23 19:45:56,295 - INFO -   - SIM_lb_test+EDB-3:6: D类型单元 (设备3, 索引: 6, 类型: sim)
+2025-02-23 19:45:56,296 - INFO -   - SIM_lb_test+EDB-3:7: B类型单元 (设备3, 索引: 7, 类型: sim)
+2025-02-23 19:45:56,296 - INFO -   - SIM_lb_test+EDB-3:8: B类型单元 (设备3, 索引: 8, 类型: sim)
+2025-02-23 19:45:56,296 - INFO -   - SIM_lb_test+EDB-3:9: B类型单元 (设备3, 索引: 9, 类型: sim)
+2025-02-23 19:45:56,296 - INFO -   - SIM_lb_test+EDB-3:10: D类型单元 (设备3, 索引: 10, 类型: sim)
+2025-02-23 19:45:56,296 - INFO -   - SIM_lb_test+EDB-3:11: D类型单元 (设备3, 索引: 11, 类型: sim)
+2025-02-23 19:45:56,297 - INFO -   - SIM_lb_test+EDB-3:12: D类型单元 (设备3, 索引: 12, 类型: sim)
+2025-02-23 19:45:56,297 - INFO -   - SIM_lb_test+EDB-3:13: D类型单元 (设备3, 索引: 13, 类型: sim)
+2025-02-23 19:45:56,297 - INFO -   - SIM_lb_test+EDB-3:14: D类型单元 (设备3, 索引: 14, 类型: sim)
+2025-02-23 19:45:56,297 - INFO -   - SIM_lb_test+EDB-3:15: D类型单元 (设备3, 索引: 15, 类型: sim)
+2025-02-23 19:45:56,297 - INFO -   - SIM_lb_test+EDB-3:16: D类型单元 (设备3, 索引: 16, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EDB-3:17: D类型单元 (设备3, 索引: 17, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EDB-3:18: D类型单元 (设备3, 索引: 18, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EDB-3:19: D类型单元 (设备3, 索引: 19, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EBD-4:0: B类型单元 (设备4, 索引: 0, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EBD-4:1: B类型单元 (设备4, 索引: 1, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EBD-4:2: B类型单元 (设备4, 索引: 2, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EBD-4:3: B类型单元 (设备4, 索引: 3, 类型: sim)
+2025-02-23 19:45:56,298 - INFO -   - SIM_lb_test+EBD-4:4: B类型单元 (设备4, 索引: 4, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:5: B类型单元 (设备4, 索引: 5, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:6: B类型单元 (设备4, 索引: 6, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:7: B类型单元 (设备4, 索引: 7, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:8: D类型单元 (设备4, 索引: 8, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:9: D类型单元 (设备4, 索引: 9, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:10: D类型单元 (设备4, 索引: 10, 类型: sim)
+2025-02-23 19:45:56,299 - INFO -   - SIM_lb_test+EBD-4:11: D类型单元 (设备4, 索引: 11, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:12: B类型单元 (设备4, 索引: 12, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:13: B类型单元 (设备4, 索引: 13, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:14: B类型单元 (设备4, 索引: 14, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:15: B类型单元 (设备4, 索引: 15, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:16: B类型单元 (设备4, 索引: 16, 类型: sim)
+2025-02-23 19:45:56,300 - INFO -   - SIM_lb_test+EBD-4:17: B类型单元 (设备4, 索引: 17, 类型: sim)
+2025-02-23 19:45:56,301 - INFO -   - SIM_lb_test+EBD-4:18: B类型单元 (设备4, 索引: 18, 类型: sim)
+2025-02-23 19:45:56,301 - INFO -   - SIM_lb_test+EBD-4:19: B类型单元 (设备4, 索引: 19, 类型: sim)
+2025-02-23 19:45:56,319 - INFO - 
+节点统计:
+2025-02-23 19:45:56,320 - INFO - - B类型节点 (sim): 38个
+2025-02-23 19:45:56,321 - INFO - - D类型节点 (sim): 42个
+2025-02-23 19:45:56,327 - INFO - 
+连接关系统计:
+2025-02-23 19:45:56,330 - INFO - - TERMINATES_AT类型关系: 64个
+2025-02-23 19:45:56,331 - INFO - - CONNECTED_TO类型关系: 16个
+2025-02-23 19:45:56,331 - INFO - - INTERNAL_CONNECTION类型关系: 760个
+2025-02-23 19:45:56,332 - INFO - - ADJACENT_CONNECTION类型关系: 1200个
+2025-02-23 19:45:56,332 - INFO - 
+提示: 在Neo4j浏览器中可以使用以下查询来分析节点:
+2025-02-23 19:45:56,332 - INFO - 
+1. 查看所有仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+RETURN v
+
+2. 按类型统计节点:
+MATCH (v:Vertex)
+WITH v.UnitType as unit_type, v.type as type, count(*) as count
+RETURN unit_type, type, count
+ORDER BY unit_type
+
+3. 查看启用的仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
+RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
+        
+2025-02-23 19:47:17,000 - INFO - 开始同步仿真数据...
+2025-02-23 19:47:17,000 - INFO - MySQL连接: 192.168.35.10
+2025-02-23 19:47:17,000 - INFO - Neo4j连接: bolt://192.168.35.10:7687
+2025-02-23 19:47:17,000 - INFO - 尝试连接MySQL,配置信息: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+2025-02-23 19:47:17,028 - INFO - MySQL连接成功!
+2025-02-23 19:47:17,028 - INFO - 1. 仿真设备及单元
+
+2025-02-23 19:47:17,029 - INFO - 正在获取设备类型数据...
+2025-02-23 19:47:17,036 - INFO - 获取到18个设备类型
+2025-02-23 19:47:17,036 - INFO - 正在获取设备数据...
+2025-02-23 19:47:17,042 - INFO - 获取到4个设备
+2025-02-23 19:47:17,043 - INFO - 正在获取点位配置数据...
+2025-02-23 19:47:17,063 - INFO - 获取到194个点位配置
+2025-02-23 19:47:17,064 - INFO - 正在获取面板设备内部连接数据...
+2025-02-23 19:47:17,095 - INFO - 获取到266个面板连接配置
+2025-02-23 19:47:17,096 - INFO - 开始验证数据...
+2025-02-23 19:47:17,096 - INFO - 数据验证完成
+2025-02-23 19:47:17,119 - INFO - 开始创建仿真节点...
+2025-02-23 19:47:17,745 - INFO - 开始创建节点间连接关系...
+2025-02-23 19:47:17,763 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 209} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:17,763 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 200} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:17,780 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 205} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:17,780 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 214} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:17,799 - INFO - 开始处理面板设备内部连接...
+2025-02-23 19:47:17,800 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,800 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,800 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,800 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,801 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,802 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,803 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,804 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,805 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,806 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,807 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,808 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,809 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,809 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,809 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,809 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,809 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,810 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,810 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,810 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,810 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,811 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,811 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,811 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,812 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,812 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,812 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,812 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,812 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,813 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,814 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,815 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,816 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,817 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,818 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,819 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,820 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,821 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,822 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,823 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,824 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,825 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,826 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,827 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,827 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,827 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,827 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,827 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,828 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,828 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,828 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,828 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,829 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,830 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,831 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,832 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:17,833 - INFO - 
+已创建的节点信息:
+2025-02-23 19:47:17,841 - INFO - 
+Simulation层节点:
+2025-02-23 19:47:17,841 - INFO -   - SIM_lb_test+EBD-1:0: B类型单元 (设备1, 索引: 0, 类型: sim)
+2025-02-23 19:47:17,842 - INFO -   - SIM_lb_test+EBD-1:1: B类型单元 (设备1, 索引: 1, 类型: sim)
+2025-02-23 19:47:17,842 - INFO -   - SIM_lb_test+EBD-1:2: B类型单元 (设备1, 索引: 2, 类型: sim)
+2025-02-23 19:47:17,843 - INFO -   - SIM_lb_test+EBD-1:3: B类型单元 (设备1, 索引: 3, 类型: sim)
+2025-02-23 19:47:17,843 - INFO -   - SIM_lb_test+EBD-1:4: B类型单元 (设备1, 索引: 4, 类型: sim)
+2025-02-23 19:47:17,843 - INFO -   - SIM_lb_test+EBD-1:5: B类型单元 (设备1, 索引: 5, 类型: sim)
+2025-02-23 19:47:17,844 - INFO -   - SIM_lb_test+EBD-1:6: B类型单元 (设备1, 索引: 6, 类型: sim)
+2025-02-23 19:47:17,844 - INFO -   - SIM_lb_test+EBD-1:7: B类型单元 (设备1, 索引: 7, 类型: sim)
+2025-02-23 19:47:17,845 - INFO -   - SIM_lb_test+EBD-1:8: D类型单元 (设备1, 索引: 8, 类型: sim)
+2025-02-23 19:47:17,845 - INFO -   - SIM_lb_test+EBD-1:9: D类型单元 (设备1, 索引: 9, 类型: sim)
+2025-02-23 19:47:17,845 - INFO -   - SIM_lb_test+EBD-1:10: D类型单元 (设备1, 索引: 10, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:11: D类型单元 (设备1, 索引: 11, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:12: B类型单元 (设备1, 索引: 12, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:13: B类型单元 (设备1, 索引: 13, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:14: B类型单元 (设备1, 索引: 14, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:15: B类型单元 (设备1, 索引: 15, 类型: sim)
+2025-02-23 19:47:17,846 - INFO -   - SIM_lb_test+EBD-1:16: B类型单元 (设备1, 索引: 16, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EBD-1:17: B类型单元 (设备1, 索引: 17, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EBD-1:18: B类型单元 (设备1, 索引: 18, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EBD-1:19: B类型单元 (设备1, 索引: 19, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EDB-2:0: D类型单元 (设备2, 索引: 0, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EDB-2:1: D类型单元 (设备2, 索引: 1, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EDB-2:2: D类型单元 (设备2, 索引: 2, 类型: sim)
+2025-02-23 19:47:17,847 - INFO -   - SIM_lb_test+EDB-2:3: D类型单元 (设备2, 索引: 3, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:4: D类型单元 (设备2, 索引: 4, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:5: D类型单元 (设备2, 索引: 5, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:6: D类型单元 (设备2, 索引: 6, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:7: B类型单元 (设备2, 索引: 7, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:8: B类型单元 (设备2, 索引: 8, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:9: B类型单元 (设备2, 索引: 9, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:10: D类型单元 (设备2, 索引: 10, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:11: D类型单元 (设备2, 索引: 11, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:12: D类型单元 (设备2, 索引: 12, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:13: D类型单元 (设备2, 索引: 13, 类型: sim)
+2025-02-23 19:47:17,848 - INFO -   - SIM_lb_test+EDB-2:14: D类型单元 (设备2, 索引: 14, 类型: sim)
+2025-02-23 19:47:17,849 - INFO -   - SIM_lb_test+EDB-2:15: D类型单元 (设备2, 索引: 15, 类型: sim)
+2025-02-23 19:47:17,849 - INFO -   - SIM_lb_test+EDB-2:16: D类型单元 (设备2, 索引: 16, 类型: sim)
+2025-02-23 19:47:17,849 - INFO -   - SIM_lb_test+EDB-2:17: D类型单元 (设备2, 索引: 17, 类型: sim)
+2025-02-23 19:47:17,849 - INFO -   - SIM_lb_test+EDB-2:18: D类型单元 (设备2, 索引: 18, 类型: sim)
+2025-02-23 19:47:17,849 - INFO -   - SIM_lb_test+EDB-2:19: D类型单元 (设备2, 索引: 19, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:0: D类型单元 (设备3, 索引: 0, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:1: D类型单元 (设备3, 索引: 1, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:2: D类型单元 (设备3, 索引: 2, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:3: D类型单元 (设备3, 索引: 3, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:4: D类型单元 (设备3, 索引: 4, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:5: D类型单元 (设备3, 索引: 5, 类型: sim)
+2025-02-23 19:47:17,850 - INFO -   - SIM_lb_test+EDB-3:6: D类型单元 (设备3, 索引: 6, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:7: B类型单元 (设备3, 索引: 7, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:8: B类型单元 (设备3, 索引: 8, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:9: B类型单元 (设备3, 索引: 9, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:10: D类型单元 (设备3, 索引: 10, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:11: D类型单元 (设备3, 索引: 11, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:12: D类型单元 (设备3, 索引: 12, 类型: sim)
+2025-02-23 19:47:17,851 - INFO -   - SIM_lb_test+EDB-3:13: D类型单元 (设备3, 索引: 13, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:14: D类型单元 (设备3, 索引: 14, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:15: D类型单元 (设备3, 索引: 15, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:16: D类型单元 (设备3, 索引: 16, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:17: D类型单元 (设备3, 索引: 17, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:18: D类型单元 (设备3, 索引: 18, 类型: sim)
+2025-02-23 19:47:17,852 - INFO -   - SIM_lb_test+EDB-3:19: D类型单元 (设备3, 索引: 19, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:0: B类型单元 (设备4, 索引: 0, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:1: B类型单元 (设备4, 索引: 1, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:2: B类型单元 (设备4, 索引: 2, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:3: B类型单元 (设备4, 索引: 3, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:4: B类型单元 (设备4, 索引: 4, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:5: B类型单元 (设备4, 索引: 5, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:6: B类型单元 (设备4, 索引: 6, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:7: B类型单元 (设备4, 索引: 7, 类型: sim)
+2025-02-23 19:47:17,853 - INFO -   - SIM_lb_test+EBD-4:8: D类型单元 (设备4, 索引: 8, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:9: D类型单元 (设备4, 索引: 9, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:10: D类型单元 (设备4, 索引: 10, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:11: D类型单元 (设备4, 索引: 11, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:12: B类型单元 (设备4, 索引: 12, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:13: B类型单元 (设备4, 索引: 13, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:14: B类型单元 (设备4, 索引: 14, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:15: B类型单元 (设备4, 索引: 15, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:16: B类型单元 (设备4, 索引: 16, 类型: sim)
+2025-02-23 19:47:17,854 - INFO -   - SIM_lb_test+EBD-4:17: B类型单元 (设备4, 索引: 17, 类型: sim)
+2025-02-23 19:47:17,855 - INFO -   - SIM_lb_test+EBD-4:18: B类型单元 (设备4, 索引: 18, 类型: sim)
+2025-02-23 19:47:17,855 - INFO -   - SIM_lb_test+EBD-4:19: B类型单元 (设备4, 索引: 19, 类型: sim)
+2025-02-23 19:47:17,862 - INFO - 
+节点统计:
+2025-02-23 19:47:17,863 - INFO - - B类型节点 (sim): 38个
+2025-02-23 19:47:17,864 - INFO - - D类型节点 (sim): 42个
+2025-02-23 19:47:17,869 - INFO - 
+连接关系统计:
+2025-02-23 19:47:17,872 - INFO - - INTERNAL_CONNECTION类型关系: 760个
+2025-02-23 19:47:17,872 - INFO - - ADJACENT_CONNECTION类型关系: 1200个
+2025-02-23 19:47:17,873 - INFO - - TERMINATES_AT类型关系: 64个
+2025-02-23 19:47:17,873 - INFO - - CONNECTED_TO类型关系: 16个
+2025-02-23 19:47:17,873 - INFO - 
+提示: 在Neo4j浏览器中可以使用以下查询来分析节点:
+2025-02-23 19:47:17,873 - INFO - 
+1. 查看所有仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+RETURN v
+
+2. 按类型统计节点:
+MATCH (v:Vertex)
+WITH v.UnitType as unit_type, v.type as type, count(*) as count
+RETURN unit_type, type, count
+ORDER BY unit_type
+
+3. 查看启用的仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
+RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
+        
+2025-02-23 19:47:47,873 - INFO - 开始同步仿真数据...
+2025-02-23 19:47:47,873 - INFO - MySQL连接: 192.168.35.10
+2025-02-23 19:47:47,873 - INFO - Neo4j连接: bolt://192.168.35.10:7687
+2025-02-23 19:47:47,874 - INFO - 尝试连接MySQL,配置信息: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+2025-02-23 19:47:47,908 - INFO - MySQL连接成功!
+2025-02-23 19:47:47,909 - INFO - 1. 仿真设备及单元
+
+2025-02-23 19:47:47,909 - INFO - 正在获取设备类型数据...
+2025-02-23 19:47:47,917 - INFO - 获取到18个设备类型
+2025-02-23 19:47:47,917 - INFO - 正在获取设备数据...
+2025-02-23 19:47:48,102 - INFO - 获取到4个设备
+2025-02-23 19:47:48,102 - INFO - 正在获取点位配置数据...
+2025-02-23 19:47:48,123 - INFO - 获取到194个点位配置
+2025-02-23 19:47:48,124 - INFO - 正在获取面板设备内部连接数据...
+2025-02-23 19:47:48,157 - INFO - 获取到266个面板连接配置
+2025-02-23 19:47:48,158 - INFO - 开始验证数据...
+2025-02-23 19:47:48,158 - INFO - 数据验证完成
+2025-02-23 19:47:48,184 - INFO - 开始创建仿真节点...
+2025-02-23 19:47:48,846 - INFO - 开始创建节点间连接关系...
+2025-02-23 19:47:48,865 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 209} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:48,866 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 200} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:48,883 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 205} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:48,883 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 214} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:47:48,901 - INFO - 开始处理面板设备内部连接...
+2025-02-23 19:47:48,902 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,902 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,902 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,903 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,904 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,905 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,906 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,907 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,908 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,909 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,910 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,911 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,911 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,911 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,911 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,912 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,912 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,912 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,912 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,913 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,913 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,913 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,913 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,913 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,914 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,915 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,916 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,917 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,918 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,919 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,920 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,921 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,922 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,923 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,924 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,925 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,926 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,927 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,927 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,927 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,927 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,927 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,928 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,928 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,928 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,928 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,929 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,929 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,929 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,929 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,929 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,930 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,930 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,930 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,930 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,930 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,931 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,932 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,933 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,934 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,935 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:47:48,936 - INFO - 
+已创建的节点信息:
+2025-02-23 19:47:48,947 - INFO - 
+Simulation层节点:
+2025-02-23 19:47:48,947 - INFO -   - SIM_lb_test+EBD-1:0: B类型单元 (设备1, 索引: 0, 类型: sim)
+2025-02-23 19:47:48,947 - INFO -   - SIM_lb_test+EBD-1:1: B类型单元 (设备1, 索引: 1, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:2: B类型单元 (设备1, 索引: 2, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:3: B类型单元 (设备1, 索引: 3, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:4: B类型单元 (设备1, 索引: 4, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:5: B类型单元 (设备1, 索引: 5, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:6: B类型单元 (设备1, 索引: 6, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:7: B类型单元 (设备1, 索引: 7, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:8: D类型单元 (设备1, 索引: 8, 类型: sim)
+2025-02-23 19:47:48,948 - INFO -   - SIM_lb_test+EBD-1:9: D类型单元 (设备1, 索引: 9, 类型: sim)
+2025-02-23 19:47:48,949 - INFO -   - SIM_lb_test+EBD-1:10: D类型单元 (设备1, 索引: 10, 类型: sim)
+2025-02-23 19:47:48,949 - INFO -   - SIM_lb_test+EBD-1:11: D类型单元 (设备1, 索引: 11, 类型: sim)
+2025-02-23 19:47:48,949 - INFO -   - SIM_lb_test+EBD-1:12: B类型单元 (设备1, 索引: 12, 类型: sim)
+2025-02-23 19:47:48,949 - INFO -   - SIM_lb_test+EBD-1:13: B类型单元 (设备1, 索引: 13, 类型: sim)
+2025-02-23 19:47:48,949 - INFO -   - SIM_lb_test+EBD-1:14: B类型单元 (设备1, 索引: 14, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EBD-1:15: B类型单元 (设备1, 索引: 15, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EBD-1:16: B类型单元 (设备1, 索引: 16, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EBD-1:17: B类型单元 (设备1, 索引: 17, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EBD-1:18: B类型单元 (设备1, 索引: 18, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EBD-1:19: B类型单元 (设备1, 索引: 19, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EDB-2:0: D类型单元 (设备2, 索引: 0, 类型: sim)
+2025-02-23 19:47:48,950 - INFO -   - SIM_lb_test+EDB-2:1: D类型单元 (设备2, 索引: 1, 类型: sim)
+2025-02-23 19:47:48,951 - INFO -   - SIM_lb_test+EDB-2:2: D类型单元 (设备2, 索引: 2, 类型: sim)
+2025-02-23 19:47:48,951 - INFO -   - SIM_lb_test+EDB-2:3: D类型单元 (设备2, 索引: 3, 类型: sim)
+2025-02-23 19:47:48,951 - INFO -   - SIM_lb_test+EDB-2:4: D类型单元 (设备2, 索引: 4, 类型: sim)
+2025-02-23 19:47:48,951 - INFO -   - SIM_lb_test+EDB-2:5: D类型单元 (设备2, 索引: 5, 类型: sim)
+2025-02-23 19:47:48,951 - INFO -   - SIM_lb_test+EDB-2:6: D类型单元 (设备2, 索引: 6, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:7: B类型单元 (设备2, 索引: 7, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:8: B类型单元 (设备2, 索引: 8, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:9: B类型单元 (设备2, 索引: 9, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:10: D类型单元 (设备2, 索引: 10, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:11: D类型单元 (设备2, 索引: 11, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:12: D类型单元 (设备2, 索引: 12, 类型: sim)
+2025-02-23 19:47:48,952 - INFO -   - SIM_lb_test+EDB-2:13: D类型单元 (设备2, 索引: 13, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:14: D类型单元 (设备2, 索引: 14, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:15: D类型单元 (设备2, 索引: 15, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:16: D类型单元 (设备2, 索引: 16, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:17: D类型单元 (设备2, 索引: 17, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:18: D类型单元 (设备2, 索引: 18, 类型: sim)
+2025-02-23 19:47:48,953 - INFO -   - SIM_lb_test+EDB-2:19: D类型单元 (设备2, 索引: 19, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:0: D类型单元 (设备3, 索引: 0, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:1: D类型单元 (设备3, 索引: 1, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:2: D类型单元 (设备3, 索引: 2, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:3: D类型单元 (设备3, 索引: 3, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:4: D类型单元 (设备3, 索引: 4, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:5: D类型单元 (设备3, 索引: 5, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:6: D类型单元 (设备3, 索引: 6, 类型: sim)
+2025-02-23 19:47:48,954 - INFO -   - SIM_lb_test+EDB-3:7: B类型单元 (设备3, 索引: 7, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:8: B类型单元 (设备3, 索引: 8, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:9: B类型单元 (设备3, 索引: 9, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:10: D类型单元 (设备3, 索引: 10, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:11: D类型单元 (设备3, 索引: 11, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:12: D类型单元 (设备3, 索引: 12, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:13: D类型单元 (设备3, 索引: 13, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:14: D类型单元 (设备3, 索引: 14, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:15: D类型单元 (设备3, 索引: 15, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:16: D类型单元 (设备3, 索引: 16, 类型: sim)
+2025-02-23 19:47:48,955 - INFO -   - SIM_lb_test+EDB-3:17: D类型单元 (设备3, 索引: 17, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EDB-3:18: D类型单元 (设备3, 索引: 18, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EDB-3:19: D类型单元 (设备3, 索引: 19, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:0: B类型单元 (设备4, 索引: 0, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:1: B类型单元 (设备4, 索引: 1, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:2: B类型单元 (设备4, 索引: 2, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:3: B类型单元 (设备4, 索引: 3, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:4: B类型单元 (设备4, 索引: 4, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:5: B类型单元 (设备4, 索引: 5, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:6: B类型单元 (设备4, 索引: 6, 类型: sim)
+2025-02-23 19:47:48,956 - INFO -   - SIM_lb_test+EBD-4:7: B类型单元 (设备4, 索引: 7, 类型: sim)
+2025-02-23 19:47:48,957 - INFO -   - SIM_lb_test+EBD-4:8: D类型单元 (设备4, 索引: 8, 类型: sim)
+2025-02-23 19:47:48,957 - INFO -   - SIM_lb_test+EBD-4:9: D类型单元 (设备4, 索引: 9, 类型: sim)
+2025-02-23 19:47:48,957 - INFO -   - SIM_lb_test+EBD-4:10: D类型单元 (设备4, 索引: 10, 类型: sim)
+2025-02-23 19:47:48,957 - INFO -   - SIM_lb_test+EBD-4:11: D类型单元 (设备4, 索引: 11, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:12: B类型单元 (设备4, 索引: 12, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:13: B类型单元 (设备4, 索引: 13, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:14: B类型单元 (设备4, 索引: 14, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:15: B类型单元 (设备4, 索引: 15, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:16: B类型单元 (设备4, 索引: 16, 类型: sim)
+2025-02-23 19:47:48,958 - INFO -   - SIM_lb_test+EBD-4:17: B类型单元 (设备4, 索引: 17, 类型: sim)
+2025-02-23 19:47:48,959 - INFO -   - SIM_lb_test+EBD-4:18: B类型单元 (设备4, 索引: 18, 类型: sim)
+2025-02-23 19:47:48,959 - INFO -   - SIM_lb_test+EBD-4:19: B类型单元 (设备4, 索引: 19, 类型: sim)
+2025-02-23 19:47:48,965 - INFO - 
+节点统计:
+2025-02-23 19:47:48,966 - INFO - - B类型节点 (sim): 38个
+2025-02-23 19:47:48,966 - INFO - - D类型节点 (sim): 42个
+2025-02-23 19:47:48,972 - INFO - 
+连接关系统计:
+2025-02-23 19:47:48,975 - INFO - - INTERNAL_CONNECTION类型关系: 760个
+2025-02-23 19:47:48,975 - INFO - - ADJACENT_CONNECTION类型关系: 1200个
+2025-02-23 19:47:48,976 - INFO - - TERMINATES_AT类型关系: 64个
+2025-02-23 19:47:48,976 - INFO - - CONNECTED_TO类型关系: 16个
+2025-02-23 19:47:48,976 - INFO - 
+提示: 在Neo4j浏览器中可以使用以下查询来分析节点:
+2025-02-23 19:47:48,976 - INFO - 
+1. 查看所有仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+RETURN v
+
+2. 按类型统计节点:
+MATCH (v:Vertex)
+WITH v.UnitType as unit_type, v.type as type, count(*) as count
+RETURN unit_type, type, count
+ORDER BY unit_type
+
+3. 查看启用的仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
+RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
+        
+2025-02-23 19:49:11,343 - INFO - 开始同步仿真数据...
+2025-02-23 19:49:11,343 - INFO - MySQL连接: 192.168.35.10
+2025-02-23 19:49:11,344 - INFO - Neo4j连接: bolt://192.168.35.10:7687
+2025-02-23 19:49:11,344 - INFO - 尝试连接MySQL,配置信息: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+2025-02-23 19:49:11,379 - INFO - MySQL连接成功!
+2025-02-23 19:49:11,379 - INFO - 1. 仿真设备及单元
+
+2025-02-23 19:49:11,379 - INFO - 正在获取设备类型数据...
+2025-02-23 19:49:11,397 - INFO - 获取到18个设备类型
+2025-02-23 19:49:11,398 - INFO - 正在获取设备数据...
+2025-02-23 19:49:11,405 - INFO - 获取到4个设备
+2025-02-23 19:49:11,405 - INFO - 正在获取点位配置数据...
+2025-02-23 19:49:11,425 - INFO - 获取到194个点位配置
+2025-02-23 19:49:11,425 - INFO - 正在获取面板设备内部连接数据...
+2025-02-23 19:49:11,457 - INFO - 获取到266个面板连接配置
+2025-02-23 19:49:11,458 - INFO - 开始验证数据...
+2025-02-23 19:49:11,458 - INFO - 数据验证完成
+2025-02-23 19:49:11,499 - INFO - 开始创建仿真节点...
+2025-02-23 19:49:12,145 - INFO - 开始创建节点间连接关系...
+2025-02-23 19:49:12,164 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 209} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:49:12,164 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 200} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId = v2.DeviceId \n              AND v1.PointIndex < v2.PointIndex\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:INTERNAL_CONNECTION {\n                type: 'internal',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:49:12,181 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 19, offset: 205} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:49:12,182 - WARNING - Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 6, column: 28, offset: 214} for query: "\n            MATCH (v1:Vertex {type: 'sim'})\n            MATCH (v2:Vertex {type: 'sim'})\n            WHERE v1.DeviceId < v2.DeviceId \n              AND abs(v1.DeviceId - v2.DeviceId) = 1\n              AND id(v1) < id(v2)\n            CREATE (v1)-[:ADJACENT_CONNECTION {\n                type: 'adjacent',\n                created_at: $timestamp\n            }]->(v2)\n        "
+2025-02-23 19:49:12,199 - INFO - 开始处理面板设备内部连接...
+2025-02-23 19:49:12,200 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,201 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,201 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,201 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,202 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,202 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,202 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,202 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,203 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,204 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,205 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,206 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,207 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,208 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,209 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,210 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,211 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,212 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,213 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,214 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,215 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,215 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,215 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,215 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,216 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,216 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,216 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,216 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,217 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,218 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,219 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,220 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,221 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,222 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,223 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,224 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,225 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,226 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,227 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,228 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,229 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,230 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,231 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,231 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,231 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,231 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,231 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,232 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,232 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,232 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,232 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,233 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,233 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,233 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,233 - ERROR - 处理连接数据时发生未知错误: 'connections'
+2025-02-23 19:49:12,234 - INFO - 
+已创建的节点信息:
+2025-02-23 19:49:12,247 - INFO - 
+Simulation层节点:
+2025-02-23 19:49:12,247 - INFO -   - SIM_lb_test+EBD-1:0: B类型单元 (设备1, 索引: 0, 类型: sim)
+2025-02-23 19:49:12,248 - INFO -   - SIM_lb_test+EBD-1:1: B类型单元 (设备1, 索引: 1, 类型: sim)
+2025-02-23 19:49:12,249 - INFO -   - SIM_lb_test+EBD-1:2: B类型单元 (设备1, 索引: 2, 类型: sim)
+2025-02-23 19:49:12,249 - INFO -   - SIM_lb_test+EBD-1:3: B类型单元 (设备1, 索引: 3, 类型: sim)
+2025-02-23 19:49:12,249 - INFO -   - SIM_lb_test+EBD-1:4: B类型单元 (设备1, 索引: 4, 类型: sim)
+2025-02-23 19:49:12,250 - INFO -   - SIM_lb_test+EBD-1:5: B类型单元 (设备1, 索引: 5, 类型: sim)
+2025-02-23 19:49:12,250 - INFO -   - SIM_lb_test+EBD-1:6: B类型单元 (设备1, 索引: 6, 类型: sim)
+2025-02-23 19:49:12,250 - INFO -   - SIM_lb_test+EBD-1:7: B类型单元 (设备1, 索引: 7, 类型: sim)
+2025-02-23 19:49:12,250 - INFO -   - SIM_lb_test+EBD-1:8: D类型单元 (设备1, 索引: 8, 类型: sim)
+2025-02-23 19:49:12,250 - INFO -   - SIM_lb_test+EBD-1:9: D类型单元 (设备1, 索引: 9, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:10: D类型单元 (设备1, 索引: 10, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:11: D类型单元 (设备1, 索引: 11, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:12: B类型单元 (设备1, 索引: 12, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:13: B类型单元 (设备1, 索引: 13, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:14: B类型单元 (设备1, 索引: 14, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:15: B类型单元 (设备1, 索引: 15, 类型: sim)
+2025-02-23 19:49:12,251 - INFO -   - SIM_lb_test+EBD-1:16: B类型单元 (设备1, 索引: 16, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EBD-1:17: B类型单元 (设备1, 索引: 17, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EBD-1:18: B类型单元 (设备1, 索引: 18, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EBD-1:19: B类型单元 (设备1, 索引: 19, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EDB-2:0: D类型单元 (设备2, 索引: 0, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EDB-2:1: D类型单元 (设备2, 索引: 1, 类型: sim)
+2025-02-23 19:49:12,252 - INFO -   - SIM_lb_test+EDB-2:2: D类型单元 (设备2, 索引: 2, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:3: D类型单元 (设备2, 索引: 3, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:4: D类型单元 (设备2, 索引: 4, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:5: D类型单元 (设备2, 索引: 5, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:6: D类型单元 (设备2, 索引: 6, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:7: B类型单元 (设备2, 索引: 7, 类型: sim)
+2025-02-23 19:49:12,253 - INFO -   - SIM_lb_test+EDB-2:8: B类型单元 (设备2, 索引: 8, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:9: B类型单元 (设备2, 索引: 9, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:10: D类型单元 (设备2, 索引: 10, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:11: D类型单元 (设备2, 索引: 11, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:12: D类型单元 (设备2, 索引: 12, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:13: D类型单元 (设备2, 索引: 13, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:14: D类型单元 (设备2, 索引: 14, 类型: sim)
+2025-02-23 19:49:12,254 - INFO -   - SIM_lb_test+EDB-2:15: D类型单元 (设备2, 索引: 15, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-2:16: D类型单元 (设备2, 索引: 16, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-2:17: D类型单元 (设备2, 索引: 17, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-2:18: D类型单元 (设备2, 索引: 18, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-2:19: D类型单元 (设备2, 索引: 19, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-3:0: D类型单元 (设备3, 索引: 0, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-3:1: D类型单元 (设备3, 索引: 1, 类型: sim)
+2025-02-23 19:49:12,255 - INFO -   - SIM_lb_test+EDB-3:2: D类型单元 (设备3, 索引: 2, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:3: D类型单元 (设备3, 索引: 3, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:4: D类型单元 (设备3, 索引: 4, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:5: D类型单元 (设备3, 索引: 5, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:6: D类型单元 (设备3, 索引: 6, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:7: B类型单元 (设备3, 索引: 7, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:8: B类型单元 (设备3, 索引: 8, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:9: B类型单元 (设备3, 索引: 9, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:10: D类型单元 (设备3, 索引: 10, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:11: D类型单元 (设备3, 索引: 11, 类型: sim)
+2025-02-23 19:49:12,256 - INFO -   - SIM_lb_test+EDB-3:12: D类型单元 (设备3, 索引: 12, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:13: D类型单元 (设备3, 索引: 13, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:14: D类型单元 (设备3, 索引: 14, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:15: D类型单元 (设备3, 索引: 15, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:16: D类型单元 (设备3, 索引: 16, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:17: D类型单元 (设备3, 索引: 17, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:18: D类型单元 (设备3, 索引: 18, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EDB-3:19: D类型单元 (设备3, 索引: 19, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EBD-4:0: B类型单元 (设备4, 索引: 0, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EBD-4:1: B类型单元 (设备4, 索引: 1, 类型: sim)
+2025-02-23 19:49:12,257 - INFO -   - SIM_lb_test+EBD-4:2: B类型单元 (设备4, 索引: 2, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:3: B类型单元 (设备4, 索引: 3, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:4: B类型单元 (设备4, 索引: 4, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:5: B类型单元 (设备4, 索引: 5, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:6: B类型单元 (设备4, 索引: 6, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:7: B类型单元 (设备4, 索引: 7, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:8: D类型单元 (设备4, 索引: 8, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:9: D类型单元 (设备4, 索引: 9, 类型: sim)
+2025-02-23 19:49:12,258 - INFO -   - SIM_lb_test+EBD-4:10: D类型单元 (设备4, 索引: 10, 类型: sim)
+2025-02-23 19:49:12,259 - INFO -   - SIM_lb_test+EBD-4:11: D类型单元 (设备4, 索引: 11, 类型: sim)
+2025-02-23 19:49:12,259 - INFO -   - SIM_lb_test+EBD-4:12: B类型单元 (设备4, 索引: 12, 类型: sim)
+2025-02-23 19:49:12,259 - INFO -   - SIM_lb_test+EBD-4:13: B类型单元 (设备4, 索引: 13, 类型: sim)
+2025-02-23 19:49:12,259 - INFO -   - SIM_lb_test+EBD-4:14: B类型单元 (设备4, 索引: 14, 类型: sim)
+2025-02-23 19:49:12,260 - INFO -   - SIM_lb_test+EBD-4:15: B类型单元 (设备4, 索引: 15, 类型: sim)
+2025-02-23 19:49:12,260 - INFO -   - SIM_lb_test+EBD-4:16: B类型单元 (设备4, 索引: 16, 类型: sim)
+2025-02-23 19:49:12,260 - INFO -   - SIM_lb_test+EBD-4:17: B类型单元 (设备4, 索引: 17, 类型: sim)
+2025-02-23 19:49:12,260 - INFO -   - SIM_lb_test+EBD-4:18: B类型单元 (设备4, 索引: 18, 类型: sim)
+2025-02-23 19:49:12,260 - INFO -   - SIM_lb_test+EBD-4:19: B类型单元 (设备4, 索引: 19, 类型: sim)
+2025-02-23 19:49:12,266 - INFO - 
+节点统计:
+2025-02-23 19:49:12,266 - INFO - - B类型节点 (sim): 38个
+2025-02-23 19:49:12,267 - INFO - - D类型节点 (sim): 42个
+2025-02-23 19:49:12,272 - INFO - 
+连接关系统计:
+2025-02-23 19:49:12,274 - INFO - - INTERNAL_CONNECTION类型关系: 760个
+2025-02-23 19:49:12,275 - INFO - - ADJACENT_CONNECTION类型关系: 1200个
+2025-02-23 19:49:12,275 - INFO - - TERMINATES_AT类型关系: 64个
+2025-02-23 19:49:12,275 - INFO - - CONNECTED_TO类型关系: 16个
+2025-02-23 19:49:12,275 - INFO - 
+提示: 在Neo4j浏览器中可以使用以下查询来分析节点:
+2025-02-23 19:49:12,275 - INFO - 
+1. 查看所有仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+RETURN v
+
+2. 按类型统计节点:
+MATCH (v:Vertex)
+WITH v.UnitType as unit_type, v.type as type, count(*) as count
+RETURN unit_type, type, count
+ORDER BY unit_type
+
+3. 查看启用的仿真节点:
+MATCH (v:Vertex {type: 'sim'})
+WHERE v.IsEnabled = true
+RETURN v
+
+4. 查看节点间的连接关系:
+MATCH p=()-[r:INTERNAL_CONNECTION|ADJACENT_CONNECTION|PANEL_CONNECTION]->()
+RETURN p LIMIT 100
+
+5. 按设备分组查看连接关系:
+MATCH (v1:Vertex)-[r]->(v2:Vertex)
+RETURN v1.DeviceId as device, type(r) as rel_type, count(r) as count
+ORDER BY device
+
+6. 查找孤立节点(没有任何连接的节点):
+MATCH (v:Vertex)
+WHERE NOT (v)-[]-()
+RETURN v
+
+7. 查看面板内部连接:
+MATCH (v1:Vertex)-[r:PANEL_CONNECTION]->(v2:Vertex)
+RETURN v1.name, type(r), r.type, v2.name
+ORDER BY r.type
+
+8. 按连接类型统计面板连接:
+MATCH ()-[r:PANEL_CONNECTION]->()
+RETURN r.type as connection_type, count(r) as count
+ORDER BY count DESC
+        
