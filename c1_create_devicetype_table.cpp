@@ -87,7 +87,14 @@ private:
     // 解析设备信息
     V_Device parseDeviceInfo(const std::string& deviceStr) {
         V_Device device;
-        device.FDID = deviceStr;
+        
+        // 去掉冒号及其后面的部分，作为FDID
+        std::string processedStr = deviceStr;
+        size_t colonPos = processedStr.find(":");
+        if (colonPos != std::string::npos) {
+            processedStr = processedStr.substr(0, colonPos);
+        }
+        device.FDID = processedStr;
 
         // 解析功能和位置
         size_t equalPos = deviceStr.find("=");
@@ -99,7 +106,14 @@ private:
                 size_t minusPos = deviceStr.find("-", plusPos);
                 if (minusPos != std::string::npos) {
                     device.Location = deviceStr.substr(plusPos + 1, minusPos - (plusPos + 1));
-                    device.Device = deviceStr.substr(minusPos + 1);
+                    
+                    // 设备部分也需要去掉冒号及其后面的部分
+                    std::string devicePart = deviceStr.substr(minusPos + 1);
+                    colonPos = devicePart.find(":");
+                    if (colonPos != std::string::npos) {
+                        devicePart = devicePart.substr(0, colonPos);
+                    }
+                    device.Device = devicePart;
                 }
             }
         }
