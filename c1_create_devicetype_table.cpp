@@ -113,7 +113,8 @@ private:
         device.Type = "Unknown";   // 默认类型
 
         // 根据设备特征判断类型
-        if (device.Device.find("PLC") != std::string::npos) {
+        if (device.Device.find("PLC") != std::string::npos ||
+            (device.Device.length() > 0 && device.Device[0] == 'A')) {
             device.isPLC = true;
             device.Type = "PLC";
         } else if (device.Device.find("X") == 0) {
