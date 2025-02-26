@@ -7,17 +7,21 @@
 #include <windows.h>
 #include "C:/clib/mysql/include/mysql.h"
 
-// 设备节点结构
-struct V_Device {
-    std::string FDID;          // 完整设备标识符
-    std::string Function;      // 功能
-    std::string Location;      // 位置
-    std::string Device;        // 设备
-    bool isInPanel;           // 是否在柜内
-    std::string Type;         // 设备类型
-    bool isSim;              // 是否为仿真设备
-    bool isPLC;              // 是否PLC设备
-    bool isTerminal;         // 是否端子设备
+// 设备点结构
+struct V_DevicePoint {
+    std::string FTID;            // 完整设备标识符点ID
+    std::string belongtoDevice;  // 属于设备
+    std::string Function;        // 功能
+    std::string Location;        // 位置
+    std::string Device;          // 设备
+    std::string Type;            // 点类型
+    std::string description;     // 点描述（改为description）
+    double voltage;              // 电压
+    double current;              // 电流
+    double resistance;           // 电阻
+    bool isSocket;               // 是否是插座点
+    bool isSetPoint;             // 是否具备设定功能
+    bool isSensePoint;           // 是否具备感知功能
 };
 
 // 简单的JSON解析函数
@@ -38,7 +42,7 @@ std::string getValueFromJson(const std::string& jsonStr, const std::string& key)
     return jsonStr.substr(start, end - start);
 }
 
-class DeviceImporter {
+class DevicePointImporter {
 private:
     MYSQL* conn;
     std::string tableName;
@@ -84,64 +88,77 @@ private:
         }
     }
 
-    // 解析设备信息
-    V_Device parseDeviceInfo(const std::string& deviceStr) {
-        V_Device device;
+    // 解析设备点信息
+    V_DevicePoint parseDevicePointInfo(const std::string& deviceStr) {
+        V_DevicePoint point;
+        point.FTID = deviceStr;
+        point.belongtoDevice = ""; // 将在后续处理中设置
         
-        // 去掉冒号及其后面的部分，作为FDID
-        std::string processedStr = deviceStr;
-        size_t colonPos = processedStr.find(":");
-        if (colonPos != std::string::npos) {
-            processedStr = processedStr.substr(0, colonPos);
-        }
-        device.FDID = processedStr;
+        // 默认电气特性
+        point.voltage = 0.0;
+        point.current = 0.0;
+        point.resistance = 0.0;
+        
+        // 默认点属性
+        point.isSocket = false;
+        point.isSetPoint = false;
+        point.isSensePoint = false;
+        point.description = "";
+        point.Type = "Unknown";
 
         // 解析功能和位置
         size_t equalPos = deviceStr.find("=");
         if (equalPos != std::string::npos) {
             size_t plusPos = deviceStr.find("+", equalPos);
             if (plusPos != std::string::npos) {
-                device.Function = deviceStr.substr(equalPos + 1, plusPos - (equalPos + 1));
+                point.Function = deviceStr.substr(equalPos + 1, plusPos - (equalPos + 1));
                 
                 size_t minusPos = deviceStr.find("-", plusPos);
                 if (minusPos != std::string::npos) {
-                    device.Location = deviceStr.substr(plusPos + 1, minusPos - (plusPos + 1));
+                    point.Location = deviceStr.substr(plusPos + 1, minusPos - (plusPos + 1));
                     
-                    // 设备部分也需要去掉冒号及其后面的部分
+                    // 设备部分需要处理冒号及其后面的部分
                     std::string devicePart = deviceStr.substr(minusPos + 1);
-                    colonPos = devicePart.find(":");
+                    size_t colonPos = devicePart.find(":");
                     if (colonPos != std::string::npos) {
-                        devicePart = devicePart.substr(0, colonPos);
+                        // 设备部分取冒号前面的内容
+                        point.Device = devicePart.substr(0, colonPos);
+                        
+                        // 提取点的描述 (冒号后的内容)
+                        point.description = devicePart.substr(colonPos + 1);
+                        
+                        // 尝试从描述中提取点的属性
+                        if (point.description.find("SET") != std::string::npos) {
+                            point.isSetPoint = true;
+                        }
+                        if (point.description.find("SENSE") != std::string::npos) {
+                            point.isSensePoint = true;
+                        }
+                        if (point.description.find("SOCKET") != std::string::npos) {
+                            point.isSocket = true;
+                        }
+                    } else {
+                        point.Device = devicePart;
                     }
-                    device.Device = devicePart;
+                    
+                    // 设置所属设备 (设备标识符)
+                    point.belongtoDevice = point.Function + "+" + point.Location + "-" + point.Device;
                 }
             }
         }
 
-        // 设置默认值
-        // 判断Location是否以K1.开头，如果是则isInPanel为true，否则为false
-        device.isInPanel = (device.Location.length() >= 3 && device.Location.substr(0, 3) == "K1.");
-        device.isSim = false;     // 默认非仿真设备
-        device.isPLC = false;     // 默认非PLC设备
-        device.isTerminal = false; // 默认非端子设备
-        device.Type = "Unknown";   // 默认类型
-
         // 根据设备特征判断类型
-        if (device.Device.find("PLC") != std::string::npos ||
-            (device.Device.length() > 0 && device.Device[0] == 'A')) {
-            device.isPLC = true;
-            device.Type = "PLC";
-        } else if (device.Device.length() >= 3 &&
-                  (device.Device.substr(0, 3) == "X20" ||
-                   device.Device.substr(0, 3) == "X21" ||
-                   device.Device.substr(0, 3) == "X22" ||
-                   device.Device.substr(0, 3) == "X23" ||
-                   device.Device.substr(0, 3) == "X24")) {
-            device.isTerminal = true;
-            device.Type = "Terminal";
+        if (point.Device.find("PLC") != std::string::npos) {
+            point.Type = "PLC_Point";
+        } else if (point.Device.find("X") == 0) {
+            point.Type = "Terminal_Point";
+        } else if (point.isSetPoint) {
+            point.Type = "SetPoint";
+        } else if (point.isSensePoint) {
+            point.Type = "SensePoint";
         }
 
-        return device;
+        return point;
     }
 
     // 转义字符串
@@ -153,7 +170,7 @@ private:
     }
 
 public:
-    DeviceImporter(const std::string& table) : tableName(table) {
+    DevicePointImporter(const std::string& table) : tableName(table) {
         conn = mysql_init(NULL);
         if (conn == NULL) {
             std::cerr << "MySQL初始化失败" << std::endl;
@@ -166,42 +183,49 @@ public:
             return;
         }
 
+        std::cout << "CSV路径: " << csvPath << std::endl;
+        std::cout << "项目编号: " << projectNumber << std::endl;
+
         if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(),
                               database.c_str(), 0, NULL, 0)) {
-            std::cerr << "连接数据库失败" << std::endl;
+            std::cerr << "连接数据库失败: " << mysql_error(conn) << std::endl;
             return;
         }
 
         // 设置字符集
         mysql_set_character_set(conn, "utf8mb4");
-        createDeviceTable();
+        createDevicePointTable();
     }
 
-    ~DeviceImporter() {
+    ~DevicePointImporter() {
         if (conn) {
             mysql_close(conn);
         }
     }
 
-    // 创建设备表
-    bool createDeviceTable() {
+    // 创建设备点表
+    bool createDevicePointTable() {
         std::string dropTable = "DROP TABLE IF EXISTS " + tableName;
         if (mysql_query(conn, dropTable.c_str())) {
-            std::cerr << "删除旧表失败" << std::endl;
+            std::cerr << "删除旧表失败: " << mysql_error(conn) << std::endl;
             return false;
         }
 
         std::string createTable = "CREATE TABLE " + tableName + " ("
             "id INT PRIMARY KEY AUTO_INCREMENT, "
-            "FDID VARCHAR(255) NOT NULL UNIQUE, "
+            "FTID VARCHAR(255) NOT NULL UNIQUE, "
+            "belongtoDevice VARCHAR(255), "
             "Function VARCHAR(255), "
             "Location VARCHAR(255), "
             "Device VARCHAR(255), "
-            "isInPanel BOOLEAN DEFAULT TRUE, "
             "Type VARCHAR(50), "
-            "isSim BOOLEAN DEFAULT FALSE, "
-            "isPLC BOOLEAN DEFAULT FALSE, "
-            "isTerminal BOOLEAN DEFAULT FALSE"
+            "description VARCHAR(255), "
+            "voltage DOUBLE DEFAULT 0, "
+            "current DOUBLE DEFAULT 0, "
+            "resistance DOUBLE DEFAULT 0, "
+            "isSocket BOOLEAN DEFAULT FALSE, "
+            "isSetPoint BOOLEAN DEFAULT FALSE, "
+            "isSensePoint BOOLEAN DEFAULT FALSE"
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
         return mysql_query(conn, createTable.c_str()) == 0;
@@ -211,11 +235,11 @@ public:
     bool importFromCSV() {
         std::ifstream file(csvPath);
         if (!file.is_open()) {
-            std::cerr << "无法打开CSV文件" << std::endl;
+            std::cerr << "无法打开CSV文件: " << csvPath << std::endl;
             return false;
         }
 
-        std::vector<V_Device> devices;
+        std::vector<V_DevicePoint> devicePoints;
         std::string line;
         int lineNum = 0;
 
@@ -248,57 +272,74 @@ public:
                     currentField += c;
                 }
             }
-            fields.push_back(currentField);
+            fields.push_back(currentField); // 不要忘记最后一个字段
 
+            // 处理第8列和第9列的设备点
             if (fields.size() >= 8) {
                 // 检查第8列是否以'='开头，确保是设备数据
                 if (!fields[7].empty() && fields[7].find("=") == 0) {
-                    V_Device device = parseDeviceInfo(fields[7]);
-                    devices.push_back(device);
+                    V_DevicePoint point = parseDevicePointInfo(fields[7]);
+                    devicePoints.push_back(point);
                 }
                 // 检查第9列
                 if (fields.size() > 8 && !fields[8].empty() && fields[8].find("=") == 0) {
-                    V_Device device = parseDeviceInfo(fields[8]);
-                    devices.push_back(device);
+                    V_DevicePoint point = parseDevicePointInfo(fields[8]);
+                    devicePoints.push_back(point);
                 }
             }
         }
 
         file.close();
-        return batchInsertDevices(devices);
+        std::cout << "解析完成，共 " << devicePoints.size() << " 个设备点" << std::endl;
+        return batchInsertDevicePoints(devicePoints);
     }
 
 private:
-    // 批量插入设备
-    bool batchInsertDevices(const std::vector<V_Device>& devices) {
+    // 批量插入设备点
+    bool batchInsertDevicePoints(const std::vector<V_DevicePoint>& points) {
         if (mysql_query(conn, "START TRANSACTION")) {
+            std::cerr << "开始事务失败: " << mysql_error(conn) << std::endl;
             return false;
         }
 
         bool success = true;
-        for (const auto& device : devices) {
+        for (const auto& point : points) {
             std::string query = "INSERT IGNORE INTO " + tableName + 
-                " (FDID, Function, Location, Device, isInPanel, Type, isSim, isPLC, isTerminal) VALUES ("
-                "'" + escapeString(device.FDID) + "', "
-                "'" + escapeString(device.Function) + "', "
-                "'" + escapeString(device.Location) + "', "
-                "'" + escapeString(device.Device) + "', "
-                + std::to_string(device.isInPanel) + ", "
-                "'" + escapeString(device.Type) + "', "
-                + std::to_string(device.isSim) + ", "
-                + std::to_string(device.isPLC) + ", "
-                + std::to_string(device.isTerminal) + ")";
+                " (FTID, belongtoDevice, Function, Location, Device, Type, description, "
+                "voltage, current, resistance, isSocket, isSetPoint, isSensePoint) VALUES ("
+                "'" + escapeString(point.FTID) + "', "
+                "'" + escapeString(point.belongtoDevice) + "', "
+                "'" + escapeString(point.Function) + "', "
+                "'" + escapeString(point.Location) + "', "
+                "'" + escapeString(point.Device) + "', "
+                "'" + escapeString(point.Type) + "', "
+                "'" + escapeString(point.description) + "', "
+                + std::to_string(point.voltage) + ", "
+                + std::to_string(point.current) + ", "
+                + std::to_string(point.resistance) + ", "
+                + std::to_string(point.isSocket) + ", "
+                + std::to_string(point.isSetPoint) + ", "
+                + std::to_string(point.isSensePoint) + ")";
 
             if (mysql_query(conn, query.c_str()) != 0) {
+                std::cerr << "插入失败: " << mysql_error(conn) << std::endl;
+                std::cerr << "问题数据: " << point.FTID << std::endl;
                 success = false;
                 break;
             }
         }
 
         if (success) {
-            return mysql_query(conn, "COMMIT") == 0;
+            if (mysql_query(conn, "COMMIT")) {
+                std::cerr << "提交事务失败: " << mysql_error(conn) << std::endl;
+                return false;
+            }
+            std::cout << "成功插入 " << points.size() << " 条记录" << std::endl;
+            return true;
         } else {
-            mysql_query(conn, "ROLLBACK");
+            if (mysql_query(conn, "ROLLBACK")) {
+                std::cerr << "回滚事务失败: " << mysql_error(conn) << std::endl;
+            }
             return false;
         }
     }
@@ -307,11 +348,11 @@ private:
 int main() {
     SetConsoleOutputCP(CP_UTF8);
     
-    DeviceImporter importer("v_points");
+    DevicePointImporter importer("v_device_points");
     if (importer.importFromCSV()) {
-        std::cout << "设备数据导入成功" << std::endl;
+        std::cout << "设备点数据导入成功" << std::endl;
     } else {
-        std::cout << "设备数据导入失败" << std::endl;
+        std::cout << "设备点数据导入失败" << std::endl;
     }
 
     return 0;
