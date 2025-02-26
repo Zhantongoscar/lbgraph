@@ -117,7 +117,12 @@ private:
             (device.Device.length() > 0 && device.Device[0] == 'A')) {
             device.isPLC = true;
             device.Type = "PLC";
-        } else if (device.Device.find("X") == 0) {
+        } else if (device.Device.length() >= 3 &&
+                  (device.Device.substr(0, 3) == "X20" ||
+                   device.Device.substr(0, 3) == "X21" ||
+                   device.Device.substr(0, 3) == "X22" ||
+                   device.Device.substr(0, 3) == "X23" ||
+                   device.Device.substr(0, 3) == "X24")) {
             device.isTerminal = true;
             device.Type = "Terminal";
         }
