@@ -14,6 +14,7 @@ struct V_Connection {
     std::string target;         // 完整点的目标设备标识符
     std::string color;          // 颜色
     bool isCable;               // 属于电缆
+    bool isInPanel;             // 是否在柜内
     std::string connType;       // 类型（内部线圈 内部触点常开 内部触点常闭 外部连接）
     double voltage;             // 电压
     double current;             // 电流
@@ -84,6 +85,25 @@ private:
         }
     }
 
+    // 检查设备位置是否在柜内
+    bool isLocationInPanel(const std::string& deviceStr) {
+        // 查找 "+" 和 "-" 或 ":" 的位置，位置信息位于这两个符号之间
+        size_t plusPos = deviceStr.find("+");
+        if (plusPos == std::string::npos) return false;
+        
+        size_t endPos = deviceStr.find("-", plusPos);
+        if (endPos == std::string::npos) {
+            endPos = deviceStr.find(":", plusPos);
+            if (endPos == std::string::npos) return false;
+        }
+        
+        // 提取位置信息
+        std::string location = deviceStr.substr(plusPos + 1, endPos - (plusPos + 1));
+        
+        // 检查位置是否以 "K1." 开头
+        return location.compare(0, 3, "K1.") == 0;
+    }
+
     // 判断连接类型
     std::string determineConnType(const std::string& sourceDevice, const std::string& targetDevice) {
         // 内部线圈判断
@@ -132,6 +152,9 @@ private:
         
         // 默认为非电缆
         conn.isCable = false;
+        
+        // 判断是否在柜内 - 源和目标都需要在柜内
+        conn.isInPanel = isLocationInPanel(source) && isLocationInPanel(target);
         
         // 判断是否为电缆 (通常包含 "Cable" 或 "电缆" 等关键词)
         if (connNo.find("Cable") != std::string::npos || 
@@ -207,6 +230,7 @@ public:
             "target VARCHAR(255) NOT NULL, "
             "color VARCHAR(50), "
             "isCable BOOLEAN DEFAULT FALSE, "
+            "isInPanel BOOLEAN DEFAULT FALSE, "
             "connType VARCHAR(50), "
             "voltage DOUBLE DEFAULT 0, "
             "current DOUBLE DEFAULT 0, "
@@ -214,7 +238,8 @@ public:
             "UNIQUE KEY conn_unique (source, target), "
             "INDEX idx_source (source), "
             "INDEX idx_target (target), "
-            "INDEX idx_conn_type (connType)"
+            "INDEX idx_conn_type (connType), "
+            "INDEX idx_in_panel (isInPanel)"
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
         return mysql_query(conn, createTable.c_str()) == 0;
@@ -294,12 +319,13 @@ private:
         bool success = true;
         for (const auto& connection : connections) {
             std::string query = "INSERT IGNORE INTO " + tableName + 
-                " (connNo, source, target, color, isCable, connType, voltage, current, resistance) VALUES ("
+                " (connNo, source, target, color, isCable, isInPanel, connType, voltage, current, resistance) VALUES ("
                 "'" + escapeString(connection.connNo) + "', "
                 "'" + escapeString(connection.source) + "', "
                 "'" + escapeString(connection.target) + "', "
                 "'" + escapeString(connection.color) + "', "
                 + std::to_string(connection.isCable) + ", "
+                + std::to_string(connection.isInPanel) + ", "
                 "'" + escapeString(connection.connType) + "', "
                 + std::to_string(connection.voltage) + ", "
                 + std::to_string(connection.current) + ", "
