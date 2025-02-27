@@ -17,6 +17,15 @@
 ## c2.bat
 `c2.bat` 为mysql的 types 表格 根据一些统用规则，自动建立连接。
 
+## c2a.bat
+zt: 建立设备类型的连机定义 以及具体实例的连接空白表。
+`c2a.bat` 文件的功能是编译和运行 c2a_create_devicetype_table.cpp 程序，该程序用于创建和填充 panel_device_inner 表和 panel_types 表。程序从配置文件中读取CSV路径和项目编号，然后从CSV文件中提取设备信息，分析设备端口并根据端口特征进行设备类型分类。它主要执行以下功能：
+1. 解析设备标识符，提取功能(Function)和位置(Location)信息
+2. 为每个设备创建端口列表(terminal_list)
+3. 根据端口特征对设备进行分类，为相似设备分配相同的类型(TYPE)
+4. 创建内部连接列表(inner_conn_list)，定义设备内部端口之间的关系
+5. 自动清理端口数量少于2个的无效设备记录
+
 ## c3.bat
 `c3.bat` python文件，用于csv文件 转换 vertex 和 edge ，筛选后写于 neo4j数据库
 
