@@ -12,12 +12,20 @@ using json = nlohmann::json;
 using namespace std;
 
 struct DeviceInfo {
-    string comparable;
-    string configuration_type;
-    string default_unit;
-    string reuse_not_allowed;
-    string old_part_number;
-    string machine_type;
+    string level;             // Level
+    string number;           // Number
+    string type;             // Type
+    string assembly_mode;    // Assembly Mode
+    string name;             // Name
+    string operating_element; // Operating Element
+    string bom_class;        // BOM Class
+    string name_zh_chs;      // Chinese Name
+    string comparable;       // Comparable
+    string configuration_type; // Configuration Type
+    string default_unit;     // Default Unit
+    string reuse_not_allowed; // Reuse Not Allowed
+    string old_part_number;  // Old Part Number
+    string machine_type;     // Machine Type
     string basic_material;
     string basic_material_desc;
     string supersede;
@@ -92,28 +100,27 @@ vector<DeviceInfo> readExcelData(const string &filename) {
     cout << "已读取文件: " << filename << endl;
     string line;
     int line_count = 0;
-    int records_read = 0;  // 添加记录计数器
-    const int MAX_RECORDS = 10;  // 限制最大读取记录数
+    int records_read = 0;
+    const int MAX_RECORDS = 10;
 
-    while (getline(file, line) && records_read < MAX_RECORDS) {  // 添加记录数限制
-        line_count++;
-        if (line_count <= 2) {  // 跳过前两行
-            continue;
-        }
-
-        DeviceInfo device;
-        stringstream ss(line);
-        string field;
+    // 跳过 BOM Report 行和 BOM Usage Attributes 行
+    getline(file, line);
+    getline(file, line);
+    
+    // 读取字段标题行
+    getline(file, line);
+    
+    // 开始读取数据行
+    while (getline(file, line) && records_read < MAX_RECORDS) {
         vector<string> fields;
-        bool in_quoted_field = false;
         string current_field;
+        bool in_quoted_field = false;
         
         // 手动解析CSV，正确处理引号
         for (size_t i = 0; i < line.length(); i++) {
             char c = line[i];
             if (c == '"') {
                 if (in_quoted_field && i + 1 < line.length() && line[i + 1] == '"') {
-                    // 处理转义的引号
                     current_field += '"';
                     i++;
                 } else {
@@ -126,58 +133,42 @@ vector<DeviceInfo> readExcelData(const string &filename) {
                 current_field += c;
             }
         }
-        fields.push_back(parseCSVField(current_field)); // 添加最后一个字段
+        fields.push_back(parseCSVField(current_field));
 
-        // 确保字段数量正确
-        while (fields.size() < 33) {  // 调整为实际字段数量
-            fields.push_back("");
-        }
-
-        // 按新的字段顺序赋值
-        device.comparable = fields[0];
-        device.configuration_type = fields[1];
-        device.default_unit = fields[2];
-        device.reuse_not_allowed = fields[3];
-        device.old_part_number = fields[4];
-        device.machine_type = fields[5];
-        device.basic_material = fields[6];
-        device.basic_material_desc = fields[7];
-        device.supersede = fields[8];
-        device.superseded_by = fields[9];
-        device.material_group = fields[10];
-        device.no_logistic_relevance = fields[11];
-        device.dangerous_good_indic = fields[12];
-        device.class_node = fields[13];
-        device.legacy_id = fields[14];
-        device.electrical_relevant = fields[15];
-        device.doc_classification = fields[16];
-        device.stackability = fields[17];
-        device.delta_x = fields[18];
-        device.delta_y = fields[19];
-        device.delta_z = fields[20];
-        device.mass = fields[21];
-        device.length = fields[22];
-        device.width = fields[23];
-        device.height = fields[24];
-        device.netto_weight = fields[25];
-        device.weight_unit = fields[26];
-        device.weight_code = fields[27];
-        device.service_life = fields[28];
-        device.spc_termination = fields[29];
-        device.design_office = fields[30];
-        device.division = fields[31];
-        device.modified_by = fields[32];
-        device.last_modified = fields.size() > 33 ? fields[33] : "";
-
-        // 只添加非空行
-        if (!device.comparable.empty() || !device.configuration_type.empty()) {
-            data.push_back(device);
-            records_read++;  // 增加记录计数
-            cout << "已读取第 " << records_read << " 条记录" << endl;  // 添加进度显示
+        // 确保有足够的字段
+        if (fields.size() >= 40) {  // 按实际CSV文件的字段数调整
+            DeviceInfo device;
+            int field_index = 0;
+            device.level = fields[field_index++];
+            device.number = fields[field_index++];
+            device.type = fields[field_index++];
+            device.assembly_mode = fields[field_index++];
+            field_index = 8; // Skip to name field
+            device.name = fields[field_index++];
+            field_index = 17; // Skip to operating element
+            device.operating_element = fields[field_index++];
+            device.bom_class = fields[field_index++];
+            field_index = 23; // Skip to Chinese name
+            device.name_zh_chs = fields[field_index++];
+            field_index = 34; // Skip to comparable
+            device.comparable = fields[field_index++];
+            device.configuration_type = fields[field_index++];
+            device.default_unit = fields[field_index++];
+            device.reuse_not_allowed = fields[field_index++];
+            device.old_part_number = fields[field_index++];
+            device.machine_type = fields[field_index++];
+            
+            // 只添加非空记录
+            if (!device.level.empty() && device.level != "Level") {
+                data.push_back(device);
+                records_read++;
+                cout << "已读取第 " << records_read << " 条记录, Level值: " << device.level 
+                     << ", Number: " << device.number << endl;
+            }
         }
     }
 
-    cout << "已读取 " << data.size() << " 行数据" << endl;
+    cout << "共读取 " << data.size() << " 行数据" << endl;
     return data;
 }
 
@@ -272,6 +263,14 @@ int main() {
 
     // 创建表 leybold_device_lib - 使用新的字段结构
     string create_table_query = "CREATE TABLE leybold_device_lib ("
+        "level TEXT, "
+        "number TEXT, "
+        "type TEXT, "
+        "assembly_mode TEXT, "
+        "name TEXT, "
+        "operating_element TEXT, "
+        "bom_class TEXT, "
+        "name_zh_chs TEXT, "
         "comparable TEXT, "
         "configuration_type TEXT, "
         "default_unit TEXT, "
@@ -316,6 +315,14 @@ int main() {
     // 插入数据到 leybold_device_lib 表中
     for (const auto &device : excel_data) {
         vector<pair<string, string>> fields = {
+            {"level", device.level},
+            {"number", device.number},
+            {"type", device.type},
+            {"assembly_mode", device.assembly_mode},
+            {"name", device.name},
+            {"operating_element", device.operating_element},
+            {"bom_class", device.bom_class},
+            {"name_zh_chs", device.name_zh_chs},
             {"comparable", device.comparable},
             {"configuration_type", device.configuration_type},
             {"default_unit", device.default_unit},
