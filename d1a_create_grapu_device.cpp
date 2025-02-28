@@ -116,11 +116,11 @@ private:
             return false;
         }
         
-        // 写入CSV标题行
-        csvOutput << "id,fdid,function,location,device" << std::endl;
+        // 写入CSV标题行，包含Type、isSim、isPLC和isTerminal字段
+        csvOutput << "id,fdid,function,location,device,Type,isSim,isPLC,isTerminal" << std::endl;
         
-        // 修改查询语句，添加条件只选择isInPanel=1的设备
-        if (mysql_query(conn, "SELECT * FROM v_devices WHERE isInPanel=1")) {
+        // 修改查询语句，添加条件只选择isInPanel=1的设备，确保输出Type、isSim、isPLC和isTerminal字段
+        if (mysql_query(conn, "SELECT id,fdid,function,location,device,Type,isSim,isPLC,isTerminal FROM v_devices WHERE isInPanel=1")) {
             std::cerr << "查询v_devices失败: " << mysql_error(conn) << std::endl;
             return false;
         }
@@ -212,12 +212,16 @@ private:
         scriptFile << "        for row in reader:\n";
         scriptFile << "            with driver.session() as session:\n";
         scriptFile << "                session.run(\n";
-        scriptFile << "                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device})',\n";
+        scriptFile << "                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',\n";
         scriptFile << "                    id=row['id'],\n";
         scriptFile << "                    fdid=row['fdid'],\n";
         scriptFile << "                    function=row['function'],\n";
         scriptFile << "                    location=row['location'],\n";
-        scriptFile << "                    device=row['device']\n";
+        scriptFile << "                    device=row['device'],\n";
+        scriptFile << "                    Type=row['Type'],\n";
+        scriptFile << "                    isSim=row['isSim'],\n";
+        scriptFile << "                    isPLC=row['isPLC'],\n";
+        scriptFile << "                    isTerminal=row['isTerminal']\n";
         scriptFile << "                )\n";
         scriptFile << "            device_count += 1\n";
         scriptFile << "            if device_count % 100 == 0:\n";

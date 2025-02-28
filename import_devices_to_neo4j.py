@@ -30,12 +30,16 @@ try:
         for row in reader:
             with driver.session() as session:
                 session.run(
-                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device})',
+                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',
                     id=row['id'],
                     fdid=row['fdid'],
                     function=row['function'],
                     location=row['location'],
-                    device=row['device']
+                    device=row['device'],
+                    Type=row['Type'],
+                    isSim=row['isSim'],
+                    isPLC=row['isPLC'],
+                    isTerminal=row['isTerminal']
                 )
             device_count += 1
             if device_count % 100 == 0:
