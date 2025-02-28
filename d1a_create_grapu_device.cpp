@@ -103,7 +103,7 @@ private:
         return true;
     }
 
-    // 导出MySQL设备数据为CSV文件
+    // 导出MySQL设备数据为CSV文件，只选择isInPanel=1的设备
     bool exportDevicesToCSV() {
         csv_file = "output/devices_export.csv";
         
@@ -119,7 +119,8 @@ private:
         // 写入CSV标题行
         csvOutput << "id,fdid,function,location,device" << std::endl;
         
-        if (mysql_query(conn, "SELECT * FROM v_devices")) {
+        // 修改查询语句，添加条件只选择isInPanel=1的设备
+        if (mysql_query(conn, "SELECT * FROM v_devices WHERE isInPanel=1")) {
             std::cerr << "查询v_devices失败: " << mysql_error(conn) << std::endl;
             return false;
         }
