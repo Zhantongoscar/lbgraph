@@ -98,14 +98,56 @@ vector<DeviceInfo> readExcelData(const string &filename) {
     }
 
     cout << "已读取文件: " << filename << endl;
+    string content;
     string line;
     int line_num = 0;
     int records_read = 0;
     int skipped_lines = 0;
 
+    // 先读取整个文件内容
+    string full_content;
     while (getline(file, line)) {
+        full_content += line + "\n";
+    }
+    
+    // 手动解析整个内容
+    vector<string> rows;
+    string current_row;
+    bool in_quotes = false;
+    
+    for (size_t i = 0; i < full_content.length(); i++) {
+        char c = full_content[i];
+        
+        // 处理引号
+        if (c == '"') {
+            if (in_quotes && i + 1 < full_content.length() && full_content[i + 1] == '"') {
+                current_row += '"';
+                i++;
+            } else {
+                in_quotes = !in_quotes;
+                current_row += c;
+            }
+        }
+        // 如果在引号外遇到换行符,说明是真正的行结束
+        else if (c == '\n' && !in_quotes) {
+            rows.push_back(current_row);
+            current_row.clear();
+        }
+        // 其他情况直接添加字符
+        else {
+            current_row += c;
+        }
+    }
+    if (!current_row.empty()) {
+        rows.push_back(current_row);
+    }
+
+    // 处理每一行
+    for (size_t row_num = 0; row_num < rows.size(); row_num++) {
         line_num++;
-        if(line.empty()) {
+        string &row = rows[row_num];
+        
+        if(row.empty()) {
             skipped_lines++;
             continue;
         }
@@ -115,22 +157,49 @@ vector<DeviceInfo> readExcelData(const string &filename) {
             skipped_lines++;
             continue;
         }
+
+        // 详细输出140-150行的信息
+        if(line_num >= 140 && line_num <= 150) {
+            cout << "\n===============================";
+            cout << "\n处理第 " << line_num << " 行:";
+            cout << "\n原始行内容:" << endl;
+            cout << row << endl;
+            
+            cout << "\nASCII码表示:" << endl;
+            for(char c : row) {
+                cout << (int)c << "(" << c << ") ";
+            }
+            cout << endl;
+        }
         
         vector<string> fields;
         string current_field;
         bool in_quoted_field = false;
         
         // 手动解析CSV，正确处理引号
-        for (size_t i = 0; i < line.length(); i++) {
-            char c = line[i];
+        if(line_num >= 140 && line_num <= 150) {
+            cout << "\n字段解析过程:" << endl;
+        }
+
+        for (size_t i = 0; i < row.length(); i++) {
+            char c = row[i];
             if (c == '"') {
-                if (in_quoted_field && i + 1 < line.length() && line[i + 1] == '"') {
+                if (in_quoted_field && i + 1 < row.length() && row[i + 1] == '"') {
+                    if(line_num >= 140 && line_num <= 150) {
+                        cout << "发现连续引号(\"\"), 转义为单引号" << endl;
+                    }
                     current_field += '"';
                     i++;
                 } else {
+                    if(line_num >= 140 && line_num <= 150) {
+                        cout << "切换引号状态: " << (in_quoted_field ? "退出" : "进入") << "引号区域" << endl;
+                    }
                     in_quoted_field = !in_quoted_field;
                 }
             } else if (c == ',' && !in_quoted_field) {
+                if(line_num >= 140 && line_num <= 150) {
+                    cout << "发现字段分隔符, 当前字段内容: [" << current_field << "]" << endl;
+                }
                 fields.push_back(parseCSVField(current_field));
                 current_field.clear();
             } else {
@@ -139,7 +208,16 @@ vector<DeviceInfo> readExcelData(const string &filename) {
         }
         fields.push_back(parseCSVField(current_field));
 
-        // 确保有足够的字段且不是空行
+        if(line_num >= 140 && line_num <= 150) {
+            cout << "\n最终解析结果:" << endl;
+            cout << "解析出的字段数量: " << fields.size() << endl;
+            for(size_t i = 0; i < fields.size(); i++) {
+                cout << "字段[" << i << "]: [" << fields[i] << "]" << endl;
+            }
+            cout << "===============================\n" << endl;
+        }
+
+        // 减少字段数量要求到实际需要的数量
         if (fields.size() >= 24) {  
             DeviceInfo device;
             try {
@@ -153,7 +231,27 @@ vector<DeviceInfo> readExcelData(const string &filename) {
                 device.name_zh_chs = fields[23];
                 
                 // 修改判断逻辑：只要任一关键字段不为空就保存
-                if (!device.number.empty()) {  // number是主要标识符
+                if (!device.number.empty() || !device.name.empty()) {
+                    // 替换字段中的换行符为空格
+                    auto replaceNewlines = [](string& str) {
+                        size_t pos;
+                        while ((pos = str.find("\n")) != string::npos) {
+                            str.replace(pos, 1, " ");
+                        }
+                        while ((pos = str.find("\r")) != string::npos) {
+                            str.replace(pos, 1, " ");
+                        }
+                    };
+                    
+                    replaceNewlines(device.level);
+                    replaceNewlines(device.number);
+                    replaceNewlines(device.type);
+                    replaceNewlines(device.assembly_mode);
+                    replaceNewlines(device.name);
+                    replaceNewlines(device.operating_element);
+                    replaceNewlines(device.bom_class);
+                    replaceNewlines(device.name_zh_chs);
+                    
                     data.push_back(device);
                     records_read++;
                     if (records_read % 100 == 0) {
@@ -168,11 +266,15 @@ vector<DeviceInfo> readExcelData(const string &filename) {
                 continue;
             }
         } else {
-            cerr << "第 " << line_num << " 行字段数量不足 (" << fields.size() << " < 24)" << endl;
+            if(line_num >= 140 && line_num <= 150) {
+                cerr << "第 " << line_num << " 行字段数量不足: 期望24个字段，实际" << fields.size() << "个字段" << endl;
+                cout << "行内容: " << row << endl;
+            }
             skipped_lines++;
         }
     }
 
+    cout << "\n处理完成统计:" << endl;
     cout << "总行数: " << line_num << endl;
     cout << "跳过行数: " << skipped_lines << endl;
     cout << "成功读取: " << data.size() << " 行数据" << endl;
