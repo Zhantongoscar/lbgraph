@@ -202,7 +202,7 @@ private:
         
         scriptFile << "    # 清空现有设备节点\n";
         scriptFile << "    with driver.session() as session:\n";
-        scriptFile << "        result = session.run('MATCH (d:Device) DELETE d')\n";
+        scriptFile << "        result = session.run('MATCH (d:V_Device) DELETE d')\n";
         scriptFile << "        print('已清除所有现有设备节点')\n\n";
         
         scriptFile << "    # 从CSV文件导入设备节点\n";
@@ -212,7 +212,7 @@ private:
         scriptFile << "        for row in reader:\n";
         scriptFile << "            with driver.session() as session:\n";
         scriptFile << "                session.run(\n";
-        scriptFile << "                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',\n";
+        scriptFile << "                    'CREATE (d:V_Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',\n";
         scriptFile << "                    id=row['id'],\n";
         scriptFile << "                    fdid=row['fdid'],\n";
         scriptFile << "                    function=row['function'],\n";

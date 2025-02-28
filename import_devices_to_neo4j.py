@@ -20,7 +20,7 @@ try:
 
     # 清空现有设备节点
     with driver.session() as session:
-        result = session.run('MATCH (d:Device) DELETE d')
+        result = session.run('MATCH (d:V_Device) DELETE d')
         print('已清除所有现有设备节点')
 
     # 从CSV文件导入设备节点
@@ -30,7 +30,7 @@ try:
         for row in reader:
             with driver.session() as session:
                 session.run(
-                    'CREATE (d:Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',
+                    'CREATE (d:V_Device {id: $id, fdid: $fdid, function: $function, location: $location, device: $device, Type: $Type, isSim: $isSim, isPLC: $isPLC, isTerminal: $isTerminal})',
                     id=row['id'],
                     fdid=row['fdid'],
                     function=row['function'],
