@@ -246,9 +246,9 @@ private:
         
         scriptFile << "    # 创建设备和终端之间的关系\n";
         scriptFile << "    with driver.session() as session:\n";
-        scriptFile << "        # 找到匹配的Device和V_Terminal节点，创建HAS_TERMINAL关系\n";
+        scriptFile << "        # 找到匹配的V_Device和V_Terminal节点，创建HAS_TERMINAL关系\n";
         scriptFile << "        session.run(\n";
-        scriptFile << "            'MATCH (d:Device), (t:V_Terminal) "\
+        scriptFile << "            'MATCH (d:V_Device), (t:V_Terminal) "\
                    "WHERE d.id = t.device_id "\
                    "CREATE (d)-[:HAS_TERMINAL]->(t)'\n";
         scriptFile << "        )\n";
