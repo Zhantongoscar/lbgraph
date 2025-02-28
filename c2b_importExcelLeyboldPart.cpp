@@ -99,18 +99,23 @@ vector<DeviceInfo> readExcelData(const string &filename) {
 
     cout << "已读取文件: " << filename << endl;
     string line;
-    int line_count = 0;
+    int line_num = 0;
     int records_read = 0;
+    int skipped_lines = 0;
 
-    // 跳过 BOM Report 行和 BOM Usage Attributes 行
-    getline(file, line);
-    getline(file, line);
-    
-    // 读取字段标题行
-    getline(file, line);
-    
-    // 开始读取数据行
-    while (getline(file, line)) {  // 移除 MAX_RECORDS 限制
+    while (getline(file, line)) {
+        line_num++;
+        if(line.empty()) {
+            skipped_lines++;
+            continue;
+        }
+        
+        // 跳过前两行和标题行
+        if (line_num <= 3) {
+            skipped_lines++;
+            continue;
+        }
+        
         vector<string> fields;
         string current_field;
         bool in_quoted_field = false;
@@ -134,40 +139,43 @@ vector<DeviceInfo> readExcelData(const string &filename) {
         }
         fields.push_back(parseCSVField(current_field));
 
-        // 确保有足够的字段
-        if (fields.size() >= 40) {  // 按实际CSV文件的字段数调整
+        // 确保有足够的字段且不是空行
+        if (fields.size() >= 24) {  
             DeviceInfo device;
-            int field_index = 0;
-            device.level = fields[field_index++];
-            device.number = fields[field_index++];
-            device.type = fields[field_index++];
-            device.assembly_mode = fields[field_index++];
-            field_index = 8; // Skip to name field
-            device.name = fields[field_index++];
-            field_index = 17; // Skip to operating element
-            device.operating_element = fields[field_index++];
-            device.bom_class = fields[field_index++];
-            field_index = 23; // Skip to Chinese name
-            device.name_zh_chs = fields[field_index++];
-            field_index = 34; // Skip to comparable
-            device.comparable = fields[field_index++];
-            device.configuration_type = fields[field_index++];
-            device.default_unit = fields[field_index++];
-            device.reuse_not_allowed = fields[field_index++];
-            device.old_part_number = fields[field_index++];
-            device.machine_type = fields[field_index++];
-            
-            // 只添加非空记录
-            if (!device.level.empty() && device.level != "Level") {
-                data.push_back(device);
-                records_read++;
-                cout << "已读取第 " << records_read << " 条记录, Level值: " << device.level 
-                     << ", Number: " << device.number << endl;
+            try {
+                device.level = fields[0];
+                device.number = fields[1];
+                device.type = fields[2];
+                device.assembly_mode = fields[3];
+                device.name = fields[8];
+                device.operating_element = fields[17];
+                device.bom_class = fields[18];
+                device.name_zh_chs = fields[23];
+                
+                // 修改判断逻辑：只要任一关键字段不为空就保存
+                if (!device.number.empty()) {  // number是主要标识符
+                    data.push_back(device);
+                    records_read++;
+                    if (records_read % 100 == 0) {
+                        cout << "已读取 " << records_read << " 条记录..." << endl;
+                    }
+                } else {
+                    skipped_lines++;
+                }
+            } catch (const exception& e) {
+                cerr << "处理第 " << line_num << " 行时出错: " << e.what() << endl;
+                skipped_lines++;
+                continue;
             }
+        } else {
+            cerr << "第 " << line_num << " 行字段数量不足 (" << fields.size() << " < 24)" << endl;
+            skipped_lines++;
         }
     }
 
-    cout << "共读取 " << data.size() << " 行数据" << endl;
+    cout << "总行数: " << line_num << endl;
+    cout << "跳过行数: " << skipped_lines << endl;
+    cout << "成功读取: " << data.size() << " 行数据" << endl;
     return data;
 }
 
@@ -260,9 +268,9 @@ int main() {
         return 1;
     }
 
-    // 创建表 leybold_device_lib - 添加id列
+    // 创建表 leybold_device_lib - 调整列顺序
     string create_table_query = "CREATE TABLE leybold_device_lib ("
-        "id INT PRIMARY KEY AUTO_INCREMENT, "  // 添加自增ID列
+        "id INT PRIMARY KEY AUTO_INCREMENT, "  // id放在最前面
         "level TEXT, "
         "number TEXT, "
         "type TEXT, "
