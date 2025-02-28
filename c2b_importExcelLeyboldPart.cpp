@@ -101,7 +101,6 @@ vector<DeviceInfo> readExcelData(const string &filename) {
     string line;
     int line_count = 0;
     int records_read = 0;
-    const int MAX_RECORDS = 10;
 
     // 跳过 BOM Report 行和 BOM Usage Attributes 行
     getline(file, line);
@@ -111,7 +110,7 @@ vector<DeviceInfo> readExcelData(const string &filename) {
     getline(file, line);
     
     // 开始读取数据行
-    while (getline(file, line) && records_read < MAX_RECORDS) {
+    while (getline(file, line)) {  // 移除 MAX_RECORDS 限制
         vector<string> fields;
         string current_field;
         bool in_quoted_field = false;
@@ -261,8 +260,9 @@ int main() {
         return 1;
     }
 
-    // 创建表 leybold_device_lib - 使用新的字段结构
+    // 创建表 leybold_device_lib - 添加id列
     string create_table_query = "CREATE TABLE leybold_device_lib ("
+        "id INT PRIMARY KEY AUTO_INCREMENT, "  // 添加自增ID列
         "level TEXT, "
         "number TEXT, "
         "type TEXT, "
@@ -270,41 +270,7 @@ int main() {
         "name TEXT, "
         "operating_element TEXT, "
         "bom_class TEXT, "
-        "name_zh_chs TEXT, "
-        "comparable TEXT, "
-        "configuration_type TEXT, "
-        "default_unit TEXT, "
-        "reuse_not_allowed TEXT, "
-        "old_part_number TEXT, "
-        "machine_type TEXT, "
-        "basic_material TEXT, "
-        "basic_material_desc TEXT, "
-        "supersede TEXT, "
-        "superseded_by TEXT, "
-        "material_group TEXT, "
-        "no_logistic_relevance TEXT, "
-        "dangerous_good_indic TEXT, "
-        "class_node TEXT, "
-        "legacy_id TEXT, "
-        "electrical_relevant TEXT, "
-        "doc_classification TEXT, "
-        "stackability TEXT, "
-        "delta_x TEXT, "
-        "delta_y TEXT, "
-        "delta_z TEXT, "
-        "mass TEXT, "
-        "length TEXT, "
-        "width TEXT, "
-        "height TEXT, "
-        "netto_weight TEXT, "
-        "weight_unit TEXT, "
-        "weight_code TEXT, "
-        "service_life TEXT, "
-        "spc_termination TEXT, "
-        "design_office TEXT, "
-        "division TEXT, "
-        "modified_by TEXT, "
-        "last_modified TEXT"
+        "name_zh_chs TEXT"
         ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
     if (mysql_query(conn, create_table_query.c_str())) {
         cerr << "创建表失败: " << mysql_error(conn) << endl;
@@ -316,47 +282,13 @@ int main() {
     for (const auto &device : excel_data) {
         vector<pair<string, string>> fields = {
             {"level", device.level},
-            {"number", device.number},
+            {"number", device.number}, 
             {"type", device.type},
             {"assembly_mode", device.assembly_mode},
             {"name", device.name},
             {"operating_element", device.operating_element},
             {"bom_class", device.bom_class},
-            {"name_zh_chs", device.name_zh_chs},
-            {"comparable", device.comparable},
-            {"configuration_type", device.configuration_type},
-            {"default_unit", device.default_unit},
-            {"reuse_not_allowed", device.reuse_not_allowed},
-            {"old_part_number", device.old_part_number},
-            {"machine_type", device.machine_type},
-            {"basic_material", device.basic_material},
-            {"basic_material_desc", device.basic_material_desc},
-            {"supersede", device.supersede},
-            {"superseded_by", device.superseded_by},
-            {"material_group", device.material_group},
-            {"no_logistic_relevance", device.no_logistic_relevance},
-            {"dangerous_good_indic", device.dangerous_good_indic},
-            {"class_node", device.class_node},
-            {"legacy_id", device.legacy_id},
-            {"electrical_relevant", device.electrical_relevant},
-            {"doc_classification", device.doc_classification},
-            {"stackability", device.stackability},
-            {"delta_x", device.delta_x},
-            {"delta_y", device.delta_y},
-            {"delta_z", device.delta_z},
-            {"mass", device.mass},
-            {"length", device.length},
-            {"width", device.width},
-            {"height", device.height},
-            {"netto_weight", device.netto_weight},
-            {"weight_unit", device.weight_unit},
-            {"weight_code", device.weight_code},
-            {"service_life", device.service_life},
-            {"spc_termination", device.spc_termination},
-            {"design_office", device.design_office},
-            {"division", device.division},
-            {"modified_by", device.modified_by},
-            {"last_modified", device.last_modified}
+            {"name_zh_chs", device.name_zh_chs}
         };
 
         vector<string> columns, values;
