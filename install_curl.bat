@@ -1,20 +1,27 @@
 @echo off
-echo Installing libcurl dependencies...
+chcp 65001
+echo Installing curl development files...
 
-REM Create directories if they don't exist
-mkdir deps 2>nul
-mkdir lib 2>nul
-mkdir include 2>nul
+if not exist "C:\clib" mkdir "C:\clib"
+if not exist "C:\clib\curl" mkdir "C:\clib\curl"
+if not exist "C:\clib\curl\bin" mkdir "C:\clib\curl\bin"
+if not exist "C:\clib\curl\include" mkdir "C:\clib\curl\include"
+if not exist "C:\clib\curl\lib" mkdir "C:\clib\curl\lib"
 
-cd deps
+echo Downloading curl...
+powershell -Command "Invoke-WebRequest -Uri 'https://curl.se/windows/dl-7.88.1_5/curl-7.88.1_5-win64-mingw.zip' -OutFile 'curl.zip'"
 
-REM Use scoop to install curl
-scoop install curl
+echo Extracting curl...
+powershell -Command "Expand-Archive -Path 'curl.zip' -DestinationPath 'temp' -Force"
 
-REM Copy necessary files from scoop installation
-xcopy /Y /I "%USERPROFILE%\scoop\apps\curl\current\bin\*.dll" "..\\"
-xcopy /Y /I "%USERPROFILE%\scoop\apps\curl\current\include\curl" "..\include\curl\"
-xcopy /Y /I "%USERPROFILE%\scoop\apps\curl\current\lib\*.lib" "..\lib\"
+echo Copying files...
+powershell -Command "Copy-Item -Path 'temp\curl-7.88.1_5-win64-mingw\bin\*' -Destination 'C:\clib\curl\bin\' -Recurse -Force"
+powershell -Command "Copy-Item -Path 'temp\curl-7.88.1_5-win64-mingw\include\*' -Destination 'C:\clib\curl\include\' -Recurse -Force"
+powershell -Command "Copy-Item -Path 'temp\curl-7.88.1_5-win64-mingw\lib\*' -Destination 'C:\clib\curl\lib\' -Recurse -Force"
 
-echo Installation complete!
-cd ..
+echo Cleaning up...
+powershell -Command "Remove-Item -Path 'temp' -Recurse -Force"
+powershell -Command "Remove-Item -Path 'curl.zip' -Force"
+
+echo Curl installation complete!
+pause
