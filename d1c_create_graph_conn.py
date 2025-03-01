@@ -76,12 +76,22 @@ def main():
 
             # 导出连接数据到CSV
             cursor = mysql_conn.cursor()
+            # 列出所有字段名称
+            cursor.execute("DESCRIBE conn_graph")
+            field_names = [field[0] for field in cursor.fetchall()]
+            log_message(f'数据库字段: {", ".join(field_names)}', f)
+
+            # 构建SELECT语句
             cursor.execute("""
-                SELECT source, target, connNo, connType, color, isCable, 
-                       voltage, current, resistance 
-                FROM conn_graph 
+                SELECT id, connNo, source, target, color, isCable, isInPanel, connType,
+                       voltage, current, resistance
+                FROM conn_graph
                 WHERE isInPanel=1
             """)
+
+            # 获取所有列名
+            columns = [desc[0] for desc in cursor.description]
+            log_message(f'数据库字段: {", ".join(columns)}', f)
             
             # 确保output目录存在
             if not os.path.exists('output'):
@@ -90,17 +100,24 @@ def main():
             csv_file = 'output/connections_export.csv'
             with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(['source', 'target', 'connNo', 'connType', 'color', 
-                           'isCable', 'voltage', 'current', 'resistance'])
+                writer.writerow(columns)
                 
                 count = 0
                 for row in cursor:
-                    # 为source和target添加等号前缀
-                    source = f"={row[0]}" if not row[0].startswith('=') else row[0]
-                    target = f"={row[1]}" if not row[1].startswith('=') else row[1]
-                    writer.writerow([source, target] + list(row[2:]))
+                    # 获取一行数据
+                    data = list(row)
+                    # 修改source和target字段（它们是第2和第3个字段，数组索引从0开始）
+                    source = str(data[2])  # source 在SELECT语句中是第3个字段
+                    target = str(data[3])  # target 在SELECT语句中是第4个字段
+                    source = f"={source}" if not source.startswith('=') else source
+                    target = f"={target}" if not target.startswith('=') else target
+                    data[2] = source
+                    data[3] = target
+                    # 写入数据
+                    log_message(f'处理数据: source={source}, target={target}', f)
+                    writer.writerow(data)
                     count += 1
-                
+                    
             log_message(f'已导出 {count} 条连接记录到CSV文件', f)
 
             # 创建连接关系
@@ -111,46 +128,40 @@ def main():
             with open(csv_file, 'r', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    source = row['source']
-                    target = row['target']
+                    source = str(row['source'])
+                    target = str(row['target'])
 
-                    # 确保source和target有等号前缀
-                    if not source.startswith('='):
-                        source = f"={source}"
-                    if not target.startswith('='):
-                        target = f"={target}"
+                    # 创建连接关系参数
+                    params = {'source': source, 'target': target}
+                    props = {}
+                    
+                    # 添加所有列作为属性（除了source和target）
+                    for key, value in row.items():
+                        if key not in ['source', 'target']:
+                            if key in ['voltage', 'current', 'resistance']:
+                                props[key] = float(value or 0)
+                            elif key == 'isCable':
+                                props[key] = value == '1'
+                            else:
+                                props[key] = value
 
                     # 创建连接关系
                     with driver.session() as session:
-                        cypher = """
+                        # 构建动态属性字符串
+                        props_str = ', '.join(f'{k}: ${k}' for k in props.keys())
+                        cypher = f"""
                             MATCH (source)
                             WHERE (source:V_Device OR source:V_Terminal)
                             AND source.FTID = $source
                             MATCH (target)
                             WHERE (target:V_Device OR target:V_Terminal)
                             AND target.FTID = $target
-                            CREATE (source)-[r:CONN {
-                                connNo: $connNo,
-                                type: $connType,
-                                color: $color,
-                                isCable: $isCable,
-                                voltage: $voltage,
-                                current: $current,
-                                resistance: $resistance
-                            }]->(target)
+                            CREATE (source)-[r:CONN {{{props_str}}}]->(target)
                             RETURN r
                         """
-                        params = {
-                            'source': source,
-                            'target': target,
-                            'connNo': row['connNo'],
-                            'connType': row['connType'],
-                            'color': row['color'],
-                            'isCable': row['isCable'] == '1',
-                            'voltage': float(row['voltage'] or 0),
-                            'current': float(row['current'] or 0),
-                            'resistance': float(row['resistance'] or 0)
-                        }
+                        
+                        # 更新参数
+                        params.update(props)
                         try:
                             result = session.run(cypher, params)
 
