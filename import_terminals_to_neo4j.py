@@ -38,9 +38,9 @@ try:
 
     # 创建设备和终端之间的关系
     with driver.session() as session:
-        # 找到匹配的Device和V_Terminal节点，创建HAS_TERMINAL关系
+        # 找到匹配的V_Device和V_Terminal节点，创建HAS_TERMINAL关系
         session.run(
-            'MATCH (d:Device), (t:V_Terminal) WHERE d.id = t.device_id CREATE (d)-[:HAS_TERMINAL]->(t)'
+            'MATCH (d:V_Device), (t:V_Terminal) WHERE d.id = t.device_id CREATE (d)-[:HAS_TERMINAL]->(t)'
         )
         print('已创建设备和终端之间的关系')
 

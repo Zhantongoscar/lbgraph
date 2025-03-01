@@ -1,0 +1,73 @@
+开始测试Neo4j连接...
+URI: bolt://192.168.35.10:7687
+测试基本连接...
+连接测试结果: 1
+
+检查节点标签...
+可用的标签:
+  - CoilTerminal
+  - ContactTerminal
+  - Relay
+  - V_Device
+  - V_Terminal
+  - Vertex
+  - VirtualLayer
+
+检查节点数量...
+V_Device: 291个节点
+V_Terminal: 2981个节点
+
+节点示例:
+
+节点类型: ['V_Terminal']
+节点属性:
+  Device: Q1
+  FTID: =A01+K1.H2-Q1:D2
+  Function: A01
+  Location: K1.H2
+  Type: Unknown
+  belongtoDevice: A01+K1.H2-Q1
+  current: 0
+  description: D2
+  id: 1
+  isSensePoint: 0
+  isSetPoint: 0
+  isSocket: 0
+  resistance: 0
+  voltage: 0
+
+节点类型: ['V_Terminal']
+节点属性:
+  Device: K3
+  FTID: =A01+K1.B1-K3:14
+  Function: A01
+  Location: K1.B1
+  Type: Unknown
+  belongtoDevice: A01+K1.B1-K3
+  current: 0
+  description: 14
+  id: 2
+  isSensePoint: 0
+  isSetPoint: 0
+  isSocket: 0
+  resistance: 0
+  voltage: 0
+
+节点类型: ['V_Terminal']
+节点属性:
+  Device: W0
+  FTID: =A01+K1.H2-W0:L1
+  Function: A01
+  Location: K1.H2
+  Type: Unknown
+  belongtoDevice: A01+K1.H2-W0
+  current: 0
+  description: L1
+  id: 3
+  isSensePoint: 0
+  isSetPoint: 0
+  isSocket: 0
+  resistance: 0
+  voltage: 0
+
+测试完成。详细日志已保存到: logs/neo4j_test.log

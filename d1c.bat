@@ -1,9 +1,21 @@
 @echo off
-g++ d1c_create_graph_conn.cpp -o d1c_grapu_conn.exe -I"C:/clib/mysql/include" -I"./include" -L"C:/clib/mysql/lib" -lmysql
-if %errorlevel% neq 0 (
-    echo 编译失败
-    pause
-    exit /b %errorlevel%
+chcp 65001
+
+if exist "d1c_create_graph_conn.py" (
+    echo 使用Python版本运行...
+    
+    python -m pip install neo4j mysql-connector-python --quiet
+    python d1c_create_graph_conn.py
+
+) else (
+    echo 错误: 找不到d1c_create_graph_conn.py文件。
+    echo 当前目录文件列表:
+    dir /b
 )
-.\d1c_grapu_conn.exe
+
+if %errorlevel% neq 0 (
+    echo 执行失败!
+    pause
+)
+
 pause
