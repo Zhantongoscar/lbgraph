@@ -141,8 +141,8 @@ private:
                         point.Device = devicePart;
                     }
                     
-                    // 设置所属设备 (设备标识符)
-                    point.belongtoDevice = point.Function + "+" + point.Location + "-" + point.Device;
+                    // 设置所属设备 (设备标识符)，添加"="前缀
+                    point.belongtoDevice = "=" + point.Function + "+" + point.Location + "-" + point.Device;
                 }
             }
         }

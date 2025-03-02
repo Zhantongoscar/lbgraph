@@ -135,8 +135,9 @@ private:
         }
         mysql_free_result(desc_result);
         
-        // 查询v_device_points表数据，使用SELECT * 获取所有列
-        if (mysql_query(conn, "SELECT * FROM v_device_points")) {
+        // 修改查询，只选择Location以'K1.'开头的记录
+        const char* query = "SELECT * FROM v_device_points WHERE Location LIKE 'K1.%'";
+        if (mysql_query(conn, query)) {
             std::cerr << "查询v_device_points失败: " << mysql_error(conn) << std::endl;
             return false;
         }
