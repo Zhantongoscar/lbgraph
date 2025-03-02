@@ -38,11 +38,16 @@ try:
 
     # 创建设备和终端之间的关系
     with driver.session() as session:
-        # 找到匹配的V_Device和V_Terminal节点，创建HAS_TERMINAL关系
-        session.run(
-            'MATCH (d:V_Device), (t:V_Terminal) WHERE d.id = t.device_id CREATE (d)-[:HAS_TERMINAL]->(t)'
-        )
-        print('已创建设备和终端之间的关系')
+        # 使用belongtoDevice字段建立关系
+        result = session.run('''
+            MATCH (t:V_Terminal)
+            MATCH (d:V_Device)
+            WHERE d.FDID = t.belongtoDevice
+            CREATE (t)-[:BELONGS_TO]->(d)
+            RETURN count(*) as rel_count
+        ''')
+        rel_count = result.single()["rel_count"]
+        print(f'已创建 {rel_count} 个终端到设备的关系')
 
     print(f'总共创建了 {terminal_count} 个终端节点')
     driver.close()
