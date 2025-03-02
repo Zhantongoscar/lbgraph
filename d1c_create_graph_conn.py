@@ -1,5 +1,4 @@
 import pymysql
-import csv
 import sys
 import os
 import traceback
@@ -31,9 +30,8 @@ def main():
             
             # 连接MySQL数据库
             log_message('尝试连接MySQL数据库...', f)
-            log_message(f'连接参数: host={MYSQL_CONFIG["host"]}, user={MYSQL_CONFIG["user"]}, database={MYSQL_CONFIG["database"]}', f)
             try:
-                mysql_conn = pymysql.connect(**MYSQL_CONFIG)
+                mysql_conn = pymysql.connect(**MYSQL_CONFIG, cursorclass=pymysql.cursors.DictCursor)
                 log_message('MySQL连接成功', f)
             except pymysql.Error as e:
                 log_message(f'MySQL连接错误: {str(e)}', f)
@@ -50,140 +48,140 @@ def main():
                 test_value = result.single()['test']
                 log_message(f'Neo4j连接测试成功: {test_value}', f)
 
-                # 统计现有节点
-                result = session.run("""
-                    MATCH (n) 
-                    WHERE n:V_Device OR n:V_Terminal 
-                    RETURN count(n) AS nodeCount
-                """)
-                node_count = result.single()["nodeCount"]
-                log_message(f'数据库中存在 {node_count} 个节点', f)
-
-                # 检查一些示例节点
-                log_message('\n示例节点:', f)
-                result = session.run("""
-                    MATCH (n)
-                    WHERE n:V_Device OR n:V_Terminal
-                    RETURN n.FTID AS FTID, labels(n) as labels
-                    LIMIT 3
-                """)
-                for record in result:
-                    log_message(f"FTID: {record['FTID']}, 标签: {record['labels']}", f)
-
                 # 清除现有连接关系
                 result = session.run('MATCH ()-[r:CONN]->() DELETE r')
                 log_message('已清除所有现有连接关系', f)
 
-            # 导出连接数据到CSV
+                # 检查Neo4j中的节点数量
+                result = session.run("""
+                    MATCH (n:V_Terminal)
+                    RETURN count(n) as count
+                """)
+                node_count = result.single()['count']
+                log_message(f"\nNeo4j中存在 {node_count} 个V_Terminal节点", f)
+
+                # 检查几个关键节点的存在性
+                log_message("\n检查示例节点:", f)
+                check_nodes = [
+                    "=A01+K1.H2-Q1:D2",
+                    "=A01+K1.B1-K3:14",
+                    "=Q15+K1.G1-G5:ANALOG.15",
+                    "=S02+K1.H2-Q1:2"
+                ]
+                for ftid in check_nodes:
+                    result = session.run("""
+                        MATCH (n:V_Terminal {FTID: $ftid})
+                        RETURN n.FTID as ftid, labels(n) as labels, properties(n) as props
+                    """, ftid=ftid)
+                    if result.peek():
+                        record = result.single()
+                        log_message(f"\n找到节点: {ftid}", f)
+                        log_message(f"标签: {record['labels']}", f)
+                        log_message(f"属性: {record['props']}", f)
+                    else:
+                        log_message(f"\n未找到节点: {ftid}", f)
+
+            # 从MySQL读取连接数据
             cursor = mysql_conn.cursor()
-            # 列出所有字段名称
-            cursor.execute("DESCRIBE conn_graph")
-            field_names = [field[0] for field in cursor.fetchall()]
-            log_message(f'数据库字段: {", ".join(field_names)}', f)
-
-            # 构建SELECT语句
-            cursor.execute("""
-                SELECT id, connNo, source, target, color, isCable, isInPanel, connType,
-                       voltage, current, resistance
-                FROM conn_graph
-                WHERE isInPanel=1
-            """)
-
-            # 获取所有列名
-            columns = [desc[0] for desc in cursor.description]
-            log_message(f'数据库字段: {", ".join(columns)}', f)
             
-            # 确保output目录存在
-            if not os.path.exists('output'):
-                os.makedirs('output')
-
-            csv_file = 'output/connections_export.csv'
-            with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(columns)
-                
-                count = 0
-                for row in cursor:
-                    # 获取一行数据
-                    data = list(row)
-                    # 修改source和target字段（它们是第2和第3个字段，数组索引从0开始）
-                    source = str(data[2])  # source 在SELECT语句中是第3个字段
-                    target = str(data[3])  # target 在SELECT语句中是第4个字段
-                    source = f"={source}" if not source.startswith('=') else source
-                    target = f"={target}" if not target.startswith('=') else target
-                    data[2] = source
-                    data[3] = target
-                    # 写入数据
-                    log_message(f'处理数据: source={source}, target={target}', f)
-                    writer.writerow(data)
-                    count += 1
-                    
-            log_message(f'已导出 {count} 条连接记录到CSV文件', f)
-
-            # 创建连接关系
+            # 获取总记录数
+            cursor.execute("SELECT COUNT(*) as count FROM conn_graph")
+            total_count = cursor.fetchone()['count']
+            log_message(f"\n总共需要处理 {total_count} 条连接记录", f)
+            
+            # 分批处理所有记录
+            batch_size = 1000
+            processed = 0
             conn_count = 0
             fail_count = 0
-            missing_nodes = set()
-
-            with open(csv_file, 'r', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    source = str(row['source'])
-                    target = str(row['target'])
-
-                    # 创建连接关系参数
-                    params = {'source': source, 'target': target}
-                    props = {}
+            
+            while processed < total_count:
+                cursor.execute(f"""
+                    SELECT * FROM conn_graph 
+                    LIMIT {processed}, {batch_size}
+                """)
+                
+                rows = cursor.fetchall()
+                if not rows:
+                    break
+                
+                for row in rows:
+                    source = row['source']
+                    target = row['target']
                     
-                    # 添加所有列作为属性（除了source和target）
-                    for key, value in row.items():
-                        if key not in ['source', 'target']:
-                            if key in ['voltage', 'current', 'resistance']:
-                                props[key] = float(value or 0)
-                            elif key == 'isCable':
-                                props[key] = value == '1'
-                            else:
-                                props[key] = value
-
-                    # 创建连接关系
+                    # 在Neo4j中创建连接
                     with driver.session() as session:
-                        # 构建动态属性字符串
+                        # 先检查节点
+                        source_result = session.run("""
+                            MATCH (n:V_Terminal {FTID: $ftid})
+                            RETURN n
+                        """, ftid=source)
+                        target_result = session.run("""
+                            MATCH (n:V_Terminal {FTID: $ftid})
+                            RETURN n
+                        """, ftid=target)
+
+                        source_exists = source_result.peek() is not None
+                        target_exists = target_result.peek() is not None
+
+                        if not source_exists or not target_exists:
+                            fail_count += 1
+                            log_message(f"\n节点缺失: source={source} ({source_exists}), target={target} ({target_exists})", f)
+                            # 获取节点的详细信息
+                            if not source_exists:
+                                result = session.run("""
+                                    MATCH (n:V_Terminal)
+                                    WHERE n.FTID STARTS WITH $prefix
+                                    RETURN n.FTID LIMIT 5
+                                """, prefix=source.split(":")[0])
+                                similar = [r['n.FTID'] for r in result]
+                                if similar:
+                                    log_message(f"类似的source节点: {similar}", f)
+                            if not target_exists:
+                                result = session.run("""
+                                    MATCH (n:V_Terminal)
+                                    WHERE n.FTID STARTS WITH $prefix
+                                    RETURN n.FTID LIMIT 5
+                                """, prefix=target.split(":")[0])
+                                similar = [r['n.FTID'] for r in result]
+                                if similar:
+                                    log_message(f"类似的target节点: {similar}", f)
+                            continue
+
+                        # 准备连接属性
+                        props = {k: v for k, v in row.items() if k not in ['source', 'target']}
+                        for k in ['voltage', 'current', 'resistance']:
+                            props[k] = float(props.get(k, 0))
+                        props['isCable'] = bool(props.get('isCable', 0))
+                        props['isInPanel'] = bool(props.get('isInPanel', 0))
+
+                        # 创建连接
                         props_str = ', '.join(f'{k}: ${k}' for k in props.keys())
                         cypher = f"""
-                            MATCH (source)
-                            WHERE (source:V_Device OR source:V_Terminal)
-                            AND source.FTID = $source
-                            MATCH (target)
-                            WHERE (target:V_Device OR target:V_Terminal)
-                            AND target.FTID = $target
+                            MATCH (source:V_Terminal {{FTID: $source}})
+                            MATCH (target:V_Terminal {{FTID: $target}})
                             CREATE (source)-[r:CONN {{{props_str}}}]->(target)
                             RETURN r
                         """
-                        
-                        # 更新参数
-                        params.update(props)
+                            
                         try:
-                            result = session.run(cypher, params)
-
+                            result = session.run(cypher, dict(source=source, target=target, **props))
                             if result.peek():
                                 conn_count += 1
-                                if conn_count % 100 == 0:
-                                    log_message(f'已创建 {conn_count} 个连接关系', f)
                             else:
-                                missing_nodes.add(f"source={source}, target={target}")
                                 fail_count += 1
+                                log_message(f"\n创建连接失败: {source} -> {target}", f)
                         except Exception as e:
-                            log_message(f"创建连接失败: source={source}, target={target}, error={e}", f)
-                            log_message(f"Cypher查询: {cypher}", f)
-                            log_message(f"参数: {params}", f)
-                            log_message(traceback.format_exc(), f)
                             fail_count += 1
+                            log_message(f"\n创建连接时出错: {source} -> {target}", f)
+                            log_message(f"错误信息: {e}", f)
+                    
+                    processed += 1
+                    if processed % 100 == 0:
+                        progress = (processed / total_count) * 100
+                        log_message(f"\r处理进度: {processed}/{total_count} ({progress:.1f}%) - 成功: {conn_count}, 失败: {fail_count}", f)
 
             log_message(f'\n总共创建了 {conn_count} 个连接关系，失败 {fail_count} 个', f)
-            if missing_nodes:
-                log_message('\n未能找到的节点对:', f)
-                for pair in sorted(missing_nodes):
-                    log_message(f'  - {pair}', f)
 
             # 验证最终的连接数量
             with driver.session() as session:
