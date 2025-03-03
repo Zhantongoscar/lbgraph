@@ -1,6 +1,3 @@
-//在此填写 c1 到 c4 文件的功能描述
-# c1 到 c4 文件的功能描述
-
 
 ## c1a.bat
 ### zt 从csv创建 v_devices 表
@@ -52,3 +49,7 @@ zt: 建立设备类型的连机定义 以及具体实例的连接空白表。
 ### zt: 设备点形成图
 在config.json 中有neo4j 和mysql的信息。
 从设备v_devices mysql的数据表读取数据作为点，生成一个LB_TT图。
+
+## d1b.bat
+
+## d1c.bat
