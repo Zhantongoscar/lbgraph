@@ -155,22 +155,24 @@ def main():
                         props['isCable'] = bool(props.get('isCable', 0))
                         props['isInPanel'] = bool(props.get('isInPanel', 0))
 
-                        # 创建连接
+                        # 创建双向连接
                         props_str = ', '.join(f'{k}: ${k}' for k in props.keys())
                         cypher = f"""
                             MATCH (source:V_Terminal {{FTID: $source}})
                             MATCH (target:V_Terminal {{FTID: $target}})
-                            CREATE (source)-[r:CONN {{{props_str}}}]->(target)
-                            RETURN r
+                            CREATE (source)-[r1:CONN {{{props_str}}}]->(target)
+                            CREATE (target)-[r2:CONN {{{props_str}}}]->(source)
+                            RETURN r1, r2
                         """
                             
                         try:
                             result = session.run(cypher, dict(source=source, target=target, **props))
-                            if result.peek():
-                                conn_count += 1
+                            record = result.peek()
+                            if record and record.get('r1') and record.get('r2'):
+                                conn_count += 2  # 每次成功创建两个连接
                             else:
                                 fail_count += 1
-                                log_message(f"\n创建连接失败: {source} -> {target}", f)
+                                log_message(f"\n创建双向连接失败: {source} <-> {target}", f)
                         except Exception as e:
                             fail_count += 1
                             log_message(f"\n创建连接时出错: {source} -> {target}", f)
