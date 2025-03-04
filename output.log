@@ -1,0 +1,23 @@
+脚本开始执行...
+当前工作目录: C:\project\2025\2025 leybold 图论\lbgraph
+Python路径: C:\project\2025\2025 leybold 图论\lbgraph\.venv\Scripts\python.exe
+正在导入模块...
+成功导入neo4j
+成功导入pymysql
+MySQL配置: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat'}
+Neo4j URI: bolt://192.168.35.10:7687
+尝试连接MySQL数据库，配置: {'host': '192.168.35.10', 'user': 'root', 'password': '13701033228', 'database': 'lbfat', 'connect_timeout': 10, 'charset': 'utf8mb4'}
+MySQL连接测试成功: {'1': 1}
+正在连接Neo4j数据库...
+成功连接到Neo4j数据库，测试值: 1
+已删除现有的内部连接
+创建了继电器线圈到常开触点的双向连接
+创建了继电器线圈到常闭触点的双向连接
+创建了继电器公共端到触点的双向连接
+创建了按钮常开触点的双向连接
+创建了按钮常闭触点的双向连接
+创建了接触器线圈到主触点的双向连接
+创建了接触器线圈到辅助触点的双向连接
+完成创建设备内部连接
+成功完成所有内部连接的创建
+数据库连接已关闭
