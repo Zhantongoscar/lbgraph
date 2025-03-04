@@ -157,9 +157,12 @@ def main():
 
                         # 创建双向连接
                         props_str = ', '.join(f'{k}: ${k}' for k in props.keys())
+                        # 先检查连接是否已存在
                         cypher = f"""
                             MATCH (source:V_Terminal {{FTID: $source}})
                             MATCH (target:V_Terminal {{FTID: $target}})
+                            WHERE NOT EXISTS((source)-[:CONN]->(target))
+                            AND NOT EXISTS((target)-[:CONN]->(source))
                             CREATE (source)-[r1:CONN {{{props_str}}}]->(target)
                             CREATE (target)-[r2:CONN {{{props_str}}}]->(source)
                             RETURN r1, r2

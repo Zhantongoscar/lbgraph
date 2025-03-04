@@ -104,7 +104,7 @@ private:
         point.isSetPoint = false;
         point.isSensePoint = false;
         point.description = "";
-        point.Type = "Unknown";
+        point.Type = "";
 
         // 解析功能和位置
         size_t equalPos = deviceStr.find("=");
@@ -305,6 +305,84 @@ public:
         return batchInsertDevicePoints(devicePoints);
     }
 
+public:
+    // 更新计算字段
+    bool updateCalculatedFields() {
+        std::cout << "开始更新计算字段..." << std::endl;
+        
+        // 执行多个更新操作，每个操作针对不同的计算逻辑
+        if (!updateVoltageFields()) return false;
+        if (!updateTypeFields()) return false;
+        // 可以添加更多的更新函数...
+        
+        std::cout << "计算字段更新完成" << std::endl;
+        return true;
+    }
+
+private:
+    // 更新电压相关字段
+    bool updateVoltageFields() {
+        std::string query = "UPDATE " + tableName + " SET voltage = 220.0 "
+                           "WHERE description LIKE '%220V%' OR description LIKE '%AC220%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新电压字段失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+        
+        query = "UPDATE " + tableName + " SET voltage = 24.0 "
+               "WHERE description LIKE '%24V%' OR description LIKE '%DC24%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新电压字段失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // 更新类型字段 - 基于其他字段的组合判断
+    bool updateTypeFields() {
+        std::string query = "UPDATE " + tableName + " SET Type = 'PowerInput' "
+                          "WHERE voltage > 0 AND isSocket = TRUE";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新类型字段失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+        
+        query = "UPDATE " + tableName + " SET Type = 'ControlPoint' "
+               "WHERE isSetPoint = TRUE AND isSensePoint = TRUE";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新类型字段失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        // 更新线圈类型
+        query = "UPDATE " + tableName + " SET Type = 'coil' "
+               "WHERE Location LIKE 'K1.%' AND Device LIKE 'Q%' AND description LIKE 'D%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新线圈类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        // 更新触点类型
+        query = "UPDATE " + tableName + " SET Type = CASE "
+               "WHEN description IN ('L1','K1', 'T1') THEN 'MC_NO_1' "
+               "WHEN description IN ('L2','K2', 'T2') THEN 'MC_NO_2' "
+               "WHEN description IN ('L3','K3', 'T3') THEN 'MC_NO_3' "
+               "WHEN description IN ('3.13','13','1','2') THEN 'AC_NO_1' "
+               "WHEN description IN ('3.14','14','13','3','4') THEN 'AC_NO_2' "
+               "WHEN description IN ('5','6') THEN 'AC_NO_3' "
+               "ELSE Type END "
+               "WHERE Location LIKE 'K1.%' AND Device LIKE 'Q%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新触点类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // 更多的更新函数可以根据需要添加...
+
 private:
     // 批量插入设备点
     bool batchInsertDevicePoints(const std::vector<V_DevicePoint>& points) {
@@ -360,8 +438,18 @@ int main() {
     SetConsoleOutputCP(CP_UTF8);
     
     DevicePointImporter importer("v_device_points");
+    
+    // 第一步：导入数据
     if (importer.importFromCSV()) {
         std::cout << "设备点数据导入成功" << std::endl;
+        
+        // 第二步：更新计算字段
+        if (importer.updateCalculatedFields()) {
+            std::cout << "计算字段更新成功" << std::endl;
+        } else {
+            std::cout << "计算字段更新失败" << std::endl;
+            // 可以决定是否将此视为整体失败
+        }
     } else {
         std::cout << "设备点数据导入失败" << std::endl;
     }
