@@ -391,6 +391,49 @@ private:
             std::cerr << "更新按钮点类型失败: " << mysql_error(conn) << std::endl;
             return false;
         }
+
+        // 更新线圈类型 - K设备的线圈
+        query = "UPDATE " + tableName + " SET Type = 'coil' "
+               "WHERE Location LIKE 'K1.%' AND Device LIKE 'K%' AND description LIKE 'A%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新继电器线圈类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
+
+        // 更新继电器触点类型
+        query = "UPDATE " + tableName + " SET Type = CASE "
+               "WHEN description IN ('1','2') THEN 'MC_NO_1' "
+               "WHEN description IN ('3','4') THEN 'MC_NO_2' "
+               "WHEN description IN ('5','6') THEN 'MC_NO_3' "
+               "WHEN description IN ('11') THEN 'AX_COM_1' "
+               "WHEN description IN ('12') THEN 'AX_NC_1' "
+               "WHEN description IN ('13','14') THEN 'AX_NO_1' "
+               "WHEN description IN ('21') THEN 'AX_COM_2' "
+               "WHEN description IN ('22') THEN 'AX_NC_2' "
+               "WHEN description IN ('23','24') THEN 'AX_NO_2' "
+               "WHEN description IN ('31') THEN 'AX_COM_3' "
+               "WHEN description IN ('32') THEN 'AX_NC_3' "
+               "WHEN description IN ('33','34') THEN 'AX_NO_3' "
+               "WHEN description IN ('41') THEN 'AX_COM_4' "
+               "WHEN description IN ('42') THEN 'AX_NC_4' "
+               "WHEN description IN ('43','44') THEN 'AX_NO_4' "
+               "WHEN description IN ('51') THEN 'AX_COM_5' "
+               "WHEN description IN ('52') THEN 'AX_NC_5' "
+               "WHEN description IN ('53','54') THEN 'AX_NO_5' "
+               "WHEN description IN ('61') THEN 'AX_COM_6' "
+               "WHEN description IN ('62') THEN 'AX_NC_6' "
+               "WHEN description IN ('63','64') THEN 'AX_NO_6' "
+               "WHEN description IN ('71') THEN 'AX_COM_7' "
+               "WHEN description IN ('72') THEN 'AX_NC_7' "
+               "WHEN description IN ('74') THEN 'AX_NO_7' "
+               "WHEN description IN ('S11','S21') THEN 'DO' "
+               "WHEN description IN ('S12','S22','S34') THEN 'DI' "
+               "ELSE Type END "
+               "WHERE Location LIKE 'K1.%' AND Device LIKE 'K%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新继电器触点类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
         
         return true;
     }
