@@ -377,6 +377,20 @@ private:
             std::cerr << "更新触点类型失败: " << mysql_error(conn) << std::endl;
             return false;
         }
+
+        // 更新按钮点类型
+        query = "UPDATE " + tableName + " SET Type = CASE "
+               "WHEN description IN ('1','2','13','14') THEN 'S_NO_1' "
+               "WHEN description IN ('.3','.4') THEN 'AC_NO_2' "
+               "WHEN description IN ('11','12') THEN 'S_NC_1' "
+               "WHEN description IN ('3','4','21','22') THEN 'S_NC_1' "
+               "WHEN description IN ('X1','X2') THEN 'LAMP' "
+               "ELSE Type END "
+               "WHERE Location LIKE 'K1.%' AND Device LIKE 'S%'";
+        if (mysql_query(conn, query.c_str()) != 0) {
+            std::cerr << "更新按钮点类型失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
         
         return true;
     }
