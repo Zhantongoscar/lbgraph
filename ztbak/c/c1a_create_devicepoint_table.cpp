@@ -141,6 +141,11 @@ private:
             device.Type = "Terminal";
         }
 
+        // 检查Device是否以S开头，如果是且isInPanel为0，则修改为2
+        if (!device.Device.empty() && device.Device[0] == 'S' && !device.isInPanel) {
+            device.isInPanel = 2;  // 修改特殊值为2
+        }
+
         return device;
     }
 

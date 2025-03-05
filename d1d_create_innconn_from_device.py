@@ -135,8 +135,22 @@ class InnerConnCreator:
             # 创建双向连接
             query = """
             MATCH (p1:V_Terminal {FTID: $point1_id}), (p2:V_Terminal {FTID: $point2_id})
-            MERGE (p1)-[r1:CONN $props]->(p2)
-            MERGE (p2)-[r2:CONN $props]->(p1)
+            MERGE (p1)-[r1:CONN {
+                voltage: 24.0,
+                current: 0.1,
+                resistance: 240.0,
+                isCable: false,
+                isInPanel: true,
+                connType: 'devInConn'
+            }]->(p2)
+            MERGE (p2)-[r2:CONN {
+                voltage: 24.0,
+                current: 0.1,
+                resistance: 240.0,
+                isCable: false,
+                isInPanel: true,
+                connType: 'devInConn'
+            }]->(p1)
             RETURN COUNT(r1) + COUNT(r2) as count
             """
             
@@ -156,8 +170,7 @@ class InnerConnCreator:
             
             result = session.run(query,
                               point1_id=point1['FTID'],
-                              point2_id=point2['FTID'],
-                              props=conn_props)
+                              point2_id=point2['FTID'])
             
             conn_count = result.single()['count']
             if conn_count == 2:
@@ -245,40 +258,44 @@ class InnerConnCreator:
                     logger.info("-"*50)
                     
                     # 处理A类点位对
-                    if len(type_points['A']) >= 2:
+                    if len(type_points['A']) > 0:
                         logger.info(f"\nA类点位配对:")
                         a_points = sorted(type_points['A'], key=lambda x: x[0])
                         logger.info(f"A类点位列表: {[p[1]['description'] for p in a_points]}")
                         
-                        # 匹配序号相邻的点位对
-                        for i in range(0, len(a_points)-1, 2):
+                        # 处理所有A点位
+                        for i in range(len(a_points)):
                             point1 = a_points[i][1]
-                            point2 = a_points[i+1][1]
-                            logger.info("\n" + "-"*30)
-                            logger.info("创建A类点位对连接：")
-                            logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
-                            logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
-                            logger.info("-"*30)
-                            self._create_connection(session, point1, point2)
+                            # 如果有下一个点，则创建连接
+                            if i + 1 < len(a_points):
+                                point2 = a_points[i+1][1]
+                                logger.info("\n" + "-"*30)
+                                logger.info("创建A类点位对连接：")
+                                logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
+                                logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
+                                logger.info("-"*30)
+                                self._create_connection(session, point1, point2)
                     else:
                         logger.info(f"\nA类点位数量不足({len(type_points['A'])}个)，跳过配对")
                         
                     # 处理D类点位对
-                    if len(type_points['D']) >= 2:
+                    if len(type_points['D']) > 0:
                         logger.info(f"\nD类点位配对:")
                         d_points = sorted(type_points['D'], key=lambda x: x[0])
                         logger.info(f"D类点位列表: {[p[1]['description'] for p in d_points]}")
                         
-                        # 匹配序号相邻的点位对
-                        for i in range(0, len(d_points)-1, 2):
+                        # 处理所有D点位
+                        for i in range(len(d_points)):
                             point1 = d_points[i][1]
-                            point2 = d_points[i+1][1]
-                            logger.info("\n" + "-"*30)
-                            logger.info("创建D类点位对连接：")
-                            logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
-                            logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
-                            logger.info("-"*30)
-                            self._create_connection(session, point1, point2)
+                            # 如果有下一个点，则创建连接
+                            if i + 1 < len(d_points):
+                                point2 = d_points[i+1][1]
+                                logger.info("\n" + "-"*30)
+                                logger.info("创建D类点位对连接：")
+                                logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
+                                logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
+                                logger.info("-"*30)
+                                self._create_connection(session, point1, point2)
                     else:
                         logger.info(f"\nD类点位数量不足({len(type_points['D'])}个)，跳过配对")
                         
@@ -286,7 +303,7 @@ class InnerConnCreator:
                     l_points = sorted(type_points['L'], key=lambda x: x[0])
                     t_points = sorted(type_points['T'], key=lambda x: x[0])
                     
-                    if l_points and t_points:
+                    if len(l_points) > 0 or len(t_points) > 0:
                         logger.info(f"\nL-T点位配对:")
                         logger.info(f"L类点位: {[p[1]['description'] for p in l_points]}")
                         logger.info(f"T类点位: {[p[1]['description'] for p in t_points]}")
