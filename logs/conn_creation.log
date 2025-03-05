@@ -2,7 +2,6 @@
 尝试连接MySQL数据库...
 MySQL连接成功
 Neo4j连接测试成功: 1
-已清除所有现有连接关系
 
 Neo4j中存在 2380 个V_Terminal节点
 
@@ -10,19 +9,19 @@ Neo4j中存在 2380 个V_Terminal节点
 
 找到节点: =A01+K1.H2-Q1:D2
 标签: ['V_Terminal']
-属性: {'Device': 'Q1', 'Type': 'Unknown', 'belongtoDevice': '=A01+K1.H2-Q1', 'isSensePoint': '0', 'Function': 'A01', 'Location': 'K1.H2', 'isSetPoint': '0', 'id': '1', 'FTID': '=A01+K1.H2-Q1:D2', 'voltage': '0', 'description': 'D2', 'current': '0', 'isSocket': '0', 'resistance': '0'}
+属性: {'Device': 'Q1', 'Type': 'coil', 'isSensePoint': '0', 'belongtoDevice': '=A01+K1.H2-Q1', 'Function': 'A01', 'Location': 'K1.H2', 'isSetPoint': '0', 'id': '1', 'FTID': '=A01+K1.H2-Q1:D2', 'voltage': '0', 'description': 'D2', 'current': '0', 'isSocket': '0', 'resistance': '0'}
 
 找到节点: =A01+K1.B1-K3:14
 标签: ['V_Terminal']
-属性: {'Device': 'K3', 'Type': 'Unknown', 'belongtoDevice': '=A01+K1.B1-K3', 'isSensePoint': '0', 'Function': 'A01', 'Location': 'K1.B1', 'isSetPoint': '0', 'id': '2', 'FTID': '=A01+K1.B1-K3:14', 'voltage': '0', 'description': '14', 'current': '0', 'isSocket': '0', 'resistance': '0'}
+属性: {'Device': 'K3', 'Type': 'AX_NO_1', 'belongtoDevice': '=A01+K1.B1-K3', 'isSensePoint': '0', 'Function': 'A01', 'Location': 'K1.B1', 'isSetPoint': '0', 'id': '2', 'FTID': '=A01+K1.B1-K3:14', 'voltage': '0', 'description': '14', 'current': '0', 'isSocket': '0', 'resistance': '0'}
 
 找到节点: =Q15+K1.G1-G5:ANALOG.15
 标签: ['V_Terminal']
-属性: {'Device': 'G5', 'Type': 'Unknown', 'belongtoDevice': '=Q15+K1.G1-G5', 'isSensePoint': '0', 'Function': 'Q15', 'Location': 'K1.G1', 'isSetPoint': '0', 'id': '2383', 'FTID': '=Q15+K1.G1-G5:ANALOG.15', 'voltage': '0', 'description': 'ANALOG.15', 'current': '0', 'isSocket': '0', 'resistance': '0'}
+属性: {'Device': 'G5', 'Type': '', 'isSensePoint': '0', 'belongtoDevice': '=Q15+K1.G1-G5', 'Function': 'Q15', 'Location': 'K1.G1', 'isSetPoint': '0', 'id': '2383', 'FTID': '=Q15+K1.G1-G5:ANALOG.15', 'voltage': '0', 'description': 'ANALOG.15', 'current': '0', 'isSocket': '0', 'resistance': '0'}
 
 找到节点: =S02+K1.H2-Q1:2
 标签: ['V_Terminal']
-属性: {'Device': 'Q1', 'Type': 'Unknown', 'belongtoDevice': '=S02+K1.H2-Q1', 'isSensePoint': '0', 'Function': 'S02', 'Location': 'K1.H2', 'isSetPoint': '0', 'id': '2523', 'FTID': '=S02+K1.H2-Q1:2', 'voltage': '0', 'description': '2', 'current': '0', 'isSocket': '0', 'resistance': '0'}
+属性: {'Device': 'Q1', 'Type': 'AC_NO_1', 'belongtoDevice': '=S02+K1.H2-Q1', 'isSensePoint': '0', 'Function': 'S02', 'Location': 'K1.H2', 'isSetPoint': '0', 'id': '2523', 'FTID': '=S02+K1.H2-Q1:2', 'voltage': '0', 'description': '2', 'current': '0', 'isSocket': '0', 'resistance': '0'}
 
 总共需要处理 1879 条连接记录
 

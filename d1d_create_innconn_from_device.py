@@ -73,7 +73,7 @@ class InnerConnCreator:
                 
             # 获取点位类型
             prefix = desc[0].upper()  # 转换为大写以统一处理
-            if prefix not in ['A', 'D', 'L', 'T']:
+            if prefix not in ['A', 'D', 'L', 'K', 'T']:
                 logger.warning(f"未知的点位类型: {prefix} (来自 {description})")
                 return None, None
                 
@@ -192,8 +192,9 @@ class InnerConnCreator:
             with self.driver.session() as session:
                 # 清理现有的连接
                 logger.info("\n=== 清理现有连接 ===")
-                session.run("MATCH ()-[r:CONN {connType: 'devInConn'}]->() DELETE r")
-                logger.info("已删除现有的设备内部连接")
+                # 注释掉删除操作
+                #session.run("MATCH ()-[r:CONN {connType: 'devInConn'}]->() DELETE r")
+                #logger.info("已删除现有的设备内部连接")
                 
                 # 创建新的连接
                 self._create_device_connections(session)
@@ -217,7 +218,7 @@ class InnerConnCreator:
                     FROM v_device_points
                     WHERE belongtoDevice IS NOT NULL
                     AND description != ''
-                    AND LEFT(description, 1) IN ('A', 'D', 'L', 'T')
+                    AND LEFT(description, 1) IN ('A', 'D', 'L', 'K', 'T')
                     ORDER BY belongtoDevice, description
                 """
                 cursor.execute(query)
@@ -234,7 +235,7 @@ class InnerConnCreator:
                 for point in points:
                     device = point['belongtoDevice']
                     if device not in device_points:
-                        device_points[device] = {'A': [], 'D': [], 'L': [], 'T': []}
+                        device_points[device] = {'A': [], 'D': [], 'L': [], 'K': [], 'T': []}
                     
                     prefix, num = self._analyze_point(point['description'])
                     if prefix and num is not None:  # 只处理能成功解析序号的点位
@@ -250,7 +251,7 @@ class InnerConnCreator:
                     logger.info(f"正在处理设备: {device}")
                     logger.info("-"*50)
                     logger.info("设备所有点位信息：")
-                    for point_type in ['A', 'D', 'L', 'T']:
+                    for point_type in ['A', 'D', 'L', 'K', 'T']:
                         points = type_points[point_type]
                         if points:
                             points_info = [f"{p[1]['description']}(FTID:{p[1]['FTID']})" for p in sorted(points, key=lambda x: x[0])]
@@ -299,34 +300,44 @@ class InnerConnCreator:
                     else:
                         logger.info(f"\nD类点位数量不足({len(type_points['D'])}个)，跳过配对")
                         
-                    # L-T点位对
+                    # L-K-T点位组
                     l_points = sorted(type_points['L'], key=lambda x: x[0])
+                    k_points = sorted(type_points['K'], key=lambda x: x[0])
                     t_points = sorted(type_points['T'], key=lambda x: x[0])
                     
-                    if len(l_points) > 0 or len(t_points) > 0:
-                        logger.info(f"\nL-T点位配对:")
+                    if len(l_points) > 0 or len(k_points) > 0 or len(t_points) > 0:
+                        logger.info(f"\nL-K-T点位配对:")
                         logger.info(f"L类点位: {[p[1]['description'] for p in l_points]}")
+                        logger.info(f"K类点位: {[p[1]['description'] for p in k_points]}")
                         logger.info(f"T类点位: {[p[1]['description'] for p in t_points]}")
                         
                         # 构建序号到点位的映射
                         l_map = {p[0]: p[1] for p in l_points}
+                        k_map = {p[0]: p[1] for p in k_points}
                         t_map = {p[0]: p[1] for p in t_points}
                         
                         # 找出共同的序号
-                        common_nums = set(l_map.keys()) & set(t_map.keys())
-                        logger.info(f"找到{len(common_nums)}对匹配的L-T点位")
+                        common_nums = set(l_map.keys()) & set(k_map.keys()) & set(t_map.keys())
+                        logger.info(f"找到{len(common_nums)}组匹配的L-K-T点位")
                         
                         for num in sorted(common_nums):
                             l_point = l_map[num]
+                            k_point = k_map[num]
                             t_point = t_map[num]
+                            
                             logger.info("\n" + "-"*30)
-                            logger.info(f"创建L-T类点位对连接 (序号{num})：")
+                            logger.info(f"创建L-K-T类点位组连接 (序号{num})：")
                             logger.info(f"  L点位: {l_point['description']} (FTID:{l_point['FTID']})")
+                            logger.info(f"  K点位: {k_point['description']} (FTID:{k_point['FTID']})")
                             logger.info(f"  T点位: {t_point['description']} (FTID:{t_point['FTID']})")
                             logger.info("-"*30)
-                            self._create_connection(session, l_point, t_point)
+                            
+                            # 创建L-K连接
+                            self._create_connection(session, l_point, k_point)
+                            # 创建K-T连接
+                            self._create_connection(session, k_point, t_point)
                     else:
-                        logger.info(f"L或T点位不足，跳过L-T配对")
+                        logger.info(f"L、K或T点位不足，跳过L-K-T配对")
                 
         except Exception as e:
             logger.error(f"处理设备连接时发生错误: {e}")

@@ -48,9 +48,9 @@ def main():
                 test_value = result.single()['test']
                 log_message(f'Neo4j连接测试成功: {test_value}', f)
 
-                # 清除现有连接关系
-                result = session.run('MATCH ()-[r:CONN]->() DELETE r')
-                log_message('已清除所有现有连接关系', f)
+                # 注释掉清除连接关系的操作
+                #result = session.run('MATCH ()-[r:CONN]->() DELETE r')
+                #log_message('已清除所有现有连接关系', f)
 
                 # 检查Neo4j中的节点数量
                 result = session.run("""

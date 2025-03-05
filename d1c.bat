@@ -1,21 +1,20 @@
 @echo off
-chcp 65001
+chcp 65001 > nul
 
-if exist "d1c_create_graph_conn.py" (
-    echo 使用Python版本运行...
-    
-    python -m pip install neo4j mysql-connector-python --quiet
-    python d1c_create_graph_conn.py
+REM 创建logs目录（如果不存在）
+if not exist "logs" mkdir logs
 
-) else (
-    echo 错误: 找不到d1c_create_graph_conn.py文件。
-    echo 当前目录文件列表:
-    dir /b
-)
+echo 开始运行d1c_create_graph_conn.py...
 
-if %errorlevel% neq 0 (
-    echo 执行失败!
+REM 运行Python脚本并同时输出到控制台和日志文件
+python -u d1c_create_graph_conn.py > logs\d1c_output.log 2>&1
+type logs\d1c_output.log
+
+if errorlevel 1 (
+    echo 程序执行出错，请查看日志文件：logs\d1c_output.log
     pause
+    exit /b 1
 )
 
+echo 程序执行完成，输出已保存到：logs\d1c_output.log
 pause
