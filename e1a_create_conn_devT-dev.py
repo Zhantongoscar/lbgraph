@@ -10,19 +10,28 @@ def create_terminal_device_relationships():
         print(f'连接到Neo4j数据库: {NEO4J_URI}')
 
         with driver.session() as session:
-            # 创建新的双向关系（使用MERGE而不是先删除）
+            # 1. 清除现有的两种关系
+            result = session.run('''
+                MATCH ()-[r:belongto|haveterminal]->()
+                DELETE r
+                RETURN count(*) as deleted_count
+            ''')
+            deleted_count = result.single()["deleted_count"]
+            print(f'已删除 {deleted_count} 个现有关系')
+
+            # 2. 创建新的双向关系
             result = session.run('''
                 MATCH (t:V_Terminal)
                 MATCH (d:V_Device)
-                WHERE d.id = t.device_id OR d.fdid = t.belongtoDevice
-                MERGE (t)-[:belongto]->(d)
-                MERGE (d)-[:haveterminal]->(t)
+                WHERE d.fdid = t.belongtoDevice
+                CREATE (t)-[:belongto]->(d)
+                CREATE (d)-[:haveterminal]->(t)
                 RETURN count(*) as created_count
             ''')
             created_count = result.single()["created_count"]
-            print(f'已创建或更新 {created_count} 个关系')
+            print(f'已创建 {created_count} 个新关系')
 
-            # 验证未成功匹配的终端点
+            # 3. 验证未成功匹配的终端点
             result = session.run('''
                 MATCH (t:V_Terminal)
                 WHERE NOT EXISTS((t)-[:belongto]->())
@@ -44,7 +53,7 @@ def create_terminal_device_relationships():
                     print(f'  设备: {record["terminal_device"]}')
                     print('---')
 
-            # 统计两种关系的总数
+            # 4. 统计两种关系的总数
             result = session.run('''
                 MATCH ()-[r]->() 
                 WHERE type(r) IN ['belongto', 'haveterminal']
