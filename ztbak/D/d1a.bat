@@ -22,7 +22,9 @@ copy "C:\clib\mysql\lib\libmysql.dll" . /Y
 echo Running d1a_grapu_device.exe...
 d1a_grapu_device.exe
 
-if errorlevel 1 (
+if %errorlevel% neq 0 (
     echo Execution failed!
-    exit /b 1
+    pause
 )
+
+pause
