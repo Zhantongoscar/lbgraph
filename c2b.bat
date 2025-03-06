@@ -26,4 +26,3 @@ echo 编译成功！
 copy "%MYSQL_LIB%\libmysql.dll" . /Y
 echo 正在运行程序...
 ".\c2b_import_excel.exe"
-pause
