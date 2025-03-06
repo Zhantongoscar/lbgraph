@@ -17,5 +17,15 @@
     "files": {
         "csv_path": "data/SmartWiringzta.csv",
         "project_number": "16331-001_00"
+    },
+    "csv_field_mapping": {
+        "Level": "level",
+        "Number": "number",
+        "Type": "type",
+        "Assembly Mode": "assembly_mode",
+        "Name": "name",
+        "Operating Element": "operating_element",
+        "BOM Class": "bom_class",
+        "Chinese Name": "name_zh_chs"
     }
 }
