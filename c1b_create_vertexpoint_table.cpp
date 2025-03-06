@@ -5,7 +5,10 @@
 #include <vector>
 #include <map>
 #include <windows.h>
+#include <filesystem>
 #include "C:/clib/mysql/include/mysql.h"
+
+namespace fs = std::filesystem;
 
 // 设备点结构
 struct V_DevicePoint {
@@ -73,11 +76,9 @@ private:
             password = getValueFromJson(mysqlJson, "password");
             database = getValueFromJson(mysqlJson, "database");
 
-            // 读取文件配置
+            // 从config.json读取项目编号
             std::string filesJson = jsonStr.substr(jsonStr.find("\"files\""));
             filesJson = filesJson.substr(0, filesJson.find("}") + 1);
-            
-            csvPath = getValueFromJson(filesJson, "csv_path");
             projectNumber = getValueFromJson(filesJson, "project_number");
 
             return !host.empty() && !user.empty() && !password.empty() && !database.empty();
@@ -180,6 +181,29 @@ private:
         return std::string(buffer.data(), length);
     }
 
+    // 从目录中获取所有CSV文件
+    std::vector<fs::path> getCSVFiles(const std::string& dirPath) {
+        std::vector<fs::path> csvFiles;
+        try {
+            if (!fs::exists(dirPath)) {
+                std::cerr << "目录不存在: " << dirPath << std::endl;
+                return csvFiles;
+            }
+
+            for (const auto& entry : fs::directory_iterator(dirPath)) {
+                if (entry.is_regular_file()) {
+                    std::string ext = entry.path().extension().string();
+                    if (ext == ".csv") {
+                        csvFiles.push_back(entry.path());
+                    }
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "获取CSV文件列表时出错: " << e.what() << std::endl;
+        }
+        return csvFiles;
+    }
+
 public:
     DevicePointImporter(const std::string& table) : tableName(table) {
         conn = mysql_init(NULL);
@@ -193,9 +217,6 @@ public:
             std::cerr << "加载配置失败" << std::endl;
             return;
         }
-
-        std::cout << "CSV路径: " << csvPath << std::endl;
-        std::cout << "项目编号: " << projectNumber << std::endl;
 
         if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(),
                               database.c_str(), 0, NULL, 0)) {
@@ -240,6 +261,35 @@ public:
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
         return mysql_query(conn, createTable.c_str()) == 0;
+    }
+
+    // 让用户选择CSV文件
+    bool selectCSVFile() {
+        std::string dataDir = "data";
+        std::vector<fs::path> csvFiles = getCSVFiles(dataDir);
+        
+        if (csvFiles.empty()) {
+            std::cerr << "在" << dataDir << "目录中未找到CSV文件" << std::endl;
+            return false;
+        }
+        
+        std::cout << "请选择要导入的CSV文件:" << std::endl;
+        for (size_t i = 0; i < csvFiles.size(); i++) {
+            std::cout << (i + 1) << ": " << csvFiles[i].filename().string() << std::endl;
+        }
+        
+        size_t choice;
+        std::cout << "请输入选择的序号: ";
+        std::cin >> choice;
+        
+        if (choice < 1 || choice > csvFiles.size()) {
+            std::cerr << "无效的选择" << std::endl;
+            return false;
+        }
+        
+        csvPath = csvFiles[choice - 1].string();
+        std::cout << "已选择文件: " << csvPath << std::endl;
+        return true;
     }
 
     // 导入CSV数据
@@ -495,6 +545,12 @@ int main() {
     SetConsoleOutputCP(CP_UTF8);
     
     DevicePointImporter importer("v_device_points");
+    
+    // 让用户选择CSV文件
+    if (!importer.selectCSVFile()) {
+        std::cout << "文件选择失败，程序退出" << std::endl;
+        return 1;
+    }
     
     // 第一步：导入数据
     if (importer.importFromCSV()) {
