@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 
-echo 开始运行 d1a.bat, d1b.bat, d1d.bat, d1c.bat...
+echo 开始运行 d1a.bat, d1b.bat, d1d.bat, d1c.bat, e1a.bat...
 echo.
 
 echo 步骤 1: 运行 d1a.bat (创建设备节点)
@@ -46,6 +46,17 @@ if errorlevel 1 (
 )
 echo.
 echo d1c.bat 执行完成
+echo.
+
+echo 步骤 5: 运行 e1a.bat (创建设备终端连接)
+echo ====================================
+call e1a.bat
+if errorlevel 1 (
+    echo e1a.bat 执行失败!
+    exit /b 1
+)
+echo.
+echo e1a.bat 执行完成
 echo.
 
 echo 所有脚本执行完成!
