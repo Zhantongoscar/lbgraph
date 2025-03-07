@@ -150,7 +150,7 @@ private:
         }
         
         // 默认为外部连接
-        return "外部连接";
+        return "out_conn";
     }
 
     // 转义字符串
@@ -160,13 +160,26 @@ private:
         unsigned long length = mysql_real_escape_string(conn, buffer.data(), str.c_str(), str.length());
         return std::string(buffer.data(), length);
     }
+    
+    // 移除第二个冒号及其后内容
+    std::string removeSecondColon(const std::string& deviceStr) {
+        size_t firstColon = deviceStr.find(":");
+        if (firstColon != std::string::npos) {
+            size_t secondColon = deviceStr.find(":", firstColon + 1);
+            if (secondColon != std::string::npos) {
+                return deviceStr.substr(0, secondColon);
+            }
+        }
+        return deviceStr; // 如果没有第二个冒号，返回原始字符串
+    }
 
     // 解析连接信息
     V_Connection parseConnectionInfo(const std::string& connNo, const std::string& source, const std::string& target, const std::string& color) {
         V_Connection conn;
+        // 移除源和目标设备中的第二个冒号及其后内容
         conn.connNo = connNo;
-        conn.source = source;
-        conn.target = target;
+        conn.source = removeSecondColon(source);
+        conn.target = removeSecondColon(target);
         conn.color = color;
         
         // 默认电气特性
