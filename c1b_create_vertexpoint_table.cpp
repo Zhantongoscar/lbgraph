@@ -128,6 +128,13 @@ private:
                         // 提取点的描述 (冒号后的内容)
                         point.description = devicePart.substr(colonPos + 1);
                         
+                        // 处理第二个冒号，如果存在，删除第二个冒号及其后面的内容
+                        size_t secondColonPos = point.description.find(":");
+                        if (secondColonPos != std::string::npos) {
+                            // 只保留第一个冒号后到第二个冒号前的内容
+                            point.description = point.description.substr(0, secondColonPos);
+                        }
+                        
                         // 尝试从描述中提取点的属性
                         if (point.description.find("SET") != std::string::npos) {
                             point.isSetPoint = true;
@@ -337,14 +344,37 @@ public:
 
             // 处理第8列和第9列的设备点
             if (fields.size() >= 8) {
-                // 检查第8列是否以'='开头，确保是设备数据
+                // 处理Device (source)字段
                 if (!fields[7].empty() && fields[7].find("=") == 0) {
-                    V_DevicePoint point = parseDevicePointInfo(fields[7]);
+                    // 处理可能包含两个冒号的FTID
+                    std::string originalFTID = fields[7];
+                    std::string processedFTID = processFTID(originalFTID);
+                    
+                    // 使用处理后的FTID创建设备点
+                    V_DevicePoint point = parseDevicePointInfo(processedFTID);
+                    
+                    // 保存原始的FTID信息以供参考
+                    if (originalFTID != processedFTID) {
+                        std::cout << "处理FTID: " << originalFTID << " -> " << processedFTID << std::endl;
+                    }
+                    
                     devicePoints.push_back(point);
                 }
-                // 检查第9列
+                
+                // 处理Device (target)字段
                 if (fields.size() > 8 && !fields[8].empty() && fields[8].find("=") == 0) {
-                    V_DevicePoint point = parseDevicePointInfo(fields[8]);
+                    // 处理可能包含两个冒号的FTID
+                    std::string originalFTID = fields[8];
+                    std::string processedFTID = processFTID(originalFTID);
+                    
+                    // 使用处理后的FTID创建设备点
+                    V_DevicePoint point = parseDevicePointInfo(processedFTID);
+                    
+                    // 保存原始的FTID信息以供参考
+                    if (originalFTID != processedFTID) {
+                        std::cout << "处理FTID: " << originalFTID << " -> " << processedFTID << std::endl;
+                    }
+                    
                     devicePoints.push_back(point);
                 }
             }
@@ -353,6 +383,19 @@ public:
         file.close();
         std::cout << "解析完成，共 " << devicePoints.size() << " 个设备点" << std::endl;
         return batchInsertDevicePoints(devicePoints);
+    }
+    
+    // 处理FTID，去除第二个冒号及其后的内容
+    std::string processFTID(const std::string& ftid) {
+        size_t firstColonPos = ftid.find(":");
+        if (firstColonPos != std::string::npos) {
+            size_t secondColonPos = ftid.find(":", firstColonPos + 1);
+            if (secondColonPos != std::string::npos) {
+                // 返回从开头到第二个冒号之前的部分
+                return ftid.substr(0, secondColonPos);
+            }
+        }
+        return ftid; // 如果没有找到第二个冒号，返回原始FTID
     }
 
 public:
