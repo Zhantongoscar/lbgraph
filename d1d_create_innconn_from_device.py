@@ -2,6 +2,7 @@
 import sys
 import traceback
 import os
+import json
 import logging
 from neo4j import GraphDatabase
 import pymysql
@@ -23,11 +24,15 @@ logger = setup_logger()
 class InnerConnCreator:
     def __init__(self):
         try:
-            logger.info("\n=== 初始化数据库连接 ===")
-            # 连接MySQL数据库
-            self.mysql_conn = pymysql.connect(**MYSQL_CONFIG, cursorclass=pymysql.cursors.DictCursor)
+            logger.info("\n=== 初始化数据库连接和加载规则 ===")
+            # 加载规则文件
+            rules_path = os.path.join(os.path.dirname(__file__), 'd1d_inner_rules.json')
+            with open(rules_path, 'r', encoding='utf-8') as f:
+                self.rules = json.load(f)
+            logger.info(f"已加载规则文件: {rules_path}")
             
-            # 连接Neo4j数据库
+            # 连接数据库
+            self.mysql_conn = pymysql.connect(**MYSQL_CONFIG, cursorclass=pymysql.cursors.DictCursor)
             self.driver = GraphDatabase.driver(
                 NEO4J_URI,
                 auth=(NEO4J_USER, NEO4J_PASSWORD)
@@ -67,23 +72,44 @@ class InnerConnCreator:
         try:
             # 清理和标准化描述
             desc = description.strip()
-            if not desc or len(desc) < 2:  # 至少需要一个字母和一个数字
-                logger.warning(f"无效的点位描述: {description}")
+            if not desc:
+                logger.warning(f"空的点位描述")
                 return None, None
                 
+            # 处理带斜杠的格式，如 "L/L1"
+            if '/' in desc:
+                parts = desc.split('/')
+                if len(parts) == 2:
+                    # 使用第二部分，因为它通常包含完整信息
+                    desc = parts[1]
+                    
             # 获取点位类型
             prefix = desc[0].upper()  # 转换为大写以统一处理
             if prefix not in ['A', 'D', 'L', 'K', 'T']:
-                logger.warning(f"未知的点位类型: {prefix} (来自 {description})")
-                return None, None
-                
-            # 提取序号
-            num_str = ''
-            for char in desc[1:]:  # 从第二个字符开始
-                if char.isdigit():
-                    num_str += char
+                # 检查特殊格式，如 "ANA.10", "ANALOG.1" 等
+                if desc.startswith(('ANA.', 'ANALOG.')):
+                    logger.info(f"跳过模拟量点位: {description}")
+                    return None, None
                 else:
-                    break  # 遇到非数字字符就停止
+                    logger.warning(f"未知的点位类型: {prefix} (来自 {description})")
+                    return None, None
+                
+            # 提取序号，支持更多格式
+            num_str = ''
+            in_brackets = False
+            for char in desc[1:]:
+                if char == '(':
+                    in_brackets = True
+                    continue
+                elif char == ')':
+                    in_brackets = False
+                    continue
+                elif char == '.':  # 忽略小数点后的内容，如 V1.1 中的 .1
+                    break
+                elif char.isdigit():
+                    num_str += char
+                elif not in_brackets and not char.isdigit():
+                    break  # 遇到非数字字符就停止，除非在括号内
                     
             if num_str:
                 num = int(num_str)
@@ -97,7 +123,7 @@ class InnerConnCreator:
             logger.error(f"点位描述解析错误 ({description}): {str(e)}")
             return None, None
 
-    def _create_connection(self, session, point1, point2):
+    def _create_connection(self, session, point1, point2, conn_props=None):
         """创建两个点位之间的双向连接"""
         try:
             # 首先验证点位存在性
@@ -105,16 +131,6 @@ class InnerConnCreator:
             MATCH (p1:V_Terminal {FTID: $point1_id}), (p2:V_Terminal {FTID: $point2_id})
             RETURN p1, p2
             """
-            logger.info("\n" + "="*50)
-            logger.info("执行点位验证查询")
-            logger.info("-"*50)
-            logger.info("CQL语句:")
-            logger.info(check_query.strip())
-            logger.info("-"*50)
-            logger.info("参数:")
-            logger.info(f"  point1_id: {point1['FTID']}")
-            logger.info(f"  point2_id: {point2['FTID']}")
-            logger.info("="*50)
             result = session.run(check_query,
                                point1_id=point1['FTID'],
                                point2_id=point2['FTID'])
@@ -122,63 +138,39 @@ class InnerConnCreator:
                 logger.error(f"点位不存在: {point1['description']} 或 {point2['description']}")
                 return False
             
-            # 创建连接属性
-            conn_props = {
-                "voltage": 24.0,
-                "current": 0.1,
-                "resistance": 240.0,
-                "isCable": False,
-                "isInPanel": True,
-                "connType": "devInConn"
-            }
+            # 使用默认连接属性，如果没有提供特定属性
+            if conn_props is None:
+                conn_props = self.rules.get('defaultConnectionProperties', {
+                    "voltage": 24.0,
+                    "current": 0.1,
+                    "resistance": 240.0,
+                    "isCable": False,
+                    "isInPanel": True,
+                    "connType": "devInConn"
+                })
             
-            # 创建双向连接
-            query = """
-            MATCH (p1:V_Terminal {FTID: $point1_id}), (p2:V_Terminal {FTID: $point2_id})
-            MERGE (p1)-[r1:CONN {
-                voltage: 24.0,
-                current: 0.1,
-                resistance: 240.0,
-                isCable: false,
-                isInPanel: true,
-                connType: 'devInConn'
-            }]->(p2)
-            MERGE (p2)-[r2:CONN {
-                voltage: 24.0,
-                current: 0.1,
-                resistance: 240.0,
-                isCable: false,
-                isInPanel: true,
-                connType: 'devInConn'
-            }]->(p1)
+            # 将属性转换为Cypher语法的字面量字符串
+            props_str = "{"
+            props_str += ", ".join(f"{k}: {repr(v)}" for k, v in conn_props.items())
+            props_str += "}"
+            
+            # 创建双向连接，使用字面量属性
+            query = f"""
+            MATCH (p1:V_Terminal {{FTID: $point1_id}}), (p2:V_Terminal {{FTID: $point2_id}})
+            MERGE (p1)-[r1:CONN {props_str}]->(p2)
+            MERGE (p2)-[r2:CONN {props_str}]->(p1)
             RETURN COUNT(r1) + COUNT(r2) as count
             """
             
-            logger.info("\n" + "="*50)
-            logger.info("执行连接创建查询")
-            logger.info("-"*50)
-            logger.info("CQL语句:")
-            logger.info(query.strip())
-            logger.info("-"*50)
-            logger.info("参数:")
-            logger.info(f"  point1_id: {point1['FTID']}")
-            logger.info(f"  point2_id: {point2['FTID']}")
-            logger.info("  连接属性:")
-            for k, v in conn_props.items():
-                logger.info(f"    {k}: {v}")
-            logger.info("="*50)
+            logger.info(f"\n创建连接: {point1['description']} <-> {point2['description']}")
+            logger.info(f"连接属性: {conn_props}")
             
             result = session.run(query,
                               point1_id=point1['FTID'],
                               point2_id=point2['FTID'])
             
             conn_count = result.single()['count']
-            if conn_count == 2:
-                logger.info(f"成功创建连接: {point1['description']} <-> {point2['description']}")
-                return True
-            else:
-                logger.error(f"连接创建不完整: 期望2个连接，实际创建{conn_count}个")
-                return False
+            return conn_count == 2
             
         except Exception as e:
             logger.error(f"创建连接时发生错误: {e}")
@@ -193,7 +185,7 @@ class InnerConnCreator:
                 # 清理现有的连接
                 logger.info("\n=== 清理现有连接 ===")
                 # 注释掉删除操作
-                #session.run("MATCH ()-[r:CONN {connType: 'devInConn'}]->() DELETE r")
+                #session.run("MATCH ()-[r:CONN {connType: 'in_conn'}]->() DELETE r")
                 #logger.info("已删除现有的设备内部连接")
                 
                 # 创建新的连接
@@ -207,6 +199,96 @@ class InnerConnCreator:
             logger.error(traceback.format_exc())
             raise
             
+    def _apply_point_type_rules(self, device_points, session):
+        """应用点位类型规则"""
+        for rule in self.rules.get('pointTypeRules', []):
+            rule_type = rule.get('type')
+            
+            if rule_type == 'adjacentSequence':
+                # 处理相邻序号连接规则（如A类和D类点位）
+                for point_type in rule.get('pointTypes', []):
+                    points = sorted(device_points.get(point_type, []), key=lambda x: x[0])
+                    for i in range(len(points) - 1):
+                        self._create_connection(
+                            session,
+                            points[i][1],
+                            points[i + 1][1],
+                            rule.get('connectionProperties', None)
+                        )
+                        
+            elif rule_type == 'matchingNumbers':
+                # 处理相同序号连接规则（如L-K-T点位组）
+                for group in rule.get('pointGroups', []):
+                    if len(group) != 2:
+                        continue
+                    
+                    type1, type2 = group
+                    points1 = {p[0]: p[1] for p in device_points.get(type1, [])}
+                    points2 = {p[0]: p[1] for p in device_points.get(type2, [])}
+                    
+                    common_nums = set(points1.keys()) & set(points2.keys())
+                    for num in common_nums:
+                        self._create_connection(
+                            session,
+                            points1[num],
+                            points2[num],
+                            rule.get('connectionProperties', None)
+                        )
+                        
+            elif rule_type == 'specificPair':
+                # 处理特定点位对的连接规则
+                for pair in rule.get('pairs', []):
+                    desc1, desc2 = pair.get('point1'), pair.get('point2')
+                    for points in device_points.values():
+                        point1 = next((p[1] for p in points if p[1]['description'].strip() == desc1), None)
+                        point2 = next((p[1] for p in points if p[1]['description'].strip() == desc2), None)
+                        if point1 and point2:
+                            self._create_connection(
+                                session,
+                                point1,
+                                point2,
+                                pair.get('connectionProperties', None)
+                            )
+                            
+            elif rule_type == 'buttonPostfix':
+                # 处理带特定后缀的按钮连接
+                postfixes = rule.get('postfixes', [])
+                conn_props = rule.get('connectionProperties', None)
+                
+                # 遍历所有点位找到带指定后缀的点位对
+                for points in device_points.values():
+                    # 按后缀分组点位
+                    postfix_groups = {}
+                    for num, point in points:
+                        desc = point['description'].strip()
+                        base_desc = None
+                        matched_postfix = None
+                        
+                        # 检查点位是否带有指定后缀
+                        for postfix in postfixes:
+                            if desc.endswith(postfix):
+                                base_desc = desc[:-len(postfix)]
+                                matched_postfix = postfix
+                                break
+                                
+                        if base_desc:
+                            if base_desc not in postfix_groups:
+                                postfix_groups[base_desc] = {}
+                            postfix_groups[base_desc][matched_postfix] = point
+                    
+                    # 创建具有相同基础描述的点位之间的连接
+                    for base_desc, suffix_points in postfix_groups.items():
+                        if len(suffix_points) >= 2:  # 至少有两个点位才能连接
+                            points_list = list(suffix_points.values())
+                            for i in range(len(points_list)):
+                                for j in range(i + 1, len(points_list)):
+                                    self._create_connection(
+                                        session,
+                                        points_list[i],
+                                        points_list[j],
+                                        conn_props
+                                    )
+
     def _create_device_connections(self, session):
         """处理所有设备的内部连接"""
         try:
@@ -231,113 +313,29 @@ class InnerConnCreator:
                 logger.info(f"找到 {len(points)} 个点位")
                 
                 # 按设备和类型分组点位
+                current_device = None
                 device_points = {}
+                
                 for point in points:
                     device = point['belongtoDevice']
-                    if device not in device_points:
-                        device_points[device] = {'A': [], 'D': [], 'L': [], 'K': [], 'T': []}
+                    if device != current_device:
+                        # 处理前一个设备的连接
+                        if current_device:
+                            logger.info(f"\n处理设备 {current_device} 的连接")
+                            self._apply_point_type_rules(device_points, session)
+                        
+                        # 开始新设备的处理
+                        current_device = device
+                        device_points = {'A': [], 'D': [], 'L': [], 'K': [], 'T': []}
                     
                     prefix, num = self._analyze_point(point['description'])
-                    if prefix and num is not None:  # 只处理能成功解析序号的点位
-                        device_points[device][prefix].append((num, point))
-                        
-                # 处理每个设备的点位组
-                logger.info("\n" + "="*50)
-                logger.info(f"开始处理 {len(device_points)} 个设备的点位组")
-                logger.info("="*50)
+                    if prefix and num is not None:
+                        device_points[prefix].append((num, point))
                 
-                for device, type_points in device_points.items():
-                    logger.info("\n" + "="*50)
-                    logger.info(f"正在处理设备: {device}")
-                    logger.info("-"*50)
-                    logger.info("设备所有点位信息：")
-                    for point_type in ['A', 'D', 'L', 'K', 'T']:
-                        points = type_points[point_type]
-                        if points:
-                            points_info = [f"{p[1]['description']}(FTID:{p[1]['FTID']})" for p in sorted(points, key=lambda x: x[0])]
-                            logger.info(f"{point_type}类点位: {points_info}")
-                    logger.info("-"*50)
-                    
-                    # 处理A类点位对
-                    if len(type_points['A']) > 0:
-                        logger.info(f"\nA类点位配对:")
-                        a_points = sorted(type_points['A'], key=lambda x: x[0])
-                        logger.info(f"A类点位列表: {[p[1]['description'] for p in a_points]}")
-                        
-                        # 处理所有A点位
-                        for i in range(len(a_points)):
-                            point1 = a_points[i][1]
-                            # 如果有下一个点，则创建连接
-                            if i + 1 < len(a_points):
-                                point2 = a_points[i+1][1]
-                                logger.info("\n" + "-"*30)
-                                logger.info("创建A类点位对连接：")
-                                logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
-                                logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
-                                logger.info("-"*30)
-                                self._create_connection(session, point1, point2)
-                    else:
-                        logger.info(f"\nA类点位数量不足({len(type_points['A'])}个)，跳过配对")
-                        
-                    # 处理D类点位对
-                    if len(type_points['D']) > 0:
-                        logger.info(f"\nD类点位配对:")
-                        d_points = sorted(type_points['D'], key=lambda x: x[0])
-                        logger.info(f"D类点位列表: {[p[1]['description'] for p in d_points]}")
-                        
-                        # 处理所有D点位
-                        for i in range(len(d_points)):
-                            point1 = d_points[i][1]
-                            # 如果有下一个点，则创建连接
-                            if i + 1 < len(d_points):
-                                point2 = d_points[i+1][1]
-                                logger.info("\n" + "-"*30)
-                                logger.info("创建D类点位对连接：")
-                                logger.info(f"  点位1: {point1['description']} (FTID:{point1['FTID']})")
-                                logger.info(f"  点位2: {point2['description']} (FTID:{point2['FTID']})")
-                                logger.info("-"*30)
-                                self._create_connection(session, point1, point2)
-                    else:
-                        logger.info(f"\nD类点位数量不足({len(type_points['D'])}个)，跳过配对")
-                        
-                    # L-K-T点位组
-                    l_points = sorted(type_points['L'], key=lambda x: x[0])
-                    k_points = sorted(type_points['K'], key=lambda x: x[0])
-                    t_points = sorted(type_points['T'], key=lambda x: x[0])
-                    
-                    if len(l_points) > 0 or len(k_points) > 0 or len(t_points) > 0:
-                        logger.info(f"\nL-K-T点位配对:")
-                        logger.info(f"L类点位: {[p[1]['description'] for p in l_points]}")
-                        logger.info(f"K类点位: {[p[1]['description'] for p in k_points]}")
-                        logger.info(f"T类点位: {[p[1]['description'] for p in t_points]}")
-                        
-                        # 构建序号到点位的映射
-                        l_map = {p[0]: p[1] for p in l_points}
-                        k_map = {p[0]: p[1] for p in k_points}
-                        t_map = {p[0]: p[1] for p in t_points}
-                        
-                        # 找出共同的序号
-                        common_nums = set(l_map.keys()) & set(k_map.keys()) & set(t_map.keys())
-                        logger.info(f"找到{len(common_nums)}组匹配的L-K-T点位")
-                        
-                        for num in sorted(common_nums):
-                            l_point = l_map[num]
-                            k_point = k_map[num]
-                            t_point = t_map[num]
-                            
-                            logger.info("\n" + "-"*30)
-                            logger.info(f"创建L-K-T类点位组连接 (序号{num})：")
-                            logger.info(f"  L点位: {l_point['description']} (FTID:{l_point['FTID']})")
-                            logger.info(f"  K点位: {k_point['description']} (FTID:{k_point['FTID']})")
-                            logger.info(f"  T点位: {t_point['description']} (FTID:{t_point['FTID']})")
-                            logger.info("-"*30)
-                            
-                            # 创建L-K连接
-                            self._create_connection(session, l_point, k_point)
-                            # 创建K-T连接
-                            self._create_connection(session, k_point, t_point)
-                    else:
-                        logger.info(f"L、K或T点位不足，跳过L-K-T配对")
+                # 处理最后一个设备
+                if current_device:
+                    logger.info(f"\n处理设备 {current_device} 的连接")
+                    self._apply_point_type_rules(device_points, session)
                 
         except Exception as e:
             logger.error(f"处理设备连接时发生错误: {e}")
@@ -350,7 +348,7 @@ class InnerConnCreator:
         try:
             # 统计连接数
             count_query = """
-            MATCH ()-[r:CONN {connType: 'devInConn'}]->()
+            MATCH ()-[r:CONN {connType: 'in_conn'}]->()
             RETURN COUNT(r) as total
             """
             result = session.run(count_query)
@@ -359,7 +357,7 @@ class InnerConnCreator:
             
             # 检查每个设备的连接
             device_query = """
-            MATCH (n1:V_Terminal)-[r:CONN {connType: 'devInConn'}]->(n2:V_Terminal)
+            MATCH (n1:V_Terminal)-[r:CONN {connType: 'in_conn'}]->(n2:V_Terminal)
             WHERE n1.FTID < n2.FTID  // 避免重复计数
             WITH n1.belongtoDevice as device,
                  COUNT(r) as conn_count,

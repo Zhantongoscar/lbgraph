@@ -1,0 +1,122 @@
+{
+  "version": "1.0",
+  "description": "设备内部连接规则配置",
+  "defaultConnectionProperties": {
+    "voltage": 24.0,
+    "current": 0.1,
+    "resistance": 240.0,
+    "isCable": false,
+    "isInPanel": true,
+    "connType": "devInConn"
+  },
+  "pointTypeRules": [
+    {
+      "type": "adjacentSequence",
+      "description": "A类点位按序号相邻连接",
+      "pointTypes": ["A"],
+      "connectionProperties": {
+        "voltage": 24.0,
+        "current": 0.1,
+        "resistance": 240.0,
+        "isCable": false,
+        "isInPanel": true,
+        "connType": "devInConn"
+      }
+    },
+    {
+      "type": "adjacentSequence",
+      "description": "D类点位按序号相邻连接",
+      "pointTypes": ["D"],
+      "connectionProperties": {
+        "voltage": 24.0,
+        "current": 0.1,
+        "resistance": 240.0,
+        "isCable": false,
+        "isInPanel": true,
+        "connType": "devInConn"
+      }
+    },
+    {
+      "type": "matchingNumbers",
+      "description": "L-T点位按相同序号直接连接",
+      "pointGroups": [
+        ["L", "T"]
+      ],
+      "connectionProperties": {
+        "voltage": 380.0,
+        "current": 16.0,
+        "resistance": 23.75,
+        "isCable": false,
+        "isInPanel": true,
+        "connType": "powerConn"
+      }
+    },
+    {
+      "type": "specificPair",
+      "description": "14-11常闭连接",
+      "pairs": [
+        {
+          "point1": "14",
+          "point2": "11",
+          "connectionProperties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true,
+            "connType": "NC"
+          }
+        }
+      ]
+    },
+    {
+      "type": "specificPair",
+      "description": "14-12常开连接",
+      "pairs": [
+        {
+          "point1": "14",
+          "point2": "12",
+          "connectionProperties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true,
+            "connType": "NO"
+          }
+        }
+      ]
+    },
+    {
+      "type": "specificPair",
+      "description": "按钮1-4常闭连接",
+      "pairs": [
+        {
+          "point1": "1",
+          "point2": "4",
+          "connectionProperties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true,
+            "connType": "NC"
+          }
+        }
+      ]
+    },
+    {
+      "type": "buttonPostfix",
+      "description": "带.1和.2后缀的按钮常闭连接",
+      "postfixes": [".1", ".2"],
+      "connectionProperties": {
+        "voltage": 24.0,
+        "current": 0.1,
+        "resistance": 240.0,
+        "isCable": false,
+        "isInPanel": true,
+        "connType": "NC"
+      }
+    }
+  ]
+}
