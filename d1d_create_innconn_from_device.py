@@ -211,113 +211,199 @@ class InnerConnCreator:
             logger.error(traceback.format_exc())
             raise
             
+    def _create_connections_by_type(self, device_points, session):
+        """根据点位的原始Type创建连接"""
+        # 收集所有点位
+        all_points = []
+        for points in device_points.values():
+            all_points.extend(points)
+            
+        # 按原始Type分组
+        type_groups = {}
+        for num, point in all_points:
+            orig_type = point.get('Type', '')
+            if orig_type:
+                if orig_type not in type_groups:
+                    type_groups[orig_type] = []
+                type_groups[orig_type].append(point)
+                
+        # 创建连接
+        connected_points = set()  # 记录已连接的点位
+        connections_made = False  # 标记是否创建了任何连接
+        
+        # 处理 AX 类型点位
+        for type_name, points in type_groups.items():
+            if not type_name.startswith('AX_'):
+                continue
+                
+            # 解析类型编号
+            parts = type_name.split('_')
+            if len(parts) != 3:
+                continue
+                
+            type_num = parts[2]  # 获取类型编号
+            
+            # 查找相同编号的其他点位
+            related_points = []
+            for other_type, other_points in type_groups.items():
+                if other_type.startswith('AX_') and other_type.endswith(type_num):
+                    related_points.extend(other_points)
+                    
+            # 创建连接
+            if len(related_points) >= 2:
+                # 检查是否有COM点位
+                com_point = next((p for p in related_points if 'COM' in p['Type']), None)
+                if com_point:
+                    # 与COM点位相连
+                    for point in related_points:
+                        if point != com_point:
+                            conn_type = 'NC' if 'NC' in point['Type'] else 'NO'
+                            conn_props = {
+                                "voltage": 24.0,
+                                "current": 0.1,
+                                "resistance": 240.0,
+                                "isCable": False,
+                                "isInPanel": True,
+                                "connType": conn_type
+                            }
+                            if self._create_connection(session, com_point, point, conn_props):
+                                connected_points.add(com_point['FTID'])
+                                connected_points.add(point['FTID'])
+                                connections_made = True
+                                
+        return connections_made, connected_points
+
     def _apply_point_type_rules(self, device_points, session):
         """应用点位类型规则"""
-        for rule in self.rules.get('pointTypeRules', []):
-            rule_type = rule.get('type')
-            
-            if rule_type == 'adjacentSequence':
-                # 处理相邻序号连接规则（如A类和D类点位）
-                for point_type in rule.get('pointTypes', []):
-                    points = sorted(device_points.get(point_type, []), key=lambda x: x[0])
-                    for i in range(len(points) - 1):
-                        self._create_connection(
-                            session,
-                            points[i][1],
-                            points[i + 1][1],
-                            rule.get('connectionProperties', None)
-                        )
-                        
-            elif rule_type == 'matchingNumbers':
-                # 处理相同序号连接规则（如L-K-T点位组）
-                for group in rule.get('pointGroups', []):
-                    if len(group) != 2:
-                        continue
-                    
-                    type1, type2 = group
-                    points1 = {p[0]: p[1] for p in device_points.get(type1, [])}
-                    points2 = {p[0]: p[1] for p in device_points.get(type2, [])}
-                    
-                    common_nums = set(points1.keys()) & set(points2.keys())
-                    for num in common_nums:
-                        self._create_connection(
-                            session,
-                            points1[num],
-                            points2[num],
-                            rule.get('connectionProperties', None)
-                        )
-                        
-            elif rule_type == 'specificPair':
-                # 处理特定点位对的连接规则
-                for pair in rule.get('pairs', []):
-                    desc1, desc2 = pair.get('point1'), pair.get('point2')
-                    for points in device_points.values():
-                        point1 = next((p[1] for p in points if p[1]['description'].strip() == desc1), None)
-                        point2 = next((p[1] for p in points if p[1]['description'].strip() == desc2), None)
-                        if point1 and point2:
+        # 首先尝试根据原始Type创建连接
+        connections_made, connected_points = self._create_connections_by_type(device_points, session)
+        
+        # 如果没有根据原始Type创建任何连接，则应用外置规则
+        if not connections_made:
+            for rule in self.rules.get('pointTypeRules', []):
+                rule_type = rule.get('type')
+                
+                if rule_type == 'adjacentSequence':
+                    # 处理相邻序号连接规则（如A类和D类点位）
+                    for point_type in rule.get('pointTypes', []):
+                        points = sorted(device_points.get(point_type, []), key=lambda x: x[0])
+                        for i in range(len(points) - 1):
                             self._create_connection(
                                 session,
-                                point1,
-                                point2,
-                                pair.get('connectionProperties', None)
+                                points[i][1],
+                                points[i + 1][1],
+                                rule.get('connectionProperties', None)
                             )
                             
-            elif rule_type == 'buttonPostfix':
-                # 处理带特定后缀的按钮连接
-                if 'postfixes' in rule:
-                    # 原有的.1,.2后缀处理逻辑
-                    postfixes = rule.get('postfixes', [])
-                    conn_props = rule.get('connectionProperties', None)
-                    
-                    # 遍历所有点位找到带指定后缀的点位对
-                    for points in device_points.values():
-                        # 按后缀分组点位
-                        postfix_groups = {}
-                        for num, point in points:
-                            desc = point['description'].strip()
-                            base_desc = None
-                            matched_postfix = None
+                elif rule_type == 'matchingNumbers':
+                    # 处理相同序号连接规则（如L-K-T点位组）
+                    for group in rule.get('pointGroups', []):
+                        if len(group) != 2:
+                            continue
+                        
+                        type1, type2 = group
+                        points1 = {p[0]: p[1] for p in device_points.get(type1, [])}
+                        points2 = {p[0]: p[1] for p in device_points.get(type2, [])}
+                        
+                        common_nums = set(points1.keys()) & set(points2.keys())
+                        for num in common_nums:
+                            self._create_connection(
+                                session,
+                                points1[num],
+                                points2[num],
+                                rule.get('connectionProperties', None)
+                            )
                             
-                            # 检查点位是否带有指定后缀
-                            for postfix in postfixes:
-                                if desc.endswith(postfix):
-                                    base_desc = desc[:-len(postfix)]
-                                    matched_postfix = postfix
-                                    break
-                                    
-                            if base_desc:
-                                if base_desc not in postfix_groups:
-                                    postfix_groups[base_desc] = {}
-                                postfix_groups[base_desc][matched_postfix] = point
-                        
-                        # 创建具有相同基础描述的点位之间的连接
-                        for base_desc, suffix_points in postfix_groups.items():
-                            if len(suffix_points) >= 2:
-                                points_list = list(suffix_points.values())
-                                for i in range(len(points_list)):
-                                    for j in range(i + 1, len(points_list)):
-                                        self._create_connection(
-                                            session,
-                                            points_list[i],
-                                            points_list[j],
-                                            conn_props
-                                        )
-                
-                # 处理新的postfixPairs规则
-                if 'postfixPairs' in rule:
-                    for pair in rule.get('postfixPairs', []):
-                        prefix = pair.get('prefix')
-                        postfix1 = pair.get('postfix1')
-                        postfix2 = pair.get('postfix2')
-                        conn_props = pair.get('connectionProperties')
-                        
-                        # 在所有点位中查找匹配的点位对
+                elif rule_type == 'specificPair':
+                    # 处理特定点位对的连接规则
+                    for pair in rule.get('pairs', []):
+                        desc1, desc2 = pair.get('point1'), pair.get('point2')
                         for points in device_points.values():
-                            points_dict = {p[1]['description'].strip(): p[1] for p in points}
+                            point1 = next((p[1] for p in points if p[1]['description'].strip() == desc1), None)
+                            point2 = next((p[1] for p in points if p[1]['description'].strip() == desc2), None)
+                            if point1 and point2:
+                                self._create_connection(
+                                    session,
+                                    point1,
+                                    point2,
+                                    pair.get('connectionProperties', None)
+                                )
+                                
+                elif rule_type == 'buttonPostfix':
+                    # 处理带特定后缀的按钮连接
+                    if 'postfixes' in rule:
+                        # 原有的.1,.2后缀处理逻辑
+                        postfixes = rule.get('postfixes', [])
+                        conn_props = rule.get('connectionProperties', None)
+                        
+                        # 遍历所有点位找到带指定后缀的点位对
+                        for points in device_points.values():
+                            # 按后缀分组点位
+                            postfix_groups = {}
+                            for num, point in points:
+                                desc = point['description'].strip()
+                                base_desc = None
+                                matched_postfix = None
+                                
+                                # 检查点位是否带有指定后缀
+                                for postfix in postfixes:
+                                    if desc.endswith(postfix):
+                                        base_desc = desc[:-len(postfix)]
+                                        matched_postfix = postfix
+                                        break
+                                        
+                                if base_desc:
+                                    if base_desc not in postfix_groups:
+                                        postfix_groups[base_desc] = {}
+                                    postfix_groups[base_desc][matched_postfix] = point
                             
-                            # 构造完整的点位描述
-                            point1_desc = f"{prefix}{postfix1}"
-                            point2_desc = f"{prefix}{postfix2}"
+                            # 创建具有相同基础描述的点位之间的连接
+                            for base_desc, suffix_points in postfix_groups.items():
+                                if len(suffix_points) >= 2:
+                                    points_list = list(suffix_points.values())
+                                    for i in range(len(points_list)):
+                                        for j in range(i + 1, len(points_list)):
+                                            self._create_connection(
+                                                session,
+                                                points_list[i],
+                                                points_list[j],
+                                                conn_props
+                                            )
+                    
+                    # 处理新的postfixPairs规则
+                    if 'postfixPairs' in rule:
+                        for pair in rule.get('postfixPairs', []):
+                            prefix = pair.get('prefix')
+                            postfix1 = pair.get('postfix1')
+                            postfix2 = pair.get('postfix2')
+                            conn_props = pair.get('connectionProperties')
+                            
+                            # 在所有点位中查找匹配的点位对
+                            for points in device_points.values():
+                                points_dict = {p[1]['description'].strip(): p[1] for p in points}
+                                
+                                # 构造完整的点位描述
+                                point1_desc = f"{prefix}{postfix1}"
+                                point2_desc = f"{prefix}{postfix2}"
+                                
+                                if point1_desc in points_dict and point2_desc in points_dict:
+                                    self._create_connection(
+                                        session,
+                                        points_dict[point1_desc],
+                                        points_dict[point2_desc],
+                                        conn_props
+                                    )
+                
+                elif rule_type == 'buttonPair':
+                    # 处理成对出现的按钮连接
+                    for pair in rule.get('pairs', []):
+                        point1_desc = pair.get('point1')
+                        point2_desc = pair.get('point2')
+                        conn_props = pair.get('connectionProperties', None)
+                        
+                        # 在所有点位类型中查找匹配的点位对
+                        for points in device_points.values():
+                            points_dict = {str(p[1]['description'].strip()): p[1] for p in points}
                             
                             if point1_desc in points_dict and point2_desc in points_dict:
                                 self._create_connection(
@@ -326,46 +412,62 @@ class InnerConnCreator:
                                     points_dict[point2_desc],
                                     conn_props
                                 )
-            
-            elif rule_type == 'buttonPair':
-                # 处理成对出现的按钮连接
-                for pair in rule.get('pairs', []):
-                    point1_desc = pair.get('point1')
-                    point2_desc = pair.get('point2')
-                    conn_props = pair.get('connectionProperties', None)
-                    
-                    # 在所有点位类型中查找匹配的点位对
-                    for points in device_points.values():
-                        points_dict = {str(p[1]['description'].strip()): p[1] for p in points}
-                        
-                        if point1_desc in points_dict and point2_desc in points_dict:
-                            self._create_connection(
-                                session,
-                                points_dict[point1_desc],
-                                points_dict[point2_desc],
-                                conn_props
-                            )
+
+    def _log_device_points_info(self, device_points):
+        """记录设备点位的详细信息"""
+        total_points = sum(len(points) for points in device_points.values())
+        type_counts = {k: len(v) for k, v in device_points.items() if v}
+        
+        # 简单的统计信息
+        logger.info(f"\n点位总数: {total_points}")
+
+        # 添加点位列表概览
+        logger.info("\n点位列表:")
+        for point_type, points in device_points.items():
+            if points:
+                points_desc = [f"{p[1]['description']}" for p in sorted(points, key=lambda x: x[0])]
+                logger.info(f"  {point_type}类: {', '.join(points_desc)}")
+        
+        logger.info("\n点位类型统计:")
+        if type_counts:
+            logger.info("按类型: " + ", ".join([f"{k}:{v}" for k, v in type_counts.items()]))
+        
+        # 点位详细信息
+        logger.info("\n点位详细信息:")
+        for point_type, points in device_points.items():
+            if points:
+                sorted_points = sorted(points, key=lambda x: x[0])
+                for num, point in sorted_points:
+                    logger.info(f"点位 {point['description']}:")
+                    logger.info(f" 所属设备: {point['belongtoDevice']}；设备Device: {point.get('deviceName', 'N/A')}")
+                    logger.info(f" FTID: {point['FTID']}   点位原始Type: {point.get('Type', 'N/A')}")
 
     def _create_device_connections(self, session):
         """处理所有设备的内部连接"""
         try:
-            # 读取点位数据
             with self.mysql_conn.cursor() as cursor:
                 logger.info("\n=== 读取点位数据 ===")
                 query = """
-                    SELECT id, description, belongtoDevice, FTID
-                    FROM v_device_points
-                    WHERE belongtoDevice IS NOT NULL
-                    AND description != ''
+                    SELECT 
+                        dp.*,
+                        d.Type as deviceType,
+                        d.Device as deviceName,
+                        d.Function as deviceFunction,
+                        d.Location as deviceLocation
+                    FROM v_device_points dp
+                    LEFT JOIN v_devices d ON dp.belongtoDevice = d.FDID
+                    WHERE dp.belongtoDevice IS NOT NULL
+                    AND dp.description != ''
+                    AND dp.Location REGEXP '^K1\\.'  -- 仅处理K1.开头的Location
                     AND (
-                        LEFT(description, 1) IN ('A', 'D', 'L', 'K', 'T')  -- 字母开头的点位
-                        OR description REGEXP '^[0-9]+$'  -- 纯数字点位（如按钮1,4）
-                        OR description REGEXP '[0-9]+\\.[0-9]+$'  -- 带后缀的点位（如1.13,1.14等）
-                        OR description REGEXP '[A-Za-z]+[0-9]*\\.[0-9]+$'  -- 带后缀的点位（如V1.1,V1.2）
+                        LEFT(dp.description, 1) IN ('A', 'D', 'L', 'K', 'T')
+                        OR dp.description REGEXP '^[0-9]+$'
+                        OR dp.description REGEXP '[0-9]+\\.[0-9]+$'
+                        OR dp.description REGEXP '[A-Za-z]+[0-9]*\\.[0-9]+$'
                     )
-                    AND belongtoDevice NOT REGEXP '-X[0-9]'  -- 排除-X开头的设备
-                    AND belongtoDevice NOT REGEXP '-X[0-9][0-9]'  -- 排除-X开头的设备(两位数)
-                    ORDER BY belongtoDevice, description
+                    AND dp.belongtoDevice NOT REGEXP '-X[0-9]'
+                    AND dp.belongtoDevice NOT REGEXP '-X[0-9][0-9]'
+                    ORDER BY dp.Location, dp.belongtoDevice, dp.Type, dp.description
                 """
                 cursor.execute(query)
                 points = cursor.fetchall()
@@ -378,19 +480,36 @@ class InnerConnCreator:
                 
                 # 按设备和类型分组点位
                 current_device = None
+                current_location = None
                 device_points = {'A': [], 'D': [], 'L': [], 'K': [], 'T': [], 'B': []}
+                current_device_info = None
                 
                 for point in points:
                     device = point['belongtoDevice']
-                    if device != current_device:
+                    location = point['Location']
+                    
+                    # 当设备或位置发生变化时处理连接
+                    if device != current_device or location != current_location:
                         # 处理前一个设备的连接
                         if current_device:
-                            logger.info(f"\n处理设备 {current_device} 的连接")
+                            logger.info(f"\n{'='*50}")
+                            logger.info(f"处理位置: {current_location}")
+                            logger.info(f"处理设备: {current_device}")
+                            if current_device_info:
+                                logger.info(f"设备类型: {current_device_info['deviceType']}")
+                                logger.info(f"设备名称: {current_device_info['deviceName']}")
+                            logger.info(f"{'='*50}")
+                            self._log_device_points_info(device_points)  # 添加点位信息汇总显示
                             self._apply_point_type_rules(device_points, session)
                         
                         # 开始新设备的处理
                         current_device = device
+                        current_location = location
                         device_points = {'A': [], 'D': [], 'L': [], 'K': [], 'T': [], 'B': []}
+                        current_device_info = {
+                            'deviceType': point['deviceType'],
+                            'deviceName': point['deviceName']
+                        }
                     
                     prefix, num = self._analyze_point(point['description'])
                     if prefix and num is not None:
@@ -398,7 +517,14 @@ class InnerConnCreator:
                 
                 # 处理最后一个设备
                 if current_device:
-                    logger.info(f"\n处理设备 {current_device} 的连接")
+                    logger.info(f"\n{'='*50}")
+                    logger.info(f"处理位置: {current_location}")
+                    logger.info(f"处理设备: {current_device}")
+                    if current_device_info:
+                        logger.info(f"设备类型: {current_device_info['deviceType']}")
+                        logger.info(f"设备名称: {current_device_info['deviceName']}")
+                    logger.info(f"{'='*50}")
+                    self._log_device_points_info(device_points)  # 添加点位信息汇总显示
                     self._apply_point_type_rules(device_points, session)
                 
         except Exception as e:
