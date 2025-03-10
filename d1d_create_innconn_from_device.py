@@ -493,8 +493,10 @@ class InnerConnCreator:
                         OR dp.description REGEXP '[0-9]+\\.[0-9]+$'
                         OR dp.description REGEXP '[A-Za-z]+[0-9]*\\.[0-9]+$'
                     )
-                    AND dp.belongtoDevice NOT REGEXP '-X[0-9]'
-                    AND dp.belongtoDevice NOT REGEXP '-X[0-9][0-9]'
+                    AND dp.belongtoDevice NOT REGEXP '-X[0-9]'  -- 排除X端子
+                    AND dp.belongtoDevice NOT REGEXP '-X[0-9][0-9]'  -- 排除X端子(两位数)
+                    AND dp.belongtoDevice NOT REGEXP '-A[0-9]'  -- 排除A类设备端子
+                    AND dp.belongtoDevice NOT REGEXP '-A[0-9][0-9]'  -- 排除A类设备端子(两位数)
                     ORDER BY dp.Location, dp.belongtoDevice, dp.Type, dp.description
                 """
                 cursor.execute(query)
