@@ -83,64 +83,31 @@ class SocketPathAnalyzer:
         logger.info("数据库连接已关闭")
 
     def get_socket_terminals(self, session):
-        """获取所有isSocket=1的终端节点"""
-        # 尝试多种可能的布尔值格式
+        """获取所有Socket终端节点"""
         query = """
         MATCH (terminal:V_Terminal)
-        WHERE terminal.isSocket = 1 OR terminal.isSocket = true OR terminal.isSocket = 'true' OR terminal.isSocket = '1'
-        RETURN terminal.FTID AS ftid, terminal.description AS description, terminal.isSocket as isSocketValue
+        WHERE terminal.FTID CONTAINS '-X' 
+        AND NOT terminal.description = 'PE'
+        AND NOT terminal.FTID CONTAINS '-X0'
+        SET terminal.isSocket = true
+        RETURN 
+            terminal.FTID AS ftid, 
+            terminal.description AS description, 
+            terminal.belongtoDevice as belongtoDevice,
+            terminal.isSocket as isSocket
+        ORDER BY terminal.belongtoDevice, terminal.description
         """
         
         result = session.run(query)
-        terminals = [{"ftid": record["ftid"], "description": record["description"], "isSocketValue": record["isSocketValue"]} for record in result]
-        
-        # 如果没找到，打印前几个节点的isSocket属性以检查格式
-        if not terminals:
-            logger.info("\n未找到任何Socket节点，检查节点isSocket属性格式...")
-            check_query = """
-            MATCH (terminal:V_Terminal)
-            WHERE terminal.FTID CONTAINS 'X20'
-            RETURN terminal.FTID AS ftid, terminal.description AS description, 
-                   terminal.isSocket AS isSocketValue, 
-                   terminal.belongtoDevice as belongtoDevice,
-                   TYPE(terminal.isSocket) as valueType
-            LIMIT 5
-            """
-            check_result = session.run(check_query)
-            check_records = list(check_result)
-            
-            if check_records:
-                logger.info("\n找到包含X20的节点样例:")
-                for record in check_records:
-                    logger.info(f"FTID: {record.get('ftid')}")
-                    logger.info(f"描述: {record.get('description')}")
-                    logger.info(f"isSocket值: {record.get('isSocketValue')}")
-                    logger.info(f"isSocket类型: {record.get('valueType')}")
-                    logger.info(f"所属设备: {record.get('belongtoDevice')}")
-                    logger.info("---")
-            else:
-                logger.info("未找到包含X20的节点样例")
-            
-            # 尝试查询您提供的具体FTID
-            specific_query = """
-            MATCH (terminal:V_Terminal {FTID: "=A02+K1.B1-X20-X20.1F:1"})
-            RETURN terminal.FTID AS ftid, terminal.description AS description, 
-                   terminal.isSocket AS isSocketValue,
-                   terminal.belongtoDevice as belongtoDevice,
-                   terminal
-            """
-            specific_result = session.run(specific_query)
-            specific_record = specific_result.single()
-            
-            if specific_record:
-                logger.info("\n找到指定的节点:")
-                logger.info(f"FTID: {specific_record.get('ftid')}")
-                logger.info(f"描述: {specific_record.get('description')}")
-                logger.info(f"isSocket值: {specific_record.get('isSocketValue')}")
-                logger.info(f"所属设备: {specific_record.get('belongtoDevice')}")
-                logger.info(f"完整属性: {dict(specific_record.get('terminal').items())}")
-            else:
-                logger.info("\n未找到FTID为'=A02+K1.B1-X20-X20.1F:1'的节点")
+        terminals = [
+            {
+                "ftid": record["ftid"], 
+                "description": record["description"],
+                "belongtoDevice": record["belongtoDevice"],
+                "isSocket": record.get("isSocket", True)  # 默认为True
+            } 
+            for record in result
+        ]
         
         return terminals
 
@@ -150,21 +117,35 @@ class SocketPathAnalyzer:
         logger.info(f"分析Socket终端: {socket_desc} (FTID: {socket_ftid})")
         logger.info(f"{'='*80}")
         
-        # 构建Cypher查询，寻找从socket_ftid出发的所有路径
+        # 构建Cypher查询，寻找从socket_ftid出发的所有路径，遇到-W点时停止
         query = f"""
         MATCH path = (p1:V_Terminal {{FTID: $socket_ftid}})-[:CONN*1..{self.max_depth}]->(p2:V_Terminal)
         WHERE 
             // 排除路径中包含PE的节点
             ALL(node IN nodes(path) WHERE node.description <> 'PE')
+            AND
+            // 确保路径中只有最后一个节点可以是-W类型（如果存在的话）
+            ALL(idx IN range(0, size(nodes(path))-2) 
+                WHERE NOT nodes(path)[idx].FTID CONTAINS '-W')
+            AND
+            // 路径的最后一个节点可以是任何类型
+            (NOT last(nodes(path)).FTID CONTAINS '-W' OR 
+             last(nodes(path)).FTID CONTAINS '-W')
         WITH 
             path, 
             length(path) AS pathLength,
-            [node IN nodes(path) | node.FTID] AS nodeIds
+            [node IN nodes(path) | node.FTID] AS nodeIds,
+            CASE 
+                WHEN last(nodes(path)).FTID CONTAINS '-W' 
+                THEN true 
+                ELSE false 
+            END AS endsWithW
         RETURN 
             pathLength,
             [node IN nodes(path) | node.description] AS nodeDescriptions,
             [rel IN relationships(path) | rel.connType] AS relTypes,
-            nodeIds
+            nodeIds,
+            endsWithW
         ORDER BY 
             pathLength DESC
         LIMIT {self.path_limit}
@@ -184,9 +165,10 @@ class SocketPathAnalyzer:
             node_descriptions = record["nodeDescriptions"]
             rel_types = record["relTypes"]
             node_ids = record["nodeIds"]
+            ends_with_w = record["endsWithW"]
             
             # 记录路径信息
-            logger.info(f"\n路径 #{idx+1} (长度: {path_length}):")
+            logger.info(f"\n路径 #{idx+1} (长度: {path_length}){' [终止于W点]' if ends_with_w else ''}:")
             
             # 输出节点和连接类型
             path_str = ""
@@ -209,7 +191,9 @@ class SocketPathAnalyzer:
         # 输出总结信息
         if paths:
             longest_path = max(record["pathLength"] for record in paths)
+            w_terminated_count = sum(1 for record in paths if record["endsWithW"])
             logger.info(f"\n最长路径长度: {longest_path}")
+            logger.info(f"终止于W点的路径数: {w_terminated_count}")
 
     def analyze_all_sockets(self):
         """分析所有Socket终端的路径"""
@@ -225,10 +209,27 @@ class SocketPathAnalyzer:
                 if not sockets:
                     logger.info("没有找到任何Socket终端，分析结束")
                     return
+
+                # 输出Socket终端清单
+                logger.info("\n=== Socket终端清单 ===")
+                logger.info("\n{:<5} {:<25} {:<45} {:<8}".format("序号", "描述", "FTID", "IsSocket"))
+                logger.info("-" * 85)
+                for idx, socket in enumerate(sockets, 1):
+                    desc = socket['description']
+                    ftid = socket['ftid']
+                    is_socket = "是" if socket['isSocket'] else "否"
+                    # 如果描述太长，截断它
+                    if len(desc) > 23:
+                        desc = desc[:20] + "..."
+                    if len(ftid) > 43:
+                        ftid = "..." + ftid[-40:]
+                    logger.info("{:<5} {:<25} {:<45} {:<8}".format(idx, desc, ftid, is_socket))
+                logger.info("-" * 85)
+                logger.info("\n")
                 
                 # 对每个Socket终端进行路径分析
-                for idx, socket in enumerate(sockets):
-                    logger.info(f"\n[{idx+1}/{len(sockets)}] 分析Socket: {socket['description']}")
+                for idx, socket in enumerate(sockets, 1):
+                    logger.info(f"\n[{idx}/{len(sockets)}] 分析Socket: {socket['description']}")
                     self.find_paths_for_socket(session, socket["ftid"], socket["description"])
                 
                 logger.info("\n=== Socket端子路径分析完成 ===")
