@@ -86,25 +86,7 @@
           }
         }
       ]
-    },
-    {
-      "type": "specificPair",
-      "description": "按钮1-4常闭连接",
-      "pairs": [
-        {
-          "point1": "1",
-          "point2": "4",
-          "connectionProperties": {
-            "voltage": 24.0,
-            "current": 0.1,
-            "resistance": 240.0,
-            "isCable": false,
-            "isInPanel": true,
-            "connType": "NC"
-          }
-        }
-      ]
-    },
+    }, 
     {
       "type": "buttonPostfix",
       "description": "带.1和.2后缀的按钮常闭连接",
@@ -117,25 +99,7 @@
         "isInPanel": true,
         "connType": "NC"
       }
-    },
-    {
-      "type": "buttonPair",
-      "description": "按钮常闭连接",
-      "pairs": [
-        {
-          "point1": "1",
-          "point2": "4",
-          "connectionProperties": {
-            "voltage": 24.0,
-            "current": 0.1,
-            "resistance": 240.0,
-            "isCable": false,
-            "isInPanel": true,
-            "connType": "NC"
-          }
-        }
-      ]
-    },
+    },    
     {
       "type": "specificPair",
       "description": "按钮1-2常闭连接",
@@ -153,25 +117,7 @@
           }
         }
       ]
-    },
-    {
-      "type": "specificPair", 
-      "description": "按钮3-4常开连接",
-      "pairs": [
-        {
-          "point1": "3",
-          "point2": "4",
-          "connectionProperties": {
-            "voltage": 24.0,
-            "current": 0.1,
-            "resistance": 240.0,
-            "isCable": false,
-            "isInPanel": true,
-            "connType": "NO"
-          }
-        }
-      ]
-    },
+    },   
     {
       "type": "buttonPostfix",
       "description": "1.13-1.14, 2.13-2.14, 3.13-3.14, 4.13-4.14的常开连接",

@@ -273,6 +273,25 @@ class InnerConnCreator:
                                 
         return connections_made, connected_points
 
+    def _check_same_group(self, point1, point2):
+        """检查两个点位是否属于同一组"""
+        def get_group(point):
+            # 从FTID中提取组信息，格式如 =A01+K1.B1-K3:4
+            ftid = point['FTID']
+            parts = ftid.split(':')
+            if len(parts) != 2:
+                return None
+            device_path = parts[0]
+            # 提取最后一个组件标识，如 K3
+            device_parts = device_path.split('-')
+            if len(device_parts) < 2:
+                return None
+            return device_parts[-1]
+            
+        group1 = get_group(point1)
+        group2 = get_group(point2)
+        return group1 and group2 and group1 == group2
+
     def _apply_point_type_rules(self, device_points, session):
         """应用点位类型规则"""
         # 首先尝试根据原始Type创建连接
@@ -400,16 +419,25 @@ class InnerConnCreator:
                         point1_desc = pair.get('point1')
                         point2_desc = pair.get('point2')
                         conn_props = pair.get('connectionProperties', None)
+                        conditions = pair.get('conditions', {})
                         
                         # 在所有点位类型中查找匹配的点位对
                         for points in device_points.values():
                             points_dict = {str(p[1]['description'].strip()): p[1] for p in points}
                             
                             if point1_desc in points_dict and point2_desc in points_dict:
+                                point1 = points_dict[point1_desc]
+                                point2 = points_dict[point2_desc]
+                                
+                                # 检查条件
+                                if conditions.get('sameGroup', False):
+                                    if not self._check_same_group(point1, point2):
+                                        continue
+                                
                                 self._create_connection(
                                     session,
-                                    points_dict[point1_desc],
-                                    points_dict[point2_desc],
+                                    point1,
+                                    point2,
                                     conn_props
                                 )
 
