@@ -166,13 +166,12 @@ private:
             point.Type = "SensePoint";
         }
 
-        // 通过检查Device前三个字符判断是否是Socket点
-        // 根据您的示例，X20开头的设备应该将isSocket设为true
-        if (point.Device.length() >= 3) {
-            std::string devicePrefix = point.Device.substr(0, 3);
-            if (devicePrefix == "X20" || devicePrefix == "X21" || 
-                devicePrefix == "X22" || devicePrefix == "X23" || 
-                devicePrefix == "X24") {
+        // 通过检查Device前缀判断是否是Socket点
+        // X20-、X21-、X22-、X23- 的设备将isSocket设为true
+        if (point.Device.length() >= 4) {  // 需要至少4个字符来匹配 "X20-" 这样的模式
+            std::string devicePrefix = point.Device.substr(0, 4);
+            if (devicePrefix == "X20-" || devicePrefix == "X21-" || 
+                devicePrefix == "X22-" || devicePrefix == "X23-") {
                 point.isSocket = true;
             }
         }
