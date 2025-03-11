@@ -7,31 +7,100 @@
 #include <windows.h>
 #include <filesystem>
 #include "C:/clib/mysql/include/mysql.h"
+#include "include/nlohmann/json.hpp"
 
+using json = nlohmann::json;
 namespace fs = std::filesystem;
+
+// 数据库配置结构
+struct DbConfig {
+    std::string host;
+    std::string user;
+    std::string password;
+    std::string database;
+
+    static DbConfig loadFromJson(const std::string& configPath) {
+        std::ifstream f(configPath);
+        if (!f.is_open()) {
+            throw std::runtime_error("无法打开配置文件: " + configPath);
+        }
+
+        json config = json::parse(f);
+        DbConfig dbConfig;
+        
+        try {
+            dbConfig.host = config["mysql"]["host"];
+            dbConfig.user = config["mysql"]["user"];
+            dbConfig.password = config["mysql"]["password"];
+            dbConfig.database = config["mysql"]["database"];
+        } catch (const json::exception& e) {
+            throw std::runtime_error("解析数据库配置失败: " + std::string(e.what()));
+        }
+
+        return dbConfig;
+    }
+};
 
 // CSV行数据结构
 struct CSVRow {
-    std::string source;    // 源
-    std::string target;    // 目标
+    // 源端数据
+    std::string s_raw;        // 原始源数据
+    std::string s_ftid;       // 源完整标识符
+    std::string s_function;   // 源功能
+    std::string s_location;   // 源位置
+    std::string s_device;     // 源设备
+    std::string s_terminal;   // 源端子
+
+    // 目标端数据
+    std::string t_raw;        // 原始目标数据
+    std::string t_ftid;       // 目标完整标识符
+    std::string t_function;   // 目标功能
+    std::string t_location;   // 目标位置
+    std::string t_device;     // 目标设备
+    std::string t_terminal;   // 目标端子
 };
 
-// 简单的JSON解析函数
-std::string getValueFromJson(const std::string& jsonStr, const std::string& key) {
-    size_t pos = jsonStr.find("\"" + key + "\"");
-    if (pos == std::string::npos) return "";
+// 解析FTID并提取各个部分
+void parseFTID(const std::string& raw, std::string& ftid, std::string& function, 
+               std::string& location, std::string& device, std::string& terminal) {
+    ftid = raw;
+    function = "";
+    location = "";
+    device = "";
+    terminal = "";
     
-    pos = jsonStr.find(":", pos);
-    if (pos == std::string::npos) return "";
-    
-    pos = jsonStr.find("\"", pos);
-    if (pos == std::string::npos) return "";
-    
-    size_t start = pos + 1;
-    size_t end = jsonStr.find("\"", start);
-    if (end == std::string::npos) return "";
-    
-    return jsonStr.substr(start, end - start);
+    // 查找等号位置（功能分隔符）
+    size_t equalPos = raw.find("=");
+    if (equalPos != std::string::npos) {
+        // 提取功能部分
+        size_t plusPos = raw.find("+", equalPos);
+        if (plusPos != std::string::npos) {
+            function = raw.substr(equalPos + 1, plusPos - (equalPos + 1));
+            
+            // 提取位置和设备部分
+            size_t minusPos = raw.find("-", plusPos);
+            if (minusPos != std::string::npos) {
+                location = raw.substr(plusPos + 1, minusPos - (plusPos + 1));
+                
+                // 处理设备和端子部分
+                std::string devicePart = raw.substr(minusPos + 1);
+                size_t colonPos = devicePart.find(":");
+                if (colonPos != std::string::npos) {
+                    device = devicePart.substr(0, colonPos);
+                    terminal = devicePart.substr(colonPos + 1);
+                    
+                    // 处理第二个冒号
+                    size_t secondColonPos = terminal.find(":");
+                    if (secondColonPos != std::string::npos) {
+                        terminal = terminal.substr(0, secondColonPos);
+                    }
+                } else {
+                    device = devicePart;
+                    terminal = "";
+                }
+            }
+        }
+    }
 }
 
 class CSVImporter {
@@ -39,109 +108,91 @@ private:
     MYSQL* conn;
     std::string tableName;
     std::string csvPath;
-    std::string projectNumber;
+    DbConfig dbConfig;
 
-    // 从config.json读取配置
-    bool loadConfig(std::string& host, std::string& user, std::string& password, std::string& database) {
-        try {
-            std::ifstream configFile("config.json");
-            if (!configFile.is_open()) {
-                std::cerr << "无法打开config.json文件" << std::endl;
-                return false;
-            }
-
-            std::string jsonStr;
-            std::string line;
-            while (std::getline(configFile, line)) {
-                jsonStr += line;
-            }
-
-            // 读取MySQL配置
-            std::string mysqlJson = jsonStr.substr(jsonStr.find("\"mysql\""));
-            mysqlJson = mysqlJson.substr(0, mysqlJson.find("}") + 1);
-            
-            host = getValueFromJson(mysqlJson, "host");
-            user = getValueFromJson(mysqlJson, "user");
-            password = getValueFromJson(mysqlJson, "password");
-            database = getValueFromJson(mysqlJson, "database");
-
-            // 从config.json读取项目编号
-            std::string filesJson = jsonStr.substr(jsonStr.find("\"files\""));
-            filesJson = filesJson.substr(0, filesJson.find("}") + 1);
-            projectNumber = getValueFromJson(filesJson, "project_number");
-
-            return !host.empty() && !user.empty() && !password.empty() && !database.empty();
-        }
-        catch (const std::exception& e) {
-            std::cerr << "读取配置文件错误: " << e.what() << std::endl;
-            return false;
-        }
-    }
-
-    // 转义字符串
+    // 转义 SQL 字符串
     std::string escapeString(const std::string& str) {
-        size_t bufLen = str.length() * 2 + 1;
-        std::vector<char> buffer(bufLen);
-        unsigned long length = mysql_real_escape_string(conn, buffer.data(), str.c_str(), str.length());
-        return std::string(buffer.data(), length);
-    }
-
-    // 从目录中获取所有CSV文件
-    std::vector<fs::path> getCSVFiles(const std::string& dirPath) {
-        std::vector<fs::path> csvFiles;
-        try {
-            if (!fs::exists(dirPath)) {
-                std::cerr << "目录不存在: " << dirPath << std::endl;
-                return csvFiles;
-            }
-
-            for (const auto& entry : fs::directory_iterator(dirPath)) {
-                if (entry.is_regular_file()) {
-                    std::string ext = entry.path().extension().string();
-                    if (ext == ".csv") {
-                        csvFiles.push_back(entry.path());
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "获取CSV文件列表时出错: " << e.what() << std::endl;
-        }
-        return csvFiles;
+        char* escaped = new char[str.length() * 2 + 1];
+        mysql_real_escape_string(conn, escaped, str.c_str(), str.length());
+        std::string result(escaped);
+        delete[] escaped;
+        return result;
     }
 
 public:
-    CSVImporter(const std::string& table) : tableName(table) {
-        conn = mysql_init(NULL);
-        if (conn == NULL) {
-            std::cerr << "MySQL初始化失败" << std::endl;
-            return;
+    CSVImporter(const std::string& table, const DbConfig& config) 
+        : tableName(table), dbConfig(config) {
+        std::cout << "初始化 MySQL..." << std::endl;
+        
+        conn = mysql_init(nullptr);
+        if (conn == nullptr) {
+            throw std::runtime_error("MySQL 初始化失败: " + std::string(mysql_error(nullptr)));
         }
 
-        std::string host, user, password, database;
-        if (!loadConfig(host, user, password, database)) {
-            std::cerr << "加载配置失败" << std::endl;
-            return;
+        std::cout << "连接到数据库..." << std::endl;
+        std::cout << "主机: " << dbConfig.host << std::endl;
+        std::cout << "用户: " << dbConfig.user << std::endl;
+        std::cout << "数据库: " << dbConfig.database << std::endl;
+
+        if (!mysql_real_connect(conn, dbConfig.host.c_str(), 
+                              dbConfig.user.c_str(), 
+                              dbConfig.password.c_str(),
+                              dbConfig.database.c_str(), 
+                              3306, nullptr, 0)) {
+            std::string error = mysql_error(conn);
+            mysql_close(conn);
+            throw std::runtime_error("连接数据库失败: " + error);
         }
 
-        if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(),
-                              database.c_str(), 0, NULL, 0)) {
-            std::cerr << "连接数据库失败: " << mysql_error(conn) << std::endl;
-            return;
+        std::cout << "设置字符集为 utf8mb4..." << std::endl;
+        if (mysql_set_character_set(conn, "utf8mb4")) {
+            std::string error = mysql_error(conn);
+            mysql_close(conn);
+            throw std::runtime_error("设置字符集失败: " + error);
         }
 
-        // 设置字符集
-        mysql_set_character_set(conn, "utf8mb4");
-        createCSVTable();
+        std::cout << "数据库连接成功！" << std::endl;
     }
 
     ~CSVImporter() {
-        if (conn) {
+        if (conn != nullptr) {
             mysql_close(conn);
+            std::cout << "关闭数据库连接" << std::endl;
         }
+    }
+
+    // 选择CSV文件
+    bool selectCSVFile() {
+        std::cout << "打开文件选择对话框..." << std::endl;
+        
+        OPENFILENAMEA ofn;
+        char szFile[260] = { 0 };
+        
+        ZeroMemory(&ofn, sizeof(ofn));
+        ofn.lStructSize = sizeof(ofn);
+        ofn.hwndOwner = NULL;
+        ofn.lpstrFile = szFile;
+        ofn.nMaxFile = sizeof(szFile);
+        ofn.lpstrFilter = "CSV Files\0*.csv\0All Files\0*.*\0";
+        ofn.nFilterIndex = 1;
+        ofn.lpstrFileTitle = NULL;
+        ofn.nMaxFileTitle = 0;
+        ofn.lpstrInitialDir = NULL;
+        ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+        if (GetOpenFileNameA(&ofn)) {
+            csvPath = ofn.lpstrFile;
+            std::cout << "已选择文件: " << csvPath << std::endl;
+            return true;
+        }
+        std::cout << "未选择文件或取消选择" << std::endl;
+        return false;
     }
 
     // 创建CSV表
     bool createCSVTable() {
+        std::cout << "正在创建数据表 " << tableName << "..." << std::endl;
+        
         std::string dropTable = "DROP TABLE IF EXISTS " + tableName;
         if (mysql_query(conn, dropTable.c_str())) {
             std::cerr << "删除旧表失败: " << mysql_error(conn) << std::endl;
@@ -150,44 +201,37 @@ public:
 
         std::string createTable = "CREATE TABLE " + tableName + " ("
             "id INT PRIMARY KEY AUTO_INCREMENT, "
-            "source VARCHAR(255) NOT NULL, "
-            "target VARCHAR(255) NOT NULL"
+            "s_raw VARCHAR(255) NOT NULL, "
+            "s_ftid VARCHAR(255), "
+            "s_function VARCHAR(255), "
+            "s_location VARCHAR(255), "
+            "s_device VARCHAR(255), "
+            "s_terminal VARCHAR(255), "
+            "t_raw VARCHAR(255) NOT NULL, "
+            "t_ftid VARCHAR(255), "
+            "t_function VARCHAR(255), "
+            "t_location VARCHAR(255), "
+            "t_device VARCHAR(255), "
+            "t_terminal VARCHAR(255)"
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
-        return mysql_query(conn, createTable.c_str()) == 0;
-    }
+        if (mysql_query(conn, createTable.c_str())) {
+            std::cerr << "创建表失败: " << mysql_error(conn) << std::endl;
+            return false;
+        }
 
-    // 让用户选择CSV文件
-    bool selectCSVFile() {
-        std::string dataDir = "data";
-        std::vector<fs::path> csvFiles = getCSVFiles(dataDir);
-        
-        if (csvFiles.empty()) {
-            std::cerr << "在" << dataDir << "目录中未找到CSV文件" << std::endl;
-            return false;
-        }
-        
-        std::cout << "请选择要导入的CSV文件:" << std::endl;
-        for (size_t i = 0; i < csvFiles.size(); i++) {
-            std::cout << (i + 1) << ": " << csvFiles[i].filename().string() << std::endl;
-        }
-        
-        size_t choice;
-        std::cout << "请输入选择的序号: ";
-        std::cin >> choice;
-        
-        if (choice < 1 || choice > csvFiles.size()) {
-            std::cerr << "无效的选择" << std::endl;
-            return false;
-        }
-        
-        csvPath = csvFiles[choice - 1].string();
-        std::cout << "已选择文件: " << csvPath << std::endl;
+        std::cout << "数据表创建成功" << std::endl;
         return true;
     }
 
     // 导入CSV数据
     bool importFromCSV() {
+        if (!createCSVTable()) {
+            std::cerr << "创建表失败" << std::endl;
+            return false;
+        }
+
+        std::cout << "打开CSV文件: " << csvPath << std::endl;
         std::ifstream file(csvPath);
         if (!file.is_open()) {
             std::cerr << "无法打开CSV文件: " << csvPath << std::endl;
@@ -227,41 +271,71 @@ public:
             }
             fields.push_back(currentField);
 
-            // 从第8列和第9列提取source和target
+            // 从第8列和第9列提取数据
             if (fields.size() >= 8) {
                 CSVRow row;
-                row.source = fields[7];
+                // 处理源数据
+                row.s_raw = fields[7];
+                if (!row.s_raw.empty()) {
+                    parseFTID(row.s_raw, row.s_ftid, row.s_function, 
+                             row.s_location, row.s_device, row.s_terminal);
+                }
+
+                // 处理目标数据
                 if (fields.size() > 8) {
-                    row.target = fields[8];
+                    row.t_raw = fields[8];
+                    if (!row.t_raw.empty()) {
+                        parseFTID(row.t_raw, row.t_ftid, row.t_function, 
+                                 row.t_location, row.t_device, row.t_terminal);
+                    }
                 }
                 rows.push_back(row);
             }
         }
 
         file.close();
+        std::cout << "CSV文件解析完成，开始导入数据..." << std::endl;
         return batchInsertRows(rows);
     }
 
 private:
     // 批量插入数据
     bool batchInsertRows(const std::vector<CSVRow>& rows) {
+        std::cout << "开始批量插入数据..." << std::endl;
+        
         if (mysql_query(conn, "START TRANSACTION")) {
             std::cerr << "开始事务失败: " << mysql_error(conn) << std::endl;
             return false;
         }
 
         bool success = true;
+        int insertedCount = 0;
         for (const auto& row : rows) {
-            if (!row.source.empty() && !row.target.empty()) {
+            if (!row.s_raw.empty() && !row.t_raw.empty()) {
                 std::string query = "INSERT INTO " + tableName + 
-                    " (source, target) VALUES ("
-                    "'" + escapeString(row.source) + "', "
-                    "'" + escapeString(row.target) + "')";
+                    " (s_raw, s_ftid, s_function, s_location, s_device, s_terminal, "
+                    "  t_raw, t_ftid, t_function, t_location, t_device, t_terminal) VALUES ("
+                    "'" + escapeString(row.s_raw) + "', "
+                    "'" + escapeString(row.s_ftid) + "', "
+                    "'" + escapeString(row.s_function) + "', "
+                    "'" + escapeString(row.s_location) + "', "
+                    "'" + escapeString(row.s_device) + "', "
+                    "'" + escapeString(row.s_terminal) + "', "
+                    "'" + escapeString(row.t_raw) + "', "
+                    "'" + escapeString(row.t_ftid) + "', "
+                    "'" + escapeString(row.t_function) + "', "
+                    "'" + escapeString(row.t_location) + "', "
+                    "'" + escapeString(row.t_device) + "', "
+                    "'" + escapeString(row.t_terminal) + "')";
 
                 if (mysql_query(conn, query.c_str()) != 0) {
                     std::cerr << "插入失败: " << mysql_error(conn) << std::endl;
                     success = false;
                     break;
+                }
+                insertedCount++;
+                if (insertedCount % 100 == 0) {
+                    std::cout << "已插入 " << insertedCount << " 条记录..." << std::endl;
                 }
             }
         }
@@ -271,9 +345,10 @@ private:
                 std::cerr << "提交事务失败: " << mysql_error(conn) << std::endl;
                 return false;
             }
-            std::cout << "成功插入 " << rows.size() << " 条记录" << std::endl;
+            std::cout << "成功插入 " << insertedCount << " 条记录" << std::endl;
             return true;
         } else {
+            std::cout << "导入失败，正在回滚..." << std::endl;
             if (mysql_query(conn, "ROLLBACK")) {
                 std::cerr << "回滚事务失败: " << mysql_error(conn) << std::endl;
             }
@@ -284,20 +359,33 @@ private:
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
+    std::cout << "程序开始运行..." << std::endl;
     
-    CSVImporter importer("v_csv_raw");
+    try {
+        std::cout << "加载数据库配置..." << std::endl;
+        auto dbConfig = DbConfig::loadFromJson("config.json");
 
-    // 让用户选择CSV文件
-    if (!importer.selectCSVFile()) {
-        std::cout << "文件选择失败，程序退出" << std::endl;
+        std::cout << "创建 CSVImporter 实例..." << std::endl;
+        CSVImporter importer("v_csv_raw", dbConfig);
+
+        std::cout << "请选择要导入的CSV文件..." << std::endl;
+        if (!importer.selectCSVFile()) {
+            std::cout << "文件选择失败，程序退出" << std::endl;
+            return 1;
+        }
+        
+        std::cout << "开始导入数据..." << std::endl;
+        if (importer.importFromCSV()) {
+            std::cout << "数据导入成功" << std::endl;
+        } else {
+            std::cout << "数据导入失败" << std::endl;
+            return 1;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "错误: " << e.what() << std::endl;
         return 1;
     }
-    
-    if (importer.importFromCSV()) {
-        std::cout << "数据导入成功" << std::endl;
-    } else {
-        std::cout << "数据导入失败" << std::endl;
-    }
 
+    std::cout << "程序正常结束" << std::endl;
     return 0;
 }
