@@ -43,6 +43,8 @@ struct DbConfig {
 
 // CSV行数据结构
 struct CSVRow {
+    std::string cnumber;     // 连续编号 Consecutive number
+    
     // 源端数据
     std::string s_raw;        // 原始源数据
     std::string s_ftid;       // 源完整标识符
@@ -201,6 +203,7 @@ public:
 
         std::string createTable = "CREATE TABLE " + tableName + " ("
             "id INT PRIMARY KEY AUTO_INCREMENT, "
+            "cnumber VARCHAR(50), "
             "s_raw VARCHAR(255) NOT NULL, "
             "s_ftid VARCHAR(255), "
             "s_function VARCHAR(255), "
@@ -271,9 +274,13 @@ public:
             }
             fields.push_back(currentField);
 
-            // 从第8列和第9列提取数据
-            if (fields.size() >= 8) {
+            // 确保有足够的字段
+            if (fields.size() >= 9) {
                 CSVRow row;
+                
+                // 提取 Consecutive number (连续编号)
+                row.cnumber = fields[0];
+                
                 // 处理源数据
                 row.s_raw = fields[7];
                 if (!row.s_raw.empty()) {
@@ -282,12 +289,10 @@ public:
                 }
 
                 // 处理目标数据
-                if (fields.size() > 8) {
-                    row.t_raw = fields[8];
-                    if (!row.t_raw.empty()) {
-                        parseFTID(row.t_raw, row.t_ftid, row.t_function, 
-                                 row.t_location, row.t_device, row.t_terminal);
-                    }
+                row.t_raw = fields[8];
+                if (!row.t_raw.empty()) {
+                    parseFTID(row.t_raw, row.t_ftid, row.t_function, 
+                             row.t_location, row.t_device, row.t_terminal);
                 }
                 rows.push_back(row);
             }
@@ -313,8 +318,9 @@ private:
         for (const auto& row : rows) {
             if (!row.s_raw.empty() && !row.t_raw.empty()) {
                 std::string query = "INSERT INTO " + tableName + 
-                    " (s_raw, s_ftid, s_function, s_location, s_device, s_terminal, "
+                    " (cnumber, s_raw, s_ftid, s_function, s_location, s_device, s_terminal, "
                     "  t_raw, t_ftid, t_function, t_location, t_device, t_terminal) VALUES ("
+                    "'" + escapeString(row.cnumber) + "', "
                     "'" + escapeString(row.s_raw) + "', "
                     "'" + escapeString(row.s_ftid) + "', "
                     "'" + escapeString(row.s_function) + "', "
