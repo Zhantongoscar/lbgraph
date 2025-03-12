@@ -303,6 +303,72 @@ public:
         return batchInsertRows(rows);
     }
 
+
+     // 新增方法：执行数据格式处理
+    bool formatData() {
+    std::cout << "执行数据格式化..." << std::endl;
+
+    // 开始事务
+    if (mysql_query(conn, "START TRANSACTION")) {
+        std::cerr << "开始事务失败: " << mysql_error(conn) << std::endl;
+        return false;
+    }
+
+    // 更新源端 s_ftid
+    std::string query_s = R"(
+        UPDATE v_csv_raw
+        SET s_ftid = CONCAT(
+            SUBSTRING(s_raw, 1, LOCATE(':', s_raw) - 1),
+            ':',
+            TRIM(LEADING '-' FROM 
+                SUBSTRING(
+                    s_raw, 
+                    LOCATE('(', s_raw) + 1, 
+                    LOCATE(')', s_raw) - LOCATE('(', s_raw) - 1
+                )
+            )
+        )
+        WHERE s_raw LIKE '%(%):%'
+    )";
+
+    if (mysql_query(conn, query_s.c_str())) {
+        std::cerr << "更新 s_ftid 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    // 更新目标端 t_ftid
+    std::string query_t = R"(
+        UPDATE v_csv_raw
+        SET t_ftid = CONCAT(
+            SUBSTRING(t_raw, 1, LOCATE(':', t_raw) - 1),
+            ':',
+            TRIM(LEADING '-' FROM 
+                SUBSTRING(
+                    t_raw, 
+                    LOCATE('(', t_raw) + 1, 
+                    LOCATE(')', t_raw) - LOCATE('(', t_raw) - 1
+                )
+            )
+        )
+        WHERE t_raw LIKE '%(%):%'
+    )";
+
+    if (mysql_query(conn, query_t.c_str())) {
+        std::cerr << "更新 t_ftid 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    // 提交事务
+    if (mysql_query(conn, "COMMIT")) {
+        std::cerr << "提交事务失败: " << mysql_error(conn) << std::endl;
+        return false;
+    }
+
+    std::cout << "数据格式化完成" << std::endl;
+    return true;
+}
 private:
     // 批量插入数据
     bool batchInsertRows(const std::vector<CSVRow>& rows) {
@@ -383,10 +449,23 @@ int main() {
         std::cout << "开始导入数据..." << std::endl;
         if (importer.importFromCSV()) {
             std::cout << "数据导入成功" << std::endl;
+       
+       
+       
+       
+            if (!importer.formatData()) {
+                std::cerr << "数据格式化失败" << std::endl;
+                return 1;
+            }
+       
+       
         } else {
             std::cout << "数据导入失败" << std::endl;
             return 1;
         }
+
+
+
     } catch (const std::exception& e) {
         std::cerr << "错误: " << e.what() << std::endl;
         return 1;
