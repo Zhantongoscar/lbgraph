@@ -305,7 +305,20 @@ public:
 
 
      // 新增方法：执行数据格式处理
-    bool formatData() {
+
+
+
+
+
+     
+
+
+     
+
+
+
+
+     bool formatData() {
     std::cout << "执行数据格式化..." << std::endl;
 
     // 开始事务
@@ -314,8 +327,8 @@ public:
         return false;
     }
 
-    // 更新源端 s_ftid
-    std::string query_s = R"(
+    // --- 1. 处理括号和冒号的情况 ---
+    std::string query_s_bracket = R"(
         UPDATE v_csv_raw
         SET s_ftid = CONCAT(
             SUBSTRING(s_raw, 1, LOCATE(':', s_raw) - 1),
@@ -331,14 +344,13 @@ public:
         WHERE s_raw LIKE '%(%):%'
     )";
 
-    if (mysql_query(conn, query_s.c_str())) {
-        std::cerr << "更新 s_ftid 失败: " << mysql_error(conn) << std::endl;
+    if (mysql_query(conn, query_s_bracket.c_str())) {
+        std::cerr << "更新 s_ftid (括号逻辑) 失败: " << mysql_error(conn) << std::endl;
         mysql_query(conn, "ROLLBACK");
         return false;
     }
 
-    // 更新目标端 t_ftid
-    std::string query_t = R"(
+    std::string query_t_bracket = R"(
         UPDATE v_csv_raw
         SET t_ftid = CONCAT(
             SUBSTRING(t_raw, 1, LOCATE(':', t_raw) - 1),
@@ -354,11 +366,187 @@ public:
         WHERE t_raw LIKE '%(%):%'
     )";
 
-    if (mysql_query(conn, query_t.c_str())) {
-        std::cerr << "更新 t_ftid 失败: " << mysql_error(conn) << std::endl;
+    if (mysql_query(conn, query_t_bracket.c_str())) {
+        std::cerr << "更新 t_ftid (括号逻辑) 失败: " << mysql_error(conn) << std::endl;
         mysql_query(conn, "ROLLBACK");
         return false;
     }
+
+    // --- 2. 处理包含 "-A" 的情况 ---
+    std::string query_s_A = R"(
+        UPDATE v_csv_raw
+        SET s_ftid = CONCAT(
+            SUBSTRING_INDEX(s_raw, ':', 1),
+            '-',
+            SUBSTRING(s_raw, LOCATE(':', s_raw) + 1)
+        )
+        WHERE s_raw LIKE '%-A%'
+    )";
+
+    if (mysql_query(conn, query_s_A.c_str())) {
+        std::cerr << "更新 s_ftid (-A) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    std::string query_t_A = R"(
+        UPDATE v_csv_raw
+        SET t_ftid = CONCAT(
+            SUBSTRING_INDEX(t_raw, ':', 1),
+            '-',
+            SUBSTRING(t_raw, LOCATE(':', t_raw) + 1)
+        )
+        WHERE t_raw LIKE '%-A%'
+    )";
+
+    if (mysql_query(conn, query_t_A.c_str())) {
+        std::cerr << "更新 t_ftid (-A) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    // --- 3. 处理包含 "-X" 和多个冒号的情况 ---
+    std::string query_s_X = R"(
+        UPDATE v_csv_raw
+        SET s_ftid = SUBSTRING_INDEX(s_raw, ':', 2)
+        WHERE s_raw LIKE '%-X%:%:%'
+    )";
+
+    if (mysql_query(conn, query_s_X.c_str())) {
+        std::cerr << "更新 s_ftid (-X) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    std::string query_t_X = R"(
+        UPDATE v_csv_raw
+        SET t_ftid = SUBSTRING_INDEX(t_raw, ':', 2)
+        WHERE t_raw LIKE '%-X%:%:%'
+    )";
+
+    if (mysql_query(conn, query_t_X.c_str())) {
+        std::cerr << "更新 t_ftid (-X) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    // --- 4. 处理 "-D/-E/-G/-M/-U" 的情况 ---
+    std::string query_s_DEGMU = R"(
+        UPDATE v_csv_raw
+        SET s_ftid = CONCAT(
+            SUBSTRING_INDEX(s_raw, ':', 1),
+            '-',
+            SUBSTRING(s_raw, LOCATE(':', s_raw) + 1)
+        )
+        WHERE s_raw LIKE '%-D%' OR s_raw LIKE '%-E%' OR 
+              s_raw LIKE '%-G%' OR s_raw LIKE '%-M%' OR 
+              s_raw LIKE '%-U%'
+    )";
+
+    if (mysql_query(conn, query_s_DEGMU.c_str())) {
+        std::cerr << "更新 s_ftid (-DEGMU) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    std::string query_t_DEGMU = R"(
+        UPDATE v_csv_raw
+        SET t_ftid = CONCAT(
+            SUBSTRING_INDEX(t_raw, ':', 1),
+            '-',
+            SUBSTRING(t_raw, LOCATE(':', t_raw) + 1)
+        )
+        WHERE t_raw LIKE '%-D%' OR t_raw LIKE '%-E%' OR 
+              t_raw LIKE '%-G%' OR t_raw LIKE '%-M%' OR 
+              t_raw LIKE '%-U%'
+    )";
+
+    if (mysql_query(conn, query_t_DEGMU.c_str())) {
+        std::cerr << "更新 t_ftid (-DEGMU) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    // --- 5. 处理 ":-" 的情况 ---
+    std::string query_s_colon_dash = R"(
+        UPDATE v_csv_raw
+        SET s_ftid = REPLACE(s_raw, ':-', '-')
+        WHERE s_raw LIKE '%:-%:%'
+    )";
+
+    if (mysql_query(conn, query_s_colon_dash.c_str())) {
+        std::cerr << "更新 s_ftid (:-) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    std::string query_t_colon_dash = R"(
+        UPDATE v_csv_raw
+        SET t_ftid = REPLACE(t_raw, ':-', '-')
+        WHERE t_raw LIKE '%:-%:%'
+    )";
+
+    if (mysql_query(conn, query_t_colon_dash.c_str())) {
+        std::cerr << "更新 t_ftid (:-) 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+
+
+
+// 提交事务之前插入第六步：
+// --- 6. 新增逻辑（例如提取设备和终端字段）---
+std::string query_s_device = R"(
+    UPDATE v_csv_raw
+    SET s_device = SUBSTRING(
+        s_ftid,
+        LOCATE('-', s_ftid) + 1,
+        LOCATE(':', s_ftid, LOCATE('-', s_ftid)) - LOCATE('-', s_ftid) - 1
+    )
+    WHERE s_ftid LIKE '%-%:%'
+)";
+if (mysql_query(conn, query_s_device.c_str())) {
+    std::cerr << "更新失败: " << mysql_error(conn) << std::endl;
+    mysql_query(conn, "ROLLBACK");
+    return false;
+}
+
+// 提交事务
+if (mysql_query(conn, "COMMIT")) {
+    std::cerr << "提交事务失败: " << mysql_error(conn) << std::endl;
+    return false;
+}
+
+    // --- 处理目标设备和终端 ---
+    std::string query_t_device = R"(
+        UPDATE v_csv_raw
+        SET t_device = SUBSTRING(
+            t_ftid,
+            LOCATE('-', t_ftid) + 1,
+            LOCATE(':', t_ftid, LOCATE('-', t_ftid)) - LOCATE('-', t_ftid) - 1
+        )
+        WHERE t_ftid LIKE '%-%:%'
+    )";
+    if (mysql_query(conn, query_t_device.c_str())) {
+        std::cerr << "更新 t_device 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+    std::string query_t_terminal = R"(
+        UPDATE v_csv_raw
+        SET t_terminal = SUBSTRING(t_ftid, LOCATE(':', t_ftid) + 1)
+        WHERE t_ftid LIKE '%:%'
+    )";
+    if (mysql_query(conn, query_t_terminal.c_str())) {
+        std::cerr << "更新 t_terminal 失败: " << mysql_error(conn) << std::endl;
+        mysql_query(conn, "ROLLBACK");
+        return false;
+    }
+
+
+
 
     // 提交事务
     if (mysql_query(conn, "COMMIT")) {
@@ -368,7 +556,19 @@ public:
 
     std::cout << "数据格式化完成" << std::endl;
     return true;
+
+
+
+
+
+
+
+
+
+
 }
+
+
 private:
     // 批量插入数据
     bool batchInsertRows(const std::vector<CSVRow>& rows) {
