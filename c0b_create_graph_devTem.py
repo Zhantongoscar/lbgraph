@@ -219,8 +219,14 @@ class GraphDeviceCreator:
                     
                     # 创建端子节点并关联设备
                     result = session.run("""
-                        // 创建设备节点（如果不存在）
+                        // 创建设备节点，并设置属性
                         MERGE (d:V_Device {fdid: $full_device})
+                        SET d.function = $function,
+                            d.location = $location,
+                            d.device = $device,
+                            d.isPlc = CASE WHEN $device STARTS WITH 'A2' THEN '1' ELSE '0' END,
+                            d.isSim = '0',
+                            d.isEnd = '0'
                         // 创建或匹配端子节点
                         MERGE (t:V_Terminal {ftid: $ftid})
                         // 设置端子节点的属性
