@@ -177,162 +177,80 @@ class GraphDeviceCreator:
         try:
             eprint("\n=== 开始创建端子节点 ===")
             
-            # 1. 从MySQL查询端子数据
+            # 查询端子数据
             with self.mysql_conn.cursor() as cursor:
-                # 查询源端点，只包含实际存在的列
-                sql_source = """
-                SELECT 
-                    s_ftid as ftid,
-                    COALESCE(s_device, '') as device,
-                    COALESCE(s_function, '') as function,
-                    COALESCE(s_location, '') as location,
-                    COALESCE(s_terminal, '') as terminal
-                FROM v_csv_raw 
-                WHERE s_ftid IS NOT NULL
+                # 查询端子数据
+                sql = """
+                SELECT DISTINCT
+                    s_terminal as terminal,
+                    s_device as device,
+                    s_location as location,
+                    s_function as function,
+                    s_ftid as ftid
+                FROM v_csv_raw
+                WHERE s_terminal IS NOT NULL
+                UNION
+                SELECT DISTINCT
+                    t_terminal as terminal,
+                    t_device as device,
+                    t_location as location,
+                    t_function as function,
+                    t_ftid as ftid
+                FROM v_csv_raw
+                WHERE t_terminal IS NOT NULL
                 """
-                try:
-                    cursor.execute(sql_source)
-                    source_terminals = cursor.fetchall()
-                    eprint(f"从MySQL中获取到 {len(source_terminals)} 个源端子")
-                except Exception as e:
-                    eprint(f"查询源端子时出错: {str(e)}")
-                    source_terminals = []
-                
-                # 查询目标端点
-                sql_target = """
-                SELECT 
-                    t_ftid as ftid,
-                    COALESCE(t_device, '') as device,
-                    COALESCE(t_function, '') as function,
-                    COALESCE(t_location, '') as location,
-                    COALESCE(t_terminal, '') as terminal
-                FROM v_csv_raw 
-                WHERE t_ftid IS NOT NULL
-                """
-                try:
-                    cursor.execute(sql_target)
-                    target_terminals = cursor.fetchall()
-                    eprint(f"从MySQL中获取到 {len(target_terminals)} 个目标端子")
-                except Exception as e:
-                    eprint(f"查询目标端子时出错: {str(e)}")
-                    target_terminals = []
-                
-                # 合并端子列表
-                all_terminals = source_terminals + target_terminals
-                # 使用字典进行去重
-                unique_terminals = {}
-                for terminal in all_terminals:
-                    ftid = terminal['ftid']
-                    if ftid not in unique_terminals:
-                        unique_terminals[ftid] = terminal
-                
-                terminals = list(unique_terminals.values())
-                eprint(f"合并并去重后共有 {len(terminals)} 个唯一端子")
-                
-                # 显示前3个端子的信息作为示例
-                for i, term in enumerate(terminals[:3]):
-                    eprint(f"端子示例 {i+1}: {term}")
-
-            # 2. 在Neo4j中创建端子节点
+                cursor.execute(sql)
+                terminals = cursor.fetchall()
+                eprint(f"从MySQL中获取到 {len(terminals)} 个端子记录")
+            
+            # 创建端子节点并关联设备
             with self.driver.session() as session:
-                # 首先删除所有关系，然后再删除节点
-                try:
-                    session.run("MATCH (t:V_Terminal)-[r]-() DELETE r")
-                    eprint("已删除端子节点的所有关系")
-                    session.run("MATCH (t:V_Terminal) DELETE t")
-                    eprint("已清除现有端子节点")
-                except Exception as e:
-                    eprint(f"清除现有端子节点时出错: {str(e)}")
-                    try:
-                        session.run("MATCH (t:V_Terminal) DETACH DELETE t")
-                        eprint("已使用DETACH DELETE清除现有端子节点")
-                    except Exception as e2:
-                        eprint(f"尝试DETACH DELETE端子节点时出错: {str(e2)}")
-                        eprint("继续执行，将尝试创建新节点")
+                # 删除旧数据
+                session.run("MATCH (t:V_Terminal) DETACH DELETE t")
+                eprint("已清除现有端子节点")
 
-                # 创建新的端子节点
                 created = 0
                 for terminal in terminals:
-                    if not terminal['ftid']:  # 跳过ftid为空的记录
+                    if not terminal['ftid']:
                         continue
                     
-                    # 从ftid提取设备ID和端子ID（这些信息仅供内部使用，不写入Neo4j）
-                    device_id = None
-                    terminal_id = None
-                    if terminal['ftid'] and ':' in terminal['ftid']:
-                        parts = terminal['ftid'].split(':')
-                        if '-' in parts[0]:
-                            device_part = parts[0].split('-')[-1]
-                            device_id = device_part
-                        else:
-                            device_id = parts[0]
-                        terminal_id = parts[1] if len(parts) > 1 else ""
+                    # 提取 full_device（即设备的 fdid）
+                    full_device = terminal['ftid'].split(':')[0] if ':' in terminal['ftid'] else terminal['ftid']
                     
-                    # 提取full_device（从ftid中获取冒号前的部分）
-                    f_device = terminal['ftid'].split(':')[0] if ':' in terminal['ftid'] else terminal['ftid']
-                    
-                    # 生成一个唯一ID，可以使用ftid作为唯一ID
-                    terminal_id_value = terminal['ftid']
-                    
+                    # 创建端子节点并关联设备
                     result = session.run("""
-                        CREATE (t:V_Terminal {
-                            id: $id,
-                            ftid: $ftid,
-                            function: $function,
-                            location: $location,
-                            device: $device,
-                            terminal: $terminal,
-                            Type: $Type,
-                            isSocket: $isSocket,
-                            isSetPoint: $isSetPoint,
-                            isSensePoint: $isSensePoint,
-                            current: $current,
-                            voltage: $voltage,
-                            resistance: $resistance,
-                            full_device: $full_device
-                        })
+                        // 创建设备节点（如果不存在）
+                        MERGE (d:V_Device {fdid: $full_device})
+                        // 创建或匹配端子节点
+                        MERGE (t:V_Terminal {ftid: $ftid})
+                        // 设置端子节点的属性
+                        SET t.id = $id,
+                            t.function = $function,
+                            t.location = $location,
+                            t.device = $device,
+                            t.terminal = $terminal,
+                            t.full_device = $full_device
+                        // 创建关系（如果不存在）
+                        MERGE (t)-[:belongTo]->(d)
+                        MERGE (d)-[:hasTerminal]->(t)
                         RETURN t
                     """, {
-                        'id': terminal_id_value,  # 使用ftid作为id
+                        'id': terminal['ftid'],
                         'ftid': terminal['ftid'],
                         'function': terminal['function'],
                         'location': terminal['location'],
                         'device': terminal['device'],
                         'terminal': terminal['terminal'],
-                        'Type': '',  # 不使用查询的Type
-                        'isSocket': None,
-                        'isSetPoint': None,
-                        'isSensePoint': None,
-                        'current': None,
-                        'voltage': None,
-                        'resistance': None,
-                        'full_device': f_device
-                        # 排除 'description', 'device_id', 'raw', 'terminal_id'
+                        'full_device': full_device
                     })
-                    
                     if result.single():
                         created += 1
-                    
-                    # 每处理100个节点记录一次进度
                     if created % 100 == 0 and created > 0:
                         eprint(f"已处理 {created} 个端子节点")
-                
                 eprint(f"成功创建了 {created} 个端子节点")
-
-                # 创建唯一性约束 - 使用id属性作为唯一性约束
-                try:
-                    session.run(""" CREATE CONSTRAINT terminal_id IF NOT EXISTS 
-                        FOR (t:V_Terminal) REQUIRE t.id IS UNIQUE
-                    """)
-                    eprint("已创建端子ID唯一性约束")
-                except Exception as e:
-                    eprint(f"创建约束时出现警告（可能已存在）: {str(e)}")
-
         except Exception as e:
             eprint(f"创建端子节点失败: {str(e)}")
-            traceback.print_exc(file=sys.stderr)
             raise
-
     def create_external_connections(self):
         """3. 保存设备点和点的外连接到neo4j"""
         # TODO: 实现从MySQL读取外部连接数据并创建Neo4j关系
