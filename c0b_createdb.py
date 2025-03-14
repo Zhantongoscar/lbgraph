@@ -121,7 +121,7 @@ def create_and_fill_tables():
             # 4. 插入设备数据
             logger.info("导入设备数据...")
             cursor.execute("""
-                INSERT INTO v_csv_device (fdid, Function, Location, Device, Type, isPLC)
+                INSERT IGNORE INTO v_csv_device (fdid, Function, Location, Device, Type, isPLC)
                 SELECT DISTINCT
                     MIN(dev.fdid) as fdid,
                     MAX(dev.Function) as Function,
@@ -244,10 +244,7 @@ def create_and_fill_tables():
                     t_ftid as target,
                     color,
                     1 as isInPanel,
-                    CASE
-                        WHEN s_location = t_location THEN 'internal'
-                        ELSE 'external'
-                    END as connType
+                    'external' as connType
                 FROM v_csv_raw r
                 WHERE s_ftid IS NOT NULL
                 AND t_ftid IS NOT NULL
