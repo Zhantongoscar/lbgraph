@@ -120,38 +120,39 @@ def create_and_fill_tables():
                     MAX(dev.Type) as Type,
                     MAX(dev.isPLC) as isPLC
                 FROM (
-                    SELECT 
+                    SELECT
                         SUBSTRING_INDEX(s_ftid, ':', 1) as FDID,
                         s_function as Function,
                         s_location as Location,
                         s_device as Device,
-                        CASE 
+                        CASE
                             WHEN s_device LIKE 'A2%' THEN 'PLC'
                             ELSE 'DEVICE'
                         END as Type,
-                        CASE 
+                        CASE
                             WHEN s_device LIKE 'A2%' THEN 1
                             ELSE 0
                         END as isPLC
                     FROM v_csv_raw
-                    WHERE s_ftid IS NOT NULL AND s_device IS NOT NULL
+                    WHERE s_ftid IS NOT NULL AND s_device IS NOT NULL AND s_location LIKE 'K1.%'
                     UNION ALL
-                    SELECT 
+                    SELECT
                         SUBSTRING_INDEX(t_ftid, ':', 1) as FDID,
                         t_function as Function,
                         t_location as Location,
                         t_device as Device,
-                        CASE 
+                        CASE
                             WHEN t_device LIKE 'A2%' THEN 'PLC'
                             ELSE 'DEVICE'
                         END as Type,
-                        CASE 
+                        CASE
                             WHEN t_device LIKE 'A2%' THEN 1
                             ELSE 0
                         END as isPLC
                     FROM v_csv_raw
-                    WHERE t_ftid IS NOT NULL AND t_device IS NOT NULL
+                    WHERE t_ftid IS NOT NULL AND t_device IS NOT NULL AND t_location LIKE 'K1.%'
                 ) as dev
+                WHERE dev.Location LIKE 'K1.%'
                 GROUP BY dev.Location, dev.Device
             """)
             device_count = cursor.rowcount
