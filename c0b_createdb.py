@@ -52,7 +52,7 @@ def create_and_fill_tables():
                     isPLC TINYINT(1) DEFAULT 0,
                     isTerminal TINYINT(1) DEFAULT 0,
                     PRIMARY KEY (id),
-                    INDEX idx_fdid (fdid),
+                    UNIQUE KEY uk_fdid (fdid),
                     INDEX idx_location (Location),
                     INDEX idx_device (Device)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -108,6 +108,16 @@ def create_and_fill_tables():
             conn.commit()
             logger.info("表创建完成")
 
+            # Check if v_csv_raw has data
+            cursor.execute("SELECT COUNT(*) as count FROM v_csv_raw")
+            raw_count = cursor.fetchone()['count']
+            logger.info(f"v_csv_raw表中有 {raw_count} 条记录")
+            
+            # Check specifically for records with K1.% locations
+            cursor.execute("SELECT COUNT(*) as count FROM v_csv_raw WHERE s_location LIKE 'K1.%' OR t_location LIKE 'K1.%'")
+            k1_count = cursor.fetchone()['count']
+            logger.info(f"v_csv_raw表中有 {k1_count} 条K1.%位置的记录")
+            
             # 4. 插入设备数据
             logger.info("导入设备数据...")
             cursor.execute("""
@@ -161,7 +171,7 @@ def create_and_fill_tables():
             # 5. 插入端子数据
             logger.info("导入源端数据...")
             cursor.execute("""
-                INSERT INTO v_csv_devpoint
+                INSERT IGNORE INTO v_csv_devpoint
                 (raw, ftid, belongtoDevice, Function, Location, Device, Terminal, Type, isInPanel)
                 SELECT
                     MIN(s_raw) as raw,
