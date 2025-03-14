@@ -64,21 +64,22 @@ def create_and_fill_tables():
                 CREATE TABLE IF NOT EXISTS v_csv_devpoint (
                     id INT NOT NULL AUTO_INCREMENT,
                     raw VARCHAR(255) NOT NULL,
-                    FTID VARCHAR(255) NOT NULL,
+                    ftid VARCHAR(255) NOT NULL,
                     belongtoDevice VARCHAR(255),
                     Function VARCHAR(255),
                     Location VARCHAR(255),
                     Device VARCHAR(255),
+                    Terminal VARCHAR(255),
                     Type VARCHAR(50),
-                    description VARCHAR(255),
                     voltage DOUBLE DEFAULT 0,
                     current DOUBLE DEFAULT 0,
                     resistance DOUBLE DEFAULT 0,
+                    isInPanel TINYINT(1) DEFAULT 0,
                     isSocket TINYINT(1) DEFAULT 0,
                     isSetPoint TINYINT(1) DEFAULT 0,
                     isSensePoint TINYINT(1) DEFAULT 0,
                     PRIMARY KEY (id),
-                    INDEX idx_ftid (FTID),
+                    INDEX idx_ftid (ftid),
                     INDEX idx_location_device (Location, Device)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """)
@@ -159,16 +160,17 @@ def create_and_fill_tables():
             # 5. 插入端子数据
             logger.info("导入源端数据...")
             cursor.execute("""
-                INSERT INTO v_csv_devpoint 
-                (raw, FTID, belongtoDevice, Function, Location, Device, Type, description)
+                INSERT INTO v_csv_devpoint
+                (raw, ftid, belongtoDevice, Function, Location, Device, Terminal, Type, isInPanel)
                 SELECT
                     MIN(s_raw) as raw,
-                    s_ftid as FTID,
+                    s_ftid as ftid,
                     SUBSTRING_INDEX(s_ftid, ':', 1) as belongtoDevice,
                     MAX(s_function) as Function,
                     s_location as Location,
                     s_device as Device,
-                    CASE 
+                    s_terminal as Terminal,
+                    CASE
                         WHEN s_terminal LIKE 'A%' THEN 'A'
                         WHEN s_terminal LIKE 'D%' THEN 'D'
                         WHEN s_terminal LIKE 'L%' THEN 'L'
@@ -176,12 +178,13 @@ def create_and_fill_tables():
                         WHEN s_terminal LIKE 'T%' THEN 'T'
                         ELSE 'OTHER'
                     END as Type,
-                    s_terminal as description
+                    1 as isInPanel
                 FROM v_csv_raw
-                WHERE s_ftid IS NOT NULL 
+                WHERE s_ftid IS NOT NULL
                 AND s_terminal IS NOT NULL
                 AND s_location IS NOT NULL
                 AND s_device IS NOT NULL
+                AND s_location LIKE 'K1.%'
                 GROUP BY s_ftid, s_location, s_device, s_terminal
             """)
             source_count = cursor.rowcount
@@ -189,16 +192,17 @@ def create_and_fill_tables():
 
             logger.info("导入目标端数据...")
             cursor.execute("""
-                INSERT IGNORE INTO v_csv_devpoint 
-                (raw, FTID, belongtoDevice, Function, Location, Device, Type, description)
+                INSERT IGNORE INTO v_csv_devpoint
+                (raw, ftid, belongtoDevice, Function, Location, Device, Terminal, Type, isInPanel)
                 SELECT
                     MIN(t_raw) as raw,
-                    t_ftid as FTID,
+                    t_ftid as ftid,
                     SUBSTRING_INDEX(t_ftid, ':', 1) as belongtoDevice,
                     MAX(t_function) as Function,
                     t_location as Location,
                     t_device as Device,
-                    CASE 
+                    t_terminal as Terminal,
+                    CASE
                         WHEN t_terminal LIKE 'A%' THEN 'A'
                         WHEN t_terminal LIKE 'D%' THEN 'D'
                         WHEN t_terminal LIKE 'L%' THEN 'L'
@@ -206,12 +210,13 @@ def create_and_fill_tables():
                         WHEN t_terminal LIKE 'T%' THEN 'T'
                         ELSE 'OTHER'
                     END as Type,
-                    t_terminal as description
+                    1 as isInPanel
                 FROM v_csv_raw
-                WHERE t_ftid IS NOT NULL 
+                WHERE t_ftid IS NOT NULL
                 AND t_terminal IS NOT NULL
                 AND t_location IS NOT NULL
                 AND t_device IS NOT NULL
+                AND t_location LIKE 'K1.%'
                 GROUP BY t_ftid, t_location, t_device, t_terminal
             """)
             target_count = cursor.rowcount
