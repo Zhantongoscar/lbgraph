@@ -42,7 +42,7 @@ def create_and_fill_tables():
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS v_csv_device (
                     id INT NOT NULL AUTO_INCREMENT,
-                    FDID VARCHAR(255) NOT NULL,
+                    fdid VARCHAR(255) NOT NULL,
                     Function VARCHAR(255),
                     Location VARCHAR(255),
                     Device VARCHAR(255),
@@ -52,7 +52,7 @@ def create_and_fill_tables():
                     isPLC TINYINT(1) DEFAULT 0,
                     isTerminal TINYINT(1) DEFAULT 0,
                     PRIMARY KEY (id),
-                    INDEX idx_fdid (FDID),
+                    INDEX idx_fdid (fdid),
                     INDEX idx_location (Location),
                     INDEX idx_device (Device)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -111,9 +111,9 @@ def create_and_fill_tables():
             # 4. 插入设备数据
             logger.info("导入设备数据...")
             cursor.execute("""
-                INSERT INTO v_csv_device (FDID, Function, Location, Device, Type, isPLC)
+                INSERT INTO v_csv_device (fdid, Function, Location, Device, Type, isPLC)
                 SELECT DISTINCT
-                    MIN(dev.FDID) as FDID,
+                    MIN(dev.fdid) as fdid,
                     MAX(dev.Function) as Function,
                     dev.Location,
                     dev.Device,
@@ -121,7 +121,7 @@ def create_and_fill_tables():
                     MAX(dev.isPLC) as isPLC
                 FROM (
                     SELECT
-                        SUBSTRING_INDEX(s_ftid, ':', 1) as FDID,
+                        SUBSTRING_INDEX(s_ftid, ':', 1) as fdid,
                         s_function as Function,
                         s_location as Location,
                         s_device as Device,
@@ -137,7 +137,7 @@ def create_and_fill_tables():
                     WHERE s_ftid IS NOT NULL AND s_device IS NOT NULL AND s_location LIKE 'K1.%'
                     UNION ALL
                     SELECT
-                        SUBSTRING_INDEX(t_ftid, ':', 1) as FDID,
+                        SUBSTRING_INDEX(t_ftid, ':', 1) as fdid,
                         t_function as Function,
                         t_location as Location,
                         t_device as Device,
