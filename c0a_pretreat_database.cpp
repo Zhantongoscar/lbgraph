@@ -330,17 +330,15 @@ public:
     // --- 1. 处理括号和冒号的情况 ---
     std::string query_s_bracket = R"(
         UPDATE v_csv_raw
-        SET s_ftid = CONCAT(
-            SUBSTRING(s_raw, 1, LOCATE(':', s_raw) - 1),
-            ':',
-            TRIM(LEADING '-' FROM 
+        SET s_ftid =
+            TRIM(LEADING '-' FROM
                 SUBSTRING(
-                    s_raw, 
-                    LOCATE('(', s_raw) + 1, 
+                    s_raw,
+                    LOCATE('(', s_raw) + 1,
                     LOCATE(')', s_raw) - LOCATE('(', s_raw) - 1
                 )
             )
-        )
+        
         WHERE s_raw LIKE '%(%):%'
     )";
 
@@ -352,17 +350,15 @@ public:
 
     std::string query_t_bracket = R"(
         UPDATE v_csv_raw
-        SET t_ftid = CONCAT(
-            SUBSTRING(t_raw, 1, LOCATE(':', t_raw) - 1),
-            ':',
-            TRIM(LEADING '-' FROM 
+        SET t_ftid =
+            TRIM(LEADING '-' FROM
                 SUBSTRING(
-                    t_raw, 
-                    LOCATE('(', t_raw) + 1, 
+                    t_raw,
+                    LOCATE('(', t_raw) + 1,
                     LOCATE(')', t_raw) - LOCATE('(', t_raw) - 1
                 )
             )
-        )
+        
         WHERE t_raw LIKE '%(%):%'
     )";
 
@@ -375,12 +371,10 @@ public:
     // --- 2. 处理包含 "-A" 的情况 ---
     std::string query_s_A = R"(
         UPDATE v_csv_raw
-        SET s_ftid = CONCAT(
-            SUBSTRING_INDEX(s_raw, ':', 1),
-            '-',
+        SET s_ftid =
             SUBSTRING(s_raw, LOCATE(':', s_raw) + 1)
-        )
-        WHERE s_raw LIKE '%-A%'
+        
+        WHERE s_raw LIKE '%:%-A%' AND s_raw NOT LIKE '%(%:%' AND s_raw NOT LIKE '%:-%:%'
     )";
 
     if (mysql_query(conn, query_s_A.c_str())) {
@@ -391,12 +385,10 @@ public:
 
     std::string query_t_A = R"(
         UPDATE v_csv_raw
-        SET t_ftid = CONCAT(
-            SUBSTRING_INDEX(t_raw, ':', 1),
-            '-',
+        SET t_ftid =
             SUBSTRING(t_raw, LOCATE(':', t_raw) + 1)
-        )
-        WHERE t_raw LIKE '%-A%'
+        
+        WHERE t_raw LIKE '%:%-A%' AND t_raw NOT LIKE '%(%:%' AND t_raw NOT LIKE '%:-%:%'
     )";
 
     if (mysql_query(conn, query_t_A.c_str())) {
@@ -433,14 +425,10 @@ public:
     // --- 4. 处理 "-D/-E/-G/-M/-U" 的情况 ---
     std::string query_s_DEGMU = R"(
         UPDATE v_csv_raw
-        SET s_ftid = CONCAT(
-            SUBSTRING_INDEX(s_raw, ':', 1),
-            '-',
+        SET s_ftid =
             SUBSTRING(s_raw, LOCATE(':', s_raw) + 1)
-        )
-        WHERE s_raw LIKE '%-D%' OR s_raw LIKE '%-E%' OR 
-              s_raw LIKE '%-G%' OR s_raw LIKE '%-M%' OR 
-              s_raw LIKE '%-U%'
+        
+        WHERE (s_raw LIKE '%:%-D%' OR s_raw LIKE '%:%-E%' OR s_raw LIKE '%:%-G%' OR s_raw LIKE '%:%-M%' OR s_raw LIKE '%:%-U%') AND s_raw NOT LIKE '%(%:%' AND s_raw NOT LIKE '%:-%:%' AND s_raw NOT LIKE '%:%-A%'
     )";
 
     if (mysql_query(conn, query_s_DEGMU.c_str())) {
@@ -451,14 +439,10 @@ public:
 
     std::string query_t_DEGMU = R"(
         UPDATE v_csv_raw
-        SET t_ftid = CONCAT(
-            SUBSTRING_INDEX(t_raw, ':', 1),
-            '-',
+        SET t_ftid =
             SUBSTRING(t_raw, LOCATE(':', t_raw) + 1)
-        )
-        WHERE t_raw LIKE '%-D%' OR t_raw LIKE '%-E%' OR 
-              t_raw LIKE '%-G%' OR t_raw LIKE '%-M%' OR 
-              t_raw LIKE '%-U%'
+        
+        WHERE (t_raw LIKE '%:%-D%' OR t_raw LIKE '%:%-E%' OR t_raw LIKE '%:%-G%' OR t_raw LIKE '%:%-M%' OR t_raw LIKE '%:%-U%') AND t_raw NOT LIKE '%(%:%' AND t_raw NOT LIKE '%:-%:%' AND t_raw NOT LIKE '%:%-A%'
     )";
 
     if (mysql_query(conn, query_t_DEGMU.c_str())) {
@@ -471,7 +455,7 @@ public:
     std::string query_s_colon_dash = R"(
         UPDATE v_csv_raw
         SET s_ftid = REPLACE(s_raw, ':-', '-')
-        WHERE s_raw LIKE '%:-%:%'
+        WHERE s_raw LIKE '%:-%:%' AND s_raw NOT LIKE '%(%:%' AND s_raw NOT LIKE '%:%-A%' AND (s_raw NOT LIKE '%:%-D%' AND s_raw NOT LIKE '%:%-E%' AND s_raw NOT LIKE '%:%-G%' AND s_raw NOT LIKE '%:%-M%' AND s_raw NOT LIKE '%:%-U%')
     )";
 
     if (mysql_query(conn, query_s_colon_dash.c_str())) {
@@ -483,7 +467,7 @@ public:
     std::string query_t_colon_dash = R"(
         UPDATE v_csv_raw
         SET t_ftid = REPLACE(t_raw, ':-', '-')
-        WHERE t_raw LIKE '%:-%:%'
+        WHERE t_raw LIKE '%:-%:%' AND t_raw NOT LIKE '%(%:%' AND t_raw NOT LIKE '%:%-A%' AND (t_raw NOT LIKE '%:%-D%' AND t_raw NOT LIKE '%:%-E%' AND t_raw NOT LIKE '%:%-G%' AND t_raw NOT LIKE '%:%-M%' AND t_raw NOT LIKE '%:%-U%')
     )";
 
     if (mysql_query(conn, query_t_colon_dash.c_str())) {
