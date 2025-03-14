@@ -63,39 +63,47 @@ struct CSVRow {
 };
 
 // 解析FTID并提取各个部分
-void parseFTID(const std::string& raw, std::string& ftid, std::string& function, 
+void parseFTID(const std::string& raw, std::string& ftid, std::string& function,
                std::string& location, std::string& device, std::string& terminal) {
+    // 首先处理整个ftid
     ftid = raw;
+    
+    // 如果字符串包含 "-W" 并且有两个冒号
+    if (raw.find("-W") != std::string::npos) {
+        size_t firstColonPos = raw.find(":");
+        if (firstColonPos != std::string::npos) {
+            size_t secondColonPos = raw.find(":", firstColonPos + 1);
+            if (secondColonPos != std::string::npos) {
+                // 保留第二个冒号之前的所有内容
+                ftid = raw.substr(0, secondColonPos);
+            }
+        }
+    }
+
     function = "";
     location = "";
     device = "";
     terminal = "";
     
     // 查找等号位置（功能分隔符）
-    size_t equalPos = raw.find("=");
+    size_t equalPos = ftid.find("=");
     if (equalPos != std::string::npos) {
         // 提取功能部分
-        size_t plusPos = raw.find("+", equalPos);
+        size_t plusPos = ftid.find("+", equalPos);
         if (plusPos != std::string::npos) {
-            function = raw.substr(equalPos + 1, plusPos - (equalPos + 1));
+            function = ftid.substr(equalPos + 1, plusPos - (equalPos + 1));
             
             // 提取位置和设备部分
-            size_t minusPos = raw.find("-", plusPos);
+            size_t minusPos = ftid.find("-", plusPos);
             if (minusPos != std::string::npos) {
-                location = raw.substr(plusPos + 1, minusPos - (plusPos + 1));
+                location = ftid.substr(plusPos + 1, minusPos - (plusPos + 1));
                 
                 // 处理设备和端子部分
-                std::string devicePart = raw.substr(minusPos + 1);
+                std::string devicePart = ftid.substr(minusPos + 1);
                 size_t colonPos = devicePart.find(":");
                 if (colonPos != std::string::npos) {
                     device = devicePart.substr(0, colonPos);
                     terminal = devicePart.substr(colonPos + 1);
-                    
-                    // 处理第二个冒号
-                    size_t secondColonPos = terminal.find(":");
-                    if (secondColonPos != std::string::npos) {
-                        terminal = terminal.substr(0, secondColonPos);
-                    }
                 } else {
                     device = devicePart;
                     terminal = "";
@@ -331,14 +339,17 @@ public:
     std::string query_s_bracket = R"(
         UPDATE v_csv_raw
         SET s_ftid =
-            TRIM(LEADING '-' FROM
-                SUBSTRING(
-                    s_raw,
-                    LOCATE('(', s_raw) + 1,
-                    LOCATE(')', s_raw) - LOCATE('(', s_raw) - 1
+            CONCAT(
+                SUBSTRING(s_raw, 1, LOCATE(':', s_raw) - 1),
+                ':',
+                TRIM(LEADING '-' FROM
+                    SUBSTRING(
+                        s_raw,
+                        LOCATE('(', s_raw) + 1,
+                        LOCATE(')', s_raw) - LOCATE('(', s_raw) - 1
+                    )
                 )
             )
-        
         WHERE s_raw LIKE '%(%):%'
     )";
 
@@ -351,14 +362,17 @@ public:
     std::string query_t_bracket = R"(
         UPDATE v_csv_raw
         SET t_ftid =
-            TRIM(LEADING '-' FROM
-                SUBSTRING(
-                    t_raw,
-                    LOCATE('(', t_raw) + 1,
-                    LOCATE(')', t_raw) - LOCATE('(', t_raw) - 1
+            CONCAT(
+                SUBSTRING(t_raw, 1, LOCATE(':', t_raw) - 1),
+                ':',
+                TRIM(LEADING '-' FROM
+                    SUBSTRING(
+                        t_raw,
+                        LOCATE('(', t_raw) + 1,
+                        LOCATE(')', t_raw) - LOCATE('(', t_raw) - 1
+                    )
                 )
             )
-        
         WHERE t_raw LIKE '%(%):%'
     )";
 
