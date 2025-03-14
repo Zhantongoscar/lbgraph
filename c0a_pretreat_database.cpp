@@ -44,6 +44,7 @@ struct DbConfig {
 // CSV行数据结构
 struct CSVRow {
     std::string cnumber;     // 连续编号 Consecutive number
+    std::string color;       // 颜色信息 Color information
     
     // 源端数据
     std::string s_raw;        // 原始源数据
@@ -223,7 +224,8 @@ public:
             "t_function VARCHAR(255), "
             "t_location VARCHAR(255), "
             "t_device VARCHAR(255), "
-            "t_terminal VARCHAR(255)"
+            "t_terminal VARCHAR(255), "
+            "color VARCHAR(50)"
             ") CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
         if (mysql_query(conn, createTable.c_str())) {
@@ -288,6 +290,7 @@ public:
                 
                 // 提取 Consecutive number (连续编号)
                 row.cnumber = fields[0];
+                row.color = fields[4];  // 提取颜色信息（取第5列的数据）
                 
                 // 处理源数据
                 row.s_raw = fields[7];
@@ -581,9 +584,9 @@ private:
         int insertedCount = 0;
         for (const auto& row : rows) {
             if (!row.s_raw.empty() && !row.t_raw.empty()) {
-                std::string query = "INSERT INTO " + tableName + 
+                std::string query = "INSERT INTO " + tableName +
                     " (cnumber, s_raw, s_ftid, s_function, s_location, s_device, s_terminal, "
-                    "  t_raw, t_ftid, t_function, t_location, t_device, t_terminal) VALUES ("
+                    "  t_raw, t_ftid, t_function, t_location, t_device, t_terminal, color) VALUES ("
                     "'" + escapeString(row.cnumber) + "', "
                     "'" + escapeString(row.s_raw) + "', "
                     "'" + escapeString(row.s_ftid) + "', "
@@ -596,7 +599,8 @@ private:
                     "'" + escapeString(row.t_function) + "', "
                     "'" + escapeString(row.t_location) + "', "
                     "'" + escapeString(row.t_device) + "', "
-                    "'" + escapeString(row.t_terminal) + "')";
+                    "'" + escapeString(row.t_terminal) + "', "
+                    "'" + escapeString(row.color) + "')";
 
                 if (mysql_query(conn, query.c_str()) != 0) {
                     std::cerr << "插入失败: " << mysql_error(conn) << std::endl;
