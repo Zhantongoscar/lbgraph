@@ -229,18 +229,22 @@ def create_and_fill_tables():
                 INSERT INTO v_csv_conn
                 (connNo, source, target, color, isInPanel, connType)
                 SELECT DISTINCT
-                    MIN(cnumber) as connNo,
-                    MIN(s_ftid) as source,
-                    MIN(t_ftid) as target,
-                    MAX(color) as color,
+                    cnumber as connNo,
+                    s_ftid as source,
+                    t_ftid as target,
+                    color,
                     1 as isInPanel,
-                    'external' as connType
-                FROM v_csv_raw
+                    CASE
+                        WHEN s_location = t_location THEN 'internal'
+                        ELSE 'external'
+                    END as connType
+                FROM v_csv_raw r
                 WHERE s_ftid IS NOT NULL
                 AND t_ftid IS NOT NULL
                 AND s_terminal IS NOT NULL
                 AND t_terminal IS NOT NULL
-                GROUP BY s_ftid, t_ftid
+                AND s_location LIKE 'K1.%'
+                AND t_location LIKE 'K1.%'
             """)
             conn_count = cursor.rowcount
             logger.info(f"已导入 {conn_count} 条连接数据")
