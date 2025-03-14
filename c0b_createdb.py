@@ -226,22 +226,21 @@ def create_and_fill_tables():
             # 6. 插入连接数据
             logger.info("导入连接数据...")
             cursor.execute("""
-                INSERT INTO v_csv_conn 
-                (connNo, source, target, isInPanel, connType)
+                INSERT INTO v_csv_conn
+                (connNo, source, target, color, isInPanel, connType)
                 SELECT DISTINCT
-                    cnumber as connNo,
-                    s_ftid as source,
-                    t_ftid as target,
+                    MIN(cnumber) as connNo,
+                    MIN(s_ftid) as source,
+                    MIN(t_ftid) as target,
+                    MAX(color) as color,
                     1 as isInPanel,
-                    CASE
-                        WHEN s_location = t_location THEN 'internal'
-                        ELSE 'external'
-                    END as connType
+                    'external' as connType
                 FROM v_csv_raw
-                WHERE s_ftid IS NOT NULL 
+                WHERE s_ftid IS NOT NULL
                 AND t_ftid IS NOT NULL
                 AND s_terminal IS NOT NULL
                 AND t_terminal IS NOT NULL
+                GROUP BY s_ftid, t_ftid
             """)
             conn_count = cursor.rowcount
             logger.info(f"已导入 {conn_count} 条连接数据")
