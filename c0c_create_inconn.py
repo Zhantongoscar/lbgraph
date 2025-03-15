@@ -63,71 +63,180 @@ def create_connection(source_point, target_point, properties):
         'properties': properties
     }
 
+def strip_device_prefix(terminal):
+    """从端子号中去除设备前缀，只保留实际的端子号部分"""
+    if ':' in terminal:
+        return terminal.split(':')[-1]
+    return terminal
+
 def find_point_by_terminal(points, terminal):
     """在点位列表中查找指定端子号的点"""
+    stripped_target = strip_device_prefix(terminal)
     # 先尝试完全匹配
     for point in points:
-        if point['Terminal'] == terminal:
+        if strip_device_prefix(point['Terminal']) == stripped_target:
             return point
     
     # 如果没有完全匹配，尝试后缀匹配
     if terminal.startswith('.'):
         for point in points:
-            if point['Terminal'].endswith(terminal):
+            if strip_device_prefix(point['Terminal']).endswith(terminal):
                 return point
     
     return None
 
-def find_pattern_matching_points(points, pattern_pair):
+def find_pattern_matching_points(points, pattern):
     """查找符合模式的端子点对"""
     matching_pairs = []
-    terminals = [point['Terminal'] for point in points]
+    # 创建一个字典，键是去除前缀后的端子号，值是原始点位
+    terminals_dict = {strip_device_prefix(p['Terminal']): p for p in points}
+    pattern1, pattern2 = pattern
     
-    # 从pattern_pair中获取正则表达式模式
-    pattern1, pattern2 = pattern_pair
+    logger.info(f"尝试匹配模式 {pattern1} -> {pattern2}")
+    logger.info(f"可用端子点: {list(terminals_dict.keys())}")
     
-    # 为每个端子尝试匹配第一个模式
-    for term in terminals:
-        match1 = re.match(pattern1, term)
-        if match1:
-            # 使用第一个匹配的分组创建第二个端子的期望值
-            expected_term2 = re.sub(pattern1, pattern2, term)
-            if expected_term2 in terminals:
-                point1 = find_point_by_terminal(points, term)
-                point2 = find_point_by_terminal(points, expected_term2)
-                if point1 and point2:
-                    matching_pairs.append((point1, point2))
+    # 对每个端子号（不带前缀）尝试匹配
+    for terminal, point in terminals_dict.items():
+        match = re.match(pattern1, terminal)
+        if match:
+            # 使用反向引用替换，需要保存捕获的组
+            groups = match.groups()
+            if groups:
+                # 第一个分组（通常是数字部分）
+                base = groups[0]
+                # 根据模式创建目标端子号
+                if pattern2 == "\\12":  # 对于 *1->*2 模式
+                    target_terminal = f"{base}2"
+                elif pattern2 == "\\14":  # 对于 *1->*4 模式
+                    target_terminal = f"{base}4"
+                else:
+                    target_terminal = re.sub(pattern1, pattern2, terminal)
+
+                if target_terminal in terminals_dict:
+                    point1 = point
+                    point2 = terminals_dict[target_terminal]
+                    if point1 and point2 and point1['ftid'] != point2['ftid']:
+                        logger.info(f"找到匹配的端子对: {terminal}-{target_terminal}")
+                        matching_pairs.append((point1, point2))
     
     return matching_pairs
 
-def get_device_subtype_rules(device_name, device_rules):
+def detect_device_subtype(points, device_rules):
+    """检测设备子类型，基于端子点模式和优先级"""
+    terminal_set = {strip_device_prefix(p['Terminal']) for p in points}
+    matching_subtypes = []
+    
+    logger.info("可用端子点: %s", terminal_set)
+    
+    # 检查每个子类型的检测规则
+    for subtype, rule in device_rules['subtypes'].items():
+        matches = False
+        if 'detection' in rule:
+            detection = rule['detection']
+            detection_results = []
+            
+            # 检查端子点模式
+            if 'patterns' in detection:
+                pattern_found = False
+                for pattern in detection['patterns']:
+                    for terminal in terminal_set:
+                        if re.match(pattern, terminal):
+                            pattern_found = True
+                            logger.info(f"子类型 {subtype} 匹配模式 {pattern}: {terminal}")
+                            break
+                    if pattern_found:
+                        break
+                detection_results.append(('pattern', pattern_found))
+            
+            # 检查可选端子组（任一匹配即可）
+            if 'or_terminals' in detection:
+                required_terminals = set(detection['or_terminals'])
+                terminals_match = bool(required_terminals.intersection(terminal_set))
+                detection_results.append(('or_terminals', terminals_match))
+                if terminals_match:
+                    logger.info(f"子类型 {subtype} 匹配可选端子: 找到 {required_terminals.intersection(terminal_set)}")
+
+            # 检查必需的端子点
+            if 'terminals' in detection:
+                required_terminals = set(detection['terminals'])
+                terminals_match = required_terminals.issubset(terminal_set)
+                detection_results.append(('terminals', terminals_match))
+                if terminals_match:
+                    logger.info(f"子类型 {subtype} 匹配必需端子: {required_terminals}")
+            
+            # 决定是否匹配：对于每种类型的检测，只要有一个匹配就算成功
+            if detection_results:
+                matches = any(result[1] for result in detection_results)
+                matches_str = ', '.join(f"{result[0]}:{result[1]}" for result in detection_results)
+                logger.info(f"子类型 {subtype} 检测结果: {matches_str} -> {'匹配' if matches else '不匹配'}")
+        
+        elif 'pattern' in rule:
+            matches = True  # 默认模式匹配，具体匹配在get_device_subtype_rules中处理
+        
+        if matches:
+            priority = rule.get('priority', 999)  # 没有优先级的规则优先级最低
+            friendly_name = rule.get('friendly_name', subtype)
+            matching_subtypes.append((subtype, priority, friendly_name))
+    
+    if matching_subtypes:
+        # 按优先级排序，返回优先级最高的子类型
+        matching_subtypes.sort(key=lambda x: x[1])
+        logger.info(f"匹配的子类型: {[f'{name}(优先级:{pri})' for _, pri, name in matching_subtypes]}")
+        return matching_subtypes[0][0], matching_subtypes[0][2]
+    
+    logger.info("没有匹配的子类型")
+    return None, None
+
+def get_device_subtype_rules(device_name, device_rules, points):
     """获取设备子类型的规则"""
     if 'subtypes' not in device_rules:
-        return device_rules
+        friendly_name = device_rules.get('friendly_name', '默认规则')
+        logger.info(f"使用设备类型默认规则: {friendly_name}")
+        return device_rules, friendly_name
     
-    # 遍历所有子类型规则
-    for subtype, rules in device_rules['subtypes'].items():
-        if 'pattern' in rules and re.match(rules['pattern'], device_name):
-            return rules
+    # 获取匹配的子类型
+    subtype, friendly_name = detect_device_subtype(points, device_rules)
+    if subtype:
+        rules = device_rules['subtypes'][subtype]
+        # 如果规则有pattern，验证设备名称是否匹配
+        if 'pattern' in rules:
+            pattern = rules['pattern']
+            if not re.match(pattern, device_name):
+                logger.info(f"设备名 {device_name} 不匹配规则模式 {pattern}")
+                # 如果不匹配且不是基于端子检测的规则，继续尝试其他规则
+                if 'detection' not in rules:
+                    subtype = None
+                    friendly_name = None
+            else:
+                logger.info(f"设备名 {device_name} 匹配规则模式 {pattern}")
     
     # 如果没有匹配的特定规则，使用默认规则
-    if 'default' in device_rules['subtypes']:
-        return device_rules['subtypes']['default']
+    if not subtype and 'default' in device_rules['subtypes']:
+        default_rules = device_rules['subtypes']['default']
+        friendly_name = default_rules.get('friendly_name', '默认规则')
+        logger.info(f"使用默认规则：{friendly_name}")
+        return default_rules, friendly_name
+    elif subtype:
+        logger.info(f"使用规则：{friendly_name}")
+        return device_rules['subtypes'][subtype], friendly_name
     
-    return None
+    logger.info("没有找到匹配的规则")
+    return None, None
 
 def apply_device_rules(points, device_name, device_type, rules):
     """应用设备规则生成连接"""
     connections = []
+    used_points = set()  # 用于跟踪已使用的端子点
+    rule_name = None  # 用于存储使用的规则名称
     
     if not rules or 'deviceRules' not in rules or device_type not in rules['deviceRules']:
-        return connections
+        return connections, used_points, rule_name
 
     device_rules = rules['deviceRules'][device_type]
-    device_rules = get_device_subtype_rules(device_name, device_rules)
+    device_rules, rule_name = get_device_subtype_rules(device_name, device_rules, points)
     
     if not device_rules:
-        return connections
+        return connections, used_points, rule_name
     
     default_props = rules.get('defaultConnectionProperties', {})
 
@@ -140,6 +249,8 @@ def apply_device_rules(points, device_name, device_type, rules):
             if point1 and point2:
                 props = {**default_props, **conn_rule.get('properties', {})}
                 connections.append(create_connection(point1, point2, props))
+                used_points.add(point1['ftid'])
+                used_points.add(point2['ftid'])
         
         # 处理触点连接
         elif conn_rule['type'] == 'contacts':
@@ -152,6 +263,8 @@ def apply_device_rules(points, device_name, device_type, rules):
                     if point1 and point2:
                         props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'NC'}
                         connections.append(create_connection(point1, point2, props))
+                        used_points.add(point1['ftid'])
+                        used_points.add(point2['ftid'])
                 
                 # 处理NO连接
                 if 'no' in pair:
@@ -160,63 +273,37 @@ def apply_device_rules(points, device_name, device_type, rules):
                     if point1 and point2:
                         props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'NO'}
                         connections.append(create_connection(point1, point2, props))
-                
-                # 处理SNC连接
-                if 'snc' in pair:
-                    point1 = find_point_by_terminal(points, pair['snc'][0])
-                    point2 = find_point_by_terminal(points, pair['snc'][1])
-                    if point1 and point2:
-                        props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'SNC'}
-                        connections.append(create_connection(point1, point2, props))
-                
-                # 处理SNO连接
-                if 'sno' in pair:
-                    point1 = find_point_by_terminal(points, pair['sno'][0])
-                    point2 = find_point_by_terminal(points, pair['sno'][1])
-                    if point1 and point2:
-                        props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'SNO'}
-                        connections.append(create_connection(point1, point2, props))
+                        used_points.add(point1['ftid'])
+                        used_points.add(point2['ftid'])
             
             # 处理模式匹配的端子对
             for pattern_pair in conn_rule.get('pattern_pairs', []):
+                # 处理单个类型的模式
                 for conn_type, pattern_info in pattern_pair.items():
-                    if isinstance(pattern_info, dict) and 'pattern' in pattern_info:
+                    if conn_type == 'combined':
+                        # 处理组合模式
+                        for pattern_set in pattern_info.get('patterns', []):
+                            for type_name, pattern in pattern_set.items():
+                                matched_pairs = find_pattern_matching_points(points, pattern)
+                                for point1, point2 in matched_pairs:
+                                    props = {**default_props, **conn_rule.get('properties', {}), 'connType': type_name.upper()}
+                                    connections.append(create_connection(point1, point2, props))
+                                    used_points.add(point1['ftid'])
+                                    used_points.add(point2['ftid'])
+                    elif isinstance(pattern_info, dict) and 'pattern' in pattern_info:
+                        # 处理普通模式
                         matched_pairs = find_pattern_matching_points(points, pattern_info['pattern'])
                         for point1, point2 in matched_pairs:
                             props = {**default_props, **conn_rule.get('properties', {}), 'connType': conn_type.upper()}
                             connections.append(create_connection(point1, point2, props))
-            
-            # 处理S设备的变体规则
-            if 'variants' in conn_rule:
-                variants = conn_rule['variants']
-                
-                # 检查是否有.1和.2端子（带后缀的变体）
-                if 'with_postfix' in variants:
-                    has_postfix = any(
-                        find_point_by_terminal(points, pair['snc'][0])
-                        and find_point_by_terminal(points, pair['snc'][1])
-                        for variant in variants['with_postfix']
-                        for pair in ([{'snc': variant['snc']}] if 'snc' in variant else [])
-                    )
-                    if has_postfix:
-                        for variant in variants['with_postfix']:
-                            if 'snc' in variant:
-                                point1 = find_point_by_terminal(points, variant['snc'][0])
-                                point2 = find_point_by_terminal(points, variant['snc'][1])
-                                if point1 and point2:
-                                    props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'SNC'}
-                                    connections.append(create_connection(point1, point2, props))
-                
-                # 检查1-4连接变体
-                elif 'has_1_4' in variants:
-                    point1 = find_point_by_terminal(points, '1')
-                    point4 = find_point_by_terminal(points, '4')
-                    if point1 and point4:
-                        for variant in variants['1-4_only']:
-                            props = {**default_props, **conn_rule.get('properties', {}), 'connType': 'SNC'}
-                            connections.append(create_connection(point1, point4, props))
+                            used_points.add(point1['ftid'])
+                            used_points.add(point2['ftid'])
 
-    return connections
+    return connections, used_points, rule_name
+
+def get_unused_points(all_points, used_point_ids):
+    """获取未使用的端子点"""
+    return [point for point in all_points if point['ftid'] not in used_point_ids]
 
 def create_internal_connections():
     """创建设备内部连接的主函数"""
@@ -267,8 +354,11 @@ def create_internal_connections():
                 belongtoDevice = device['belongtoDevice']
                 device_name = device['Device']
                 device_type = get_device_type(device_name)
+                device_index = f"设备 {i+1}/{len(filtered_devices)}"
                 
-                print(f"\n=== 设备 {i+1}/{len(filtered_devices)}: {device_name}(-{belongtoDevice}) (位置: {device['Location']}) ===")
+                print(f"\n{'='*20} {device_index}: {device_name} {'='*20}")
+                print(f"位置: {device['Location']}")
+                print(f"设备ID: {belongtoDevice}")
                 
                 # 获取当前设备的所有端子点
                 cursor.execute("""
@@ -279,7 +369,7 @@ def create_internal_connections():
                 """, (belongtoDevice,))
                 points = cursor.fetchall()
                 
-                print(f"设备 {device_name}({belongtoDevice}) 共有 {len(points)} 个唯一端子点")
+                print(f"\n总端子数: {len(points)} 个")
                 
                 # 简单列出所有端子点
                 print("端子点列表:")
@@ -287,50 +377,74 @@ def create_internal_connections():
                     print(f"  {j+1}. {point['ftid']} - {point['Terminal']}")
                 
                 # 应用规则生成连接
-                connections = apply_device_rules(points, device_name, device_type, rules)
-                print(f"\n根据规则生成了 {len(connections)} 个连接")
+                connections, used_points, rule_name = apply_device_rules(points, device_name, device_type, rules)
                 
-                # 将连接写入数据库
-                device_connections = 0
-                for idx, conn_info in enumerate(connections):
-                    try:
-                        global_conn_id += 1
-                        conn_id = f"in{global_conn_id}"
-                        
-                        # 获取连接属性
-                        props = conn_info['properties']
-                        
-                        print(f"  连接 {conn_info['sourceTerminal']} -> {conn_info['targetTerminal']} ({props.get('connType', 'unknown')})")
-                        
-                        # 插入数据库
-                        cursor.execute("""
-                            INSERT INTO v_csv_conn
-                            (connNo, source, target, color, isCable, isInPanel, connType)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """, (
-                            conn_id,
-                            conn_info['source'],
-                            conn_info['target'],
-                            None,
-                            1 if props.get('isCable', False) else 0,
-                            1 if props.get('isInPanel', True) else 0,
-                            props.get('connType', 'devInConn')
-                        ))
-                        device_connections += 1
-                        total_connections += 1
-                    except Exception as e:
-                        print(f"  创建连接失败: {str(e)}")
+                # 生成摘要信息
+                summary = []
+                summary.append(f"应用规则: {rule_name or '无匹配规则'}")
+                summary.append(f"生成连接: {len(connections)} 个")
+                
+                # 处理连接
+                print("\n" + "\n".join(summary))
+                if connections:
+                    print("\n连接详情:")
+                    device_connections = 0
+                    for idx, conn_info in enumerate(connections):
+                        try:
+                            global_conn_id += 1
+                            conn_id = f"in{global_conn_id}"
+                            props = conn_info['properties']
+                            desc = props.get('description', '')
+                            desc_str = f" ({desc})" if desc else ""
+                            print(f"  {strip_device_prefix(conn_info['sourceTerminal'])} -> "
+                                  f"{strip_device_prefix(conn_info['targetTerminal'])} "
+                                  f"({props.get('connType', 'unknown')}{desc_str})")
+                            
+                            cursor.execute("""
+                                INSERT INTO v_csv_conn
+                                (connNo, source, target, color, isCable, isInPanel, connType)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """, (
+                                conn_id,
+                                conn_info['source'],
+                                conn_info['target'],
+                                None,
+                                1 if props.get('isCable', False) else 0,
+                                1 if props.get('isInPanel', True) else 0,
+                                props.get('connType', 'devInConn')
+                            ))
+                            device_connections += 1
+                            total_connections += 1
+                        except Exception as e:
+                            print(f"  创建连接失败: {str(e)}")
+                
+                # 列出未使用的端子点
+                unused_points = get_unused_points(points, used_points)
+                if unused_points:
+                    print("\n未连接端子:")
+                    for point in unused_points:
+                        print(f"  * {point['ftid']} - {strip_device_prefix(point['Terminal'])}")
                 
                 # 提交当前设备的所有连接
                 conn.commit()
-                print(f"设备 {device_name}({belongtoDevice}) 共创建了 {device_connections} 个内部连接")
+                
+                # 显示处理结果摘要
+                print(f"\n{device_index} 处理完成:")
+                print(f"  * 总端子数: {len(points)}")
+                print(f"  * 已连接: {len(used_points)} 个端子")
+                print(f"  * 未连接: {len(unused_points)} 个端子")
+                print(f"  * 创建连接: {device_connections} 个")
                 
                 # 添加分隔线
-                print("="*50)
+                print("="*60)
                 
                 # 暂停等待用户确认
-                input(f"已处理完设备 {i+1}/{len(filtered_devices)}: {device_name}，按Enter键继续下一个设备...")
+                input(f"按Enter键继续处理下一个设备...")
 
+            # 显示总体处理结果
+            print("\n处理完成！")
+            print(f"总设备数: {len(filtered_devices)}")
+            print(f"总连接数: {total_connections}")
             logger.info(f"总共创建了 {total_connections} 个内部连接")
         return 0
 
