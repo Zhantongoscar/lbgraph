@@ -1,181 +1,164 @@
 {
-    "version": "1.0",
-    "description": "设备内部连接规则配置",
-    "allowedDeviceTypes": ["Q", "K", "D", "S"],
-    "defaultConnectionProperties": {
-      "voltage": 24.0,
-      "current": 0.1,
-      "resistance": 240.0,
-      "isCable": false,
-      "isInPanel": true,
-      "connType": "devInConn"
-    },
-    "pointTypeRules": [
-      {
-        "type": "adjacentSequence",
-        "description": "A类点位按序号相邻连接",
-        "pointTypes": ["A"],
-        "connectionProperties": {
-          "voltage": 24.0,
-          "current": 0.1,
-          "resistance": 240.0,
-          "isCable": false,
-          "isInPanel": true,
-          "connType": "devInConn"
+  "version": "1.0",
+  "description": "设备内部连接规则配置",
+  "allowedDeviceTypes": ["K", "Q", "S"],
+  "defaultConnectionProperties": {
+    "voltage": 24.0,
+    "current": 0.1,
+    "resistance": 240.0,
+    "isCable": false,
+    "isInPanel": true,
+    "connType": "devInConn"
+  },
+  "deviceRules": {
+    "K": {
+      "description": "继电器连接规则",
+      "subtypes": {
+        "K2": {
+          "pattern": "^K2",
+          "connections": [
+            {
+              "type": "coil",
+              "points": ["A1", "A2"],
+              "properties": {
+                "connType": "coil"
+              }
+            },
+            {
+              "type": "contacts",
+              "pairs": [
+                {
+                  "nc": ["42", "41"],
+                  "no": ["41", "44"]
+                },
+                {
+                  "nc": ["32", "31"],
+                  "no": ["31", "34"]
+                },
+                {
+                  "nc": ["22", "21"],
+                  "no": ["21", "24"]
+                },
+                {
+                  "nc": ["12", "11"],
+                  "no": ["11", "14"]
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true
+              }
+            }
+          ]
+        },
+        "default": {
+          "pattern": "^K",
+          "connections": [
+            {
+              "type": "coil",
+              "points": ["A11", "A12"],
+              "properties": {
+                "connType": "coil"
+              }
+            },
+            {
+              "type": "contacts",
+              "pattern_pairs": [
+                {
+                  "nc": {
+                    "pattern": ["(\\d+)1", "\\g<1>2"],
+                    "examples": ["11-12", "71-72"]
+                  }
+                },
+                {
+                  "nc": {
+                    "pattern": ["(\\d+)3", "\\g<1>4"],
+                    "examples": ["23-24"]
+                  }
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true,
+                "connType": "NC"
+              }
+            }
+          ]
         }
-      },
-      {
-        "type": "adjacentSequence",
-        "description": "D类点位按序号相邻连接",
-        "pointTypes": ["D"],
-        "connectionProperties": {
-          "voltage": 24.0,
-          "current": 0.1,
-          "resistance": 240.0,
-          "isCable": false,
-          "isInPanel": true,
-          "connType": "devInConn"
-        }
-      },
-      {
-        "type": "matchingNumbers",
-        "description": "L-T点位按相同序号直接连接",
-        "pointGroups": [
-          ["L", "T"]
-        ],
-        "connectionProperties": {
-          "voltage": 380.0,
-          "current": 16.0,
-          "resistance": 23.75,
-          "isCable": false,
-          "isInPanel": true,
-          "connType": "powerConn"
-        }
-      },
-      {
-        "type": "specificPair",
-        "description": "14-11常闭连接",
-        "pairs": [
-          {
-            "point1": "14",
-            "point2": "11",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NC"
-            }
-          }
-        ]
-      },
-      {
-        "type": "specificPair",
-        "description": "14-12常开连接",
-        "pairs": [
-          {
-            "point1": "14",
-            "point2": "12",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NO"
-            }
-          }
-        ]
-      }, 
-      {
-        "type": "buttonPostfix",
-        "description": "带.1和.2后缀的按钮常闭连接",
-        "postfixes": [".1", ".2"],
-        "connectionProperties": {
-          "voltage": 24.0,
-          "current": 0.1,
-          "resistance": 240.0,
-          "isCable": false,
-          "isInPanel": true,
-          "connType": "NC"
-        }
-      },    
-      {
-        "type": "specificPair",
-        "description": "按钮1-2常闭连接",
-        "pairs": [
-          {
-            "point1": "1",
-            "point2": "2",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NC"
-            }
-          }
-        ]
-      },   
-      {
-        "type": "buttonPostfix",
-        "description": "1.13-1.14, 2.13-2.14, 3.13-3.14, 4.13-4.14的常开连接",
-        "postfixPairs": [
-          {
-            "prefix": "1",
-            "postfix1": ".13",
-            "postfix2": ".14",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NO"
-            }
-          },
-          {
-            "prefix": "2",
-            "postfix1": ".13",
-            "postfix2": ".14",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NO"
-            }
-          },
-          {
-            "prefix": "3",
-            "postfix1": ".13",
-            "postfix2": ".14",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NO"
-            }
-          },
-          {
-            "prefix": "4",
-            "postfix1": ".13",
-            "postfix2": ".14",
-            "connectionProperties": {
-              "voltage": 24.0,
-              "current": 0.1,
-              "resistance": 240.0,
-              "isCable": false,
-              "isInPanel": true,
-              "connType": "NO"
-            }
-          }
-        ]
       }
-    ]
+    },
+    "Q": {
+      "description": "Q类设备规则",
+      "connections": [
+        {
+          "type": "coil",
+          "points": ["D1", "D2"],
+          "properties": {
+            "connType": "coil"
+          }
+        },
+        {
+          "type": "contacts",
+          "pairs": [
+            {
+              "no": ["L1", "T1"]
+            },
+            {
+              "no": ["L2", "T2"]
+            },
+            {
+              "no": ["L3", "T3"]
+            }
+          ],
+          "properties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true,
+            "connType": "NO"
+          }
+        }
+      ]
+    },
+    "S": {
+      "description": "S类设备规则",
+      "connections": [
+        {
+          "type": "contacts",
+          "pairs": [
+            {
+              "snc": ["1", "2"],
+              "sno": ["3", "4"]
+            }
+          ],
+          "variants": {
+            "1-4_only": [
+              {
+                "snc": ["1", "4"]
+              }
+            ],
+            "with_postfix": [
+              {
+                "snc": [".1", ".2"]
+              }
+            ]
+          },
+          "properties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true
+          }
+        }
+      ]
+    }
   }
+}
