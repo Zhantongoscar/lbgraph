@@ -95,8 +95,25 @@ def find_pattern_matching_points(points, pattern):
     logger.info(f"尝试匹配模式 {pattern1} -> {pattern2}")
     logger.info(f"可用端子点: {list(terminals_dict.keys())}")
     
+    # 定义常见的端子对模式
+    simple_pairs = {
+        '1': '2', '3': '4', '5': '6', '13': '14', '23': '24', 
+        '33': '34', '43': '44', '53': '54', '21': '22',
+        '3.13': '3.14'
+    }
+    
     # 对每个端子号（不带前缀）尝试匹配
     for terminal, point in terminals_dict.items():
+        # 先处理简单的端子对匹配
+        if terminal in simple_pairs and simple_pairs[terminal] in terminals_dict:
+            target_terminal = simple_pairs[terminal]
+            point2 = terminals_dict[target_terminal]
+            if point['ftid'] != point2['ftid']:
+                logger.info(f"找到匹配的端子对: {terminal}-{target_terminal}")
+                matching_pairs.append((point, point2))
+                continue  # 如果找到简单匹配，跳过正则匹配
+        
+        # 然后处理正则表达式匹配
         match = re.match(pattern1, terminal)
         if match:
             # 使用反向引用替换，需要保存捕获的组
@@ -109,6 +126,8 @@ def find_pattern_matching_points(points, pattern):
                     target_terminal = f"{base}2"
                 elif pattern2 == "\\14":  # 对于 *1->*4 模式
                     target_terminal = f"{base}4"
+                elif pattern2.isdigit():  # 对于简单数字替换模式，如 1->2, 3->4
+                    target_terminal = pattern2
                 else:
                     target_terminal = re.sub(pattern1, pattern2, terminal)
 
@@ -118,7 +137,7 @@ def find_pattern_matching_points(points, pattern):
                     if point1 and point2 and point1['ftid'] != point2['ftid']:
                         logger.info(f"找到匹配的端子对: {terminal}-{target_terminal}")
                         matching_pairs.append((point1, point2))
-    
+
     return matching_pairs
 
 def detect_device_subtype(points, device_rules):
@@ -228,7 +247,7 @@ def apply_device_rules(points, device_name, device_type, rules):
     connections = []
     used_points = set()  # 用于跟踪已使用的端子点
     rule_name = None  # 用于存储使用的规则名称
-    
+
     if not rules or 'deviceRules' not in rules or device_type not in rules['deviceRules']:
         return connections, used_points, rule_name
 
@@ -395,7 +414,7 @@ def create_internal_connections():
                             conn_id = f"in{global_conn_id}"
                             props = conn_info['properties']
                             desc = props.get('description', '')
-                            desc_str = f" ({desc})" if desc else ""
+                            desc_str = f" ({desc})" if desc else "" 
                             print(f"  {strip_device_prefix(conn_info['sourceTerminal'])} -> "
                                   f"{strip_device_prefix(conn_info['targetTerminal'])} "
                                   f"({props.get('connType', 'unknown')}{desc_str})")
@@ -403,7 +422,7 @@ def create_internal_connections():
                             cursor.execute("""
                                 INSERT INTO v_csv_conn
                                 (connNo, source, target, color, isCable, isInPanel, connType)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             """, (
                                 conn_id,
                                 conn_info['source'],

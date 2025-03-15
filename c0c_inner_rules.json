@@ -113,6 +113,26 @@
               "type": "contacts",
               "pattern_pairs": [
                 {
+                  "no": {
+                    "pattern": ["1$", "2"]
+                  }
+                },
+                {
+                  "no": {
+                    "pattern": ["3$", "4"]
+                  }
+                },
+                {
+                  "no": {
+                    "pattern": ["5$", "6"]
+                  }
+                },
+                {
+                  "no": {
+                    "pattern": ["13$", "14"]
+                  }
+                },
+                {
                   "combined": {
                     "patterns": [
                       {
@@ -165,6 +185,48 @@
             },
             {
               "no": ["L3", "T3"]
+            },
+            {
+              "no": ["3.13", "3.14"]
+            },
+            {
+              "no": ["13", "14"]
+            },
+            {
+              "no": ["1", "2"]
+            },
+            {
+              "no": ["3", "4"]
+            },
+            {
+              "no": ["5", "6"]
+            }
+          ],
+          "pattern_pairs": [
+            {
+              "no": {
+                "pattern": ["^([1-9])\\.13$", "\\1.14"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["^(\\d+)3$", "\\14"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["1$", "2"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["3$", "4"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["5$", "6"]
+              }
             }
           ],
           "properties": {
@@ -182,18 +244,18 @@
       "description": "S类设备规则",
       "friendly_name": "S类设备标准规则",
       "subtypes": {
-        "SBUTTON": {
-          "friendly_name": "S类按钮触点规则",
+        "SBOTH": {
+          "friendly_name": "S类按钮和LED规则",
           "priority": 1,
           "detection": {
-            "terminals": [".3", ".4"]
+            "terminals": [".3", ".4", "X1", "X2"]
           },
           "connections": [
             {
               "type": "contacts",
               "pairs": [
                 {
-                  "button": [".3", ".4"]
+                  "no": [".3", ".4"]
                 }
               ],
               "properties": {
@@ -204,21 +266,12 @@
                 "isInPanel": true,
                 "connType": "button"
               }
-            }
-          ]
-        },
-        "SLED": {
-          "friendly_name": "S类LED规则",
-          "priority": 1,
-          "detection": {
-            "terminals": ["X1", "X2"]
-          },
-          "connections": [
+            },
             {
               "type": "contacts",
               "pairs": [
                 {
-                  "led": ["X1", "X2"]
+                  "no": ["X1", "X2"]
                 }
               ],
               "properties": {
@@ -268,6 +321,19 @@
                 },
                 {
                   "no": ["3", "4"]
+                },
+                {
+                  "no": ["11", "12"]
+                },
+                {
+                  "no": [".3", ".4"]
+                }
+              ],
+              "pattern_pairs": [
+                {
+                  "no": {
+                    "pattern": ["^([1-9])\\.13$", "\\1.14"]
+                  }
                 }
               ],
               "properties": {
