@@ -100,6 +100,7 @@ def create_and_fill_tables():
                     current DOUBLE DEFAULT 0,
                     resistance DOUBLE DEFAULT 0,
                     PRIMARY KEY (id),
+                    UNIQUE KEY uk_connNo (connNo),
                     INDEX idx_source (source),
                     INDEX idx_target (target)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -236,7 +237,7 @@ def create_and_fill_tables():
             # 6. 插入连接数据
             logger.info("导入连接数据...")
             cursor.execute("""
-                INSERT INTO v_csv_conn
+                INSERT IGNORE INTO v_csv_conn
                 (connNo, source, target, color, isInPanel, connType)
                 SELECT DISTINCT
                     cnumber as connNo,

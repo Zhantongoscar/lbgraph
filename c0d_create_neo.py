@@ -78,6 +78,8 @@ def create_terminal_nodes(connection, driver):
             print(f"Created {len(terminals)} V_terminal nodes")
     except Exception as e:
         print(f"Error creating terminal nodes: {e}")
+
+# 函数功能：relationship between V_terminal and V_device nodes
 def create_terminal_device_relations(connection, driver):
     """Creates belongto relationships between V_terminal and V_device nodes."""
     try:
@@ -112,6 +114,7 @@ def create_terminal_device_relations(connection, driver):
     except Exception as e:
         print(f"Error creating terminal-device relationships: {e}")
 
+# 函数功能：读取v_csv_conn数据，创建external connections
 def create_connections(connection, driver):
     """Reads data from v_csv_conn and creates relationships between nodes in Neo4j."""
     try:
@@ -124,19 +127,34 @@ def create_connections(connection, driver):
                     properties = {k: conn[k] for k in conn if conn[k] is not None}
                     source = conn['source']
                     target = conn['target']
+                    connNo = properties.get('connNo')
+                    if not connNo:
+                        continue
+
+                    # 使用MERGE和connNo确保连接唯一性
                     query = (
                         "MATCH (a:V_terminal {ftid: $source}), (b:V_terminal {ftid: $target}) "
-                        "CREATE (a)-[:conn $properties]->(b)"
+                        "MERGE (a)-[r:conn {connNo: $connNo}]->(b) "
+                        "SET r = $properties"
                     )
-                    session.run(query, source=source, target=target, properties=properties)
+                    session.run(query, source=source, target=target, connNo=connNo, properties=properties)
 
-                    # Create bidirectional relationship
+                    # 创建双向关系
                     query_reverse = (
                         "MATCH (a:V_terminal {ftid: $target}), (b:V_terminal {ftid: $source}) "
-                        "CREATE (a)-[:conn $properties]->(b)"
+                        "MERGE (a)-[r:conn {connNo: $connNo}]->(b) "
+                        "SET r = $properties"
                     )
-                    session.run(query_reverse, source=target, target=source, properties=properties)
-            print(f"Created {len(connections)} connections")
+                    session.run(query_reverse, source=target, target=source, connNo=connNo, properties=properties)
+            
+            print(f"\nCreated {len(connections)} connections")
+            print("\n使用以下CQL查询在Neo4j浏览器中查看结果:")
+            print("// 查看所有连接及其connNo")
+            print("MATCH (a:V_terminal)-[r:conn]->(b:V_terminal)")
+            print("RETURN a.ftid, b.ftid, r.connNo, r.connType LIMIT 25;")
+            print("\n// 检查是否有重复的connNo")
+            print("MATCH ()-[r:conn]->() WITH r.connNo as connNo, count(*) as cnt")
+            print("WHERE cnt > 2 RETURN connNo, cnt;")
     except Exception as e:
         print(f"Error creating connections: {e}")
 

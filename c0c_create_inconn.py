@@ -324,6 +324,32 @@ def get_unused_points(all_points, used_point_ids):
     """获取未使用的端子点"""
     return [point for point in all_points if point['ftid'] not in used_point_ids]
 
+def create_innerconn_table(cursor):
+    """创建v_csv_innerconn表"""
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS v_csv_innerconn (
+                id INT NOT NULL AUTO_INCREMENT,
+                connNo VARCHAR(255) NOT NULL,
+                source VARCHAR(255) NOT NULL,
+                target VARCHAR(255) NOT NULL,
+                color VARCHAR(50),
+                isCable TINYINT(1) DEFAULT 0,
+                isInPanel TINYINT(1) DEFAULT 0,
+                connType VARCHAR(50),
+                voltage DOUBLE DEFAULT 0,
+                current DOUBLE DEFAULT 0,
+                resistance DOUBLE DEFAULT 0,
+                PRIMARY KEY (id),
+                INDEX idx_source (source),
+                INDEX idx_target (target)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """)
+        logger.info("v_csv_innerconn表创建成功")
+    except Exception as e:
+        logger.error(f"创建v_csv_innerconn表失败: {str(e)}")
+        raise
+
 def create_internal_connections():
     """创建设备内部连接的主函数"""
     conn = None
@@ -331,6 +357,13 @@ def create_internal_connections():
         # 连接数据库
         conn = get_db_connection()
         logger.info("已连接到数据库")
+
+        # 创建v_csv_innerconn表
+        with conn.cursor() as cursor:
+            create_innerconn_table(cursor)
+            # 清空已有数据
+            cursor.execute("TRUNCATE TABLE v_csv_innerconn")
+            logger.info("清空v_csv_innerconn表中的现有数据")
 
         # 加载连接规则
         rules = load_device_rules()
@@ -420,9 +453,9 @@ def create_internal_connections():
                                   f"({props.get('connType', 'unknown')}{desc_str})")
                             
                             cursor.execute("""
-                                INSERT INTO v_csv_conn
-                                (connNo, source, target, color, isCable, isInPanel, connType)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                INSERT INTO v_csv_innerconn
+                                (connNo, source, target, color, isCable, isInPanel, connType, voltage, current, resistance)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """, (
                                 conn_id,
                                 conn_info['source'],
@@ -430,7 +463,10 @@ def create_internal_connections():
                                 None,
                                 1 if props.get('isCable', False) else 0,
                                 1 if props.get('isInPanel', True) else 0,
-                                props.get('connType', 'devInConn')
+                                props.get('connType', 'devInConn'),
+                                props.get('voltage', 0.0),
+                                props.get('current', 0.0),
+                                props.get('resistance', 0.0)
                             ))
                             device_connections += 1
                             total_connections += 1
