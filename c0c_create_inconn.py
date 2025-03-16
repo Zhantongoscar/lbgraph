@@ -458,7 +458,7 @@ def create_internal_connections():
                 print("="*60)
                 
                 # 暂停等待用户确认
-                input(f"按Enter键继续处理下一个设备...")
+                #input(f"按Enter键继续处理下一个设备...")
 
             # 显示总体处理结果
             print("\n处理完成！")
