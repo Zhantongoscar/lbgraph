@@ -9,7 +9,7 @@ from datetime import datetime
 import re
 import os
 from typing import Dict, List, Set, Tuple
-from c0c_device_rules import create_ks_rule
+from c0c_device_rules import create_device_rule
 
 # 配置日志输出到文件和控制台
 log_file = f'create_inconn_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
@@ -96,14 +96,31 @@ def process_device_points(cursor, device: Dict, points: List[Dict]) -> None:
     device_type = get_device_type(device['Device'])
     print(f"\n设备类型: {device_type}")
     
-    # 检查是否为KS设备
-    if device_type == 'K' and {'A11', 'A12'}.issubset(terminal_set):
-        print("设备特征: KS安全继电器")
-        print("识别依据:")
-        print("  * 设备名称以K开头")
-        print("  * 包含特征端子对: A11-A12")
-    else:
-        print("设备特征: 标准设备")
+    # 获取设备规则
+    rule = create_device_rule(device['Device'])
+    
+    if rule:
+        # 如果是K类设备，检测特征
+        if device_type == 'K':
+            device_feature = rule.detect_features(device['Device'], terminal_set)
+            print(f"设备特征: {device_feature}")
+            
+            # 检查安全继电器特征端子对
+            has_s11_s12 = {'S11', 'S12'}.issubset(terminal_set)
+            has_s21_s22 = {'S21', 'S22'}.issubset(terminal_set)
+            has_a11_a12 = {'A11', 'A12'}.issubset(terminal_set)
+            
+            if device_feature == "KS安全继电器":
+                print("识别依据:")
+                print("  * 设备名称以K开头")
+                if has_a11_a12:
+                    print("  * 包含主线圈端子对: A11-A12")
+                if has_s11_s12:
+                    print("  * 包含安全端子对: S11-S12")
+                if has_s21_s22:
+                    print("  * 包含安全端子对: S21-S22")
+        else:
+            print("设备特征: 标准设备")
 
 def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int) -> Tuple[int, Set[str]]:
     """处理单个设备"""
@@ -127,8 +144,9 @@ def process_device(cursor, device: Dict, index: int, total: int, global_conn_id:
     device_type = get_device_type(device_name)
     used_points = set()
     
-    if device_type == 'K':
-        rule = create_ks_rule()
+    # 获取设备规则
+    rule = create_device_rule(device_name)
+    if rule:
         terminal_set = {strip_device_prefix(p['Terminal']) for p in points}
         if rule.match(device_name, terminal_set):
             print("\n开始创建连接...")
@@ -168,7 +186,7 @@ def process_device(cursor, device: Dict, index: int, total: int, global_conn_id:
     if unused_points:
         print("\n未创建连接的端子:")
         for point in unused_points:
-            print(f"  * {point['Terminal']}")
+            print(f"  * {strip_device_prefix(point['Terminal'])}")
     else:
         print("\n所有端子都已创建连接")
 
