@@ -40,32 +40,46 @@ class KSRule(DeviceRule):
             "安全继电器的识别和连接规则",
             priority=1
         )
+        # 定义线圈端子对
+        self.coil_terminals = {
+            'A1', 'A2',  # 标准线圈
+            'A11', 'A12',  # 安全继电器主线圈
+            'S11', 'S12',  # 安全线圈1
+            'S21', 'S22'   # 安全线圈2
+        }
 
     def match(self, device_name: str, terminals: Set[str]) -> bool:
         """
         判断设备是否为KS类型
-        规则：设备名称以K开头，且端子集合中包含A11和A12
+        规则：设备名称以K开头
         """
-        return (device_name.startswith('K') and 
-                'A11' in terminals and 'A12' in terminals)
+        return device_name.startswith('K')
 
     def get_connections(self, points: List[Dict]) -> List[Dict]:
         """生成所有连接"""
         connections = []
-        # R001-1: 主线圈连接
-        coil_connections = self._create_coil_connections(points)
-        if coil_connections:
-            connections.extend(coil_connections)
+        
+        # 检查是否为安全继电器（有A11-A12）
+        is_safety_relay = False
+        terminal_set = {p['Terminal'].split(':')[-1] for p in points}
+        if 'A11' in terminal_set and 'A12' in terminal_set:
+            is_safety_relay = True
+        
+        # 如果是安全继电器，处理安全继电器特有的连接
+        if is_safety_relay:
+            safety_connections = self._create_safety_connections(points)
+            if safety_connections:
+                connections.extend(safety_connections)
+        
+        # 处理标准连接（对所有K类设备都适用）
+        standard_connections = self._create_standard_connections(points)
+        if standard_connections:
+            connections.extend(standard_connections)
 
-        # R001-2: NC触点连接
-        nc_connections = self._create_nc_contact_connections(points)
-        if nc_connections:
-            connections.extend(nc_connections)
-
-        # R001-3: NO触点连接
-        no_connections = self._create_no_contact_connections(points)
-        if no_connections:
-            connections.extend(no_connections)
+        # 处理触点连接
+        contact_connections = self._create_contact_connections(points)
+        if contact_connections:
+            connections.extend(contact_connections)
 
         return connections
 
@@ -91,17 +105,16 @@ class KSRule(DeviceRule):
             'properties': props
         }
 
-    def _create_coil_connections(self, points: List[Dict]) -> List[Dict]:
-        """规则R001-1: 线圈连接处理"""
+    def _create_safety_connections(self, points: List[Dict]) -> List[Dict]:
+        """创建安全继电器特有的连接"""
         connections = []
-        coil_pairs = [
-            ('A11', 'A12'),  # 主线圈
-            ('A1', 'A2'),    # 辅助线圈
-            ('S11', 'S12'),  # S11-S12
-            ('S21', 'S22')   # S21-S22
+        safety_coil_pairs = [
+            ('A11', 'A12'),   # 主线圈
+            ('S11', 'S12'),   # S11-S12
+            ('S21', 'S22')    # S21-S22
         ]
         
-        for term1, term2 in coil_pairs:
+        for term1, term2 in safety_coil_pairs:
             point1 = self._find_terminal_points(points, term1)
             point2 = self._find_terminal_points(points, term2)
             if point1 and point2:
@@ -111,18 +124,58 @@ class KSRule(DeviceRule):
                 
         return connections
 
-    def _create_nc_contact_connections(self, points: List[Dict]) -> List[Dict]:
-        """规则R001-2: NC触点连接 (*1-*2规则)"""
+    def _create_standard_connections(self, points: List[Dict]) -> List[Dict]:
+        """创建标准K类设备的连接"""
+        connections = []
+        
+        # A1-A2 coil连接
+        point_a1 = self._find_terminal_points(points, 'A1')
+        point_a2 = self._find_terminal_points(points, 'A2')
+        if point_a1 and point_a2:
+            connections.append(
+                self._create_connection(point_a1, point_a2, "coil")
+            )
+        
+        # A-0 NC连接
+        point_a = self._find_terminal_points(points, 'A')
+        point_0 = self._find_terminal_points(points, '0')
+        if point_a and point_0:
+            connections.append(
+                self._create_connection(point_a, point_0, "NC")
+            )
+        
+        # A-+ NO连接
+        point_plus = self._find_terminal_points(points, '+')
+        if point_a and point_plus:
+            connections.append(
+                self._create_connection(point_a, point_plus, "NO")
+            )
+        
+        return connections
+
+    def _is_coil_terminal(self, terminal: str) -> bool:
+        """判断是否为线圈端子"""
+        return terminal in self.coil_terminals
+
+    def _create_contact_connections(self, points: List[Dict]) -> List[Dict]:
+        """创建触点连接"""
         connections = []
         terminals_dict = {}
         
         # 建立端子号字典
         for point in points:
-            terminals_dict[point['Terminal']] = point
+            terminal = point['Terminal']
+            if ':' in terminal:
+                terminal = terminal.split(':')[-1]
+            terminals_dict[terminal] = point
 
         # 处理NC触点对（*1-*2模式）
         for terminal in terminals_dict:
             if terminal.endswith('1'):
+                # 跳过线圈端子
+                if self._is_coil_terminal(terminal):
+                    continue
+                    
                 base = terminal[:-1]
                 other = base + '2'
                 if other in terminals_dict:
@@ -133,18 +186,7 @@ class KSRule(DeviceRule):
                             "NC"
                         )
                     )
-
-        return connections
-
-    def _create_no_contact_connections(self, points: List[Dict]) -> List[Dict]:
-        """规则R001-3: NO触点连接 (*3-*4规则)"""
-        connections = []
-        terminals_dict = {}
-        
-        # 建立端子号字典
-        for point in points:
-            terminals_dict[point['Terminal']] = point
-
+                    
         # 处理NO触点对（*3-*4模式）
         for terminal in terminals_dict:
             if terminal.endswith('3'):

@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 import re
 import os
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 from c0c_device_rules import create_ks_rule
 
 # 配置日志输出到文件和控制台
@@ -48,9 +48,9 @@ def get_device_type(device_name):
         return device_name[0].upper()
     return None
 
-def get_unused_points(all_points, used_point_ids):
+def get_unused_points(points: List[Dict], used_point_ids: Set[str]) -> List[Dict]:
     """获取未使用的端子点"""
-    return [point for point in all_points if point['ftid'] not in used_point_ids]
+    return [point for point in points if point['ftid'] not in used_point_ids]
 
 def create_innerconn_table(cursor):
     """创建v_csv_innerconn表"""
@@ -78,13 +78,39 @@ def create_innerconn_table(cursor):
         logger.error(f"创建v_csv_innerconn表失败: {str(e)}")
         raise
 
-def process_device(cursor, device: Dict, device_rules: Dict, global_conn_id: int) -> int:
-    """处理单个设备"""
-    belongtoDevice = device['belongtoDevice']
-    device_name = device['Device']
-    device_type = get_device_type(device_name)
+def print_device_header(index: int, total: int, device: Dict):
+    """打印设备处理头部信息"""
+    print("\n" + "="*60)
+    print(f"正在处理设备 {index}/{total}")
+    print("="*60)
+    print(f"设备名称: {device['Device']}")
+    print(f"位置: {device['Location']}")
+    print(f"设备ID: {device['belongtoDevice']}")
+
+def process_device_points(cursor, device: Dict, points: List[Dict]) -> None:
+    """处理并显示设备端子信息"""
+    print("\n可用端子点:")
+    terminal_set = {strip_device_prefix(p['Terminal']) for p in points}
+    print(f"端子列表: {sorted(list(terminal_set))}")
     
-    # 获取当前设备的所有端子点
+    device_type = get_device_type(device['Device'])
+    print(f"\n设备类型: {device_type}")
+    
+    # 检查是否为KS设备
+    if device_type == 'K' and {'A11', 'A12'}.issubset(terminal_set):
+        print("设备特征: KS安全继电器")
+        print("识别依据:")
+        print("  * 设备名称以K开头")
+        print("  * 包含特征端子对: A11-A12")
+    else:
+        print("设备特征: 标准设备")
+
+def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int) -> Tuple[int, Set[str]]:
+    """处理单个设备"""
+    print_device_header(index, total, device)
+    
+    # 获取设备端子点
+    belongtoDevice = device['belongtoDevice']
     cursor.execute("""
         SELECT DISTINCT ftid, Terminal
         FROM v_csv_devpoint
@@ -92,17 +118,22 @@ def process_device(cursor, device: Dict, device_rules: Dict, global_conn_id: int
         ORDER BY Terminal
     """, (belongtoDevice,))
     points = cursor.fetchall()
-
-    # 设备规则匹配
-    rule = None
+    
+    # 显示端子信息
+    process_device_points(cursor, device, points)
+    
+    # 创建连接
+    device_name = device['Device']
+    device_type = get_device_type(device_name)
+    used_points = set()
+    
     if device_type == 'K':
         rule = create_ks_rule()
         terminal_set = {strip_device_prefix(p['Terminal']) for p in points}
         if rule.match(device_name, terminal_set):
+            print("\n开始创建连接...")
             connections = rule.get_connections(points)
-            logger.info(f"为设备 {device_name} 应用KS规则")
             
-            # 创建连接
             for conn in connections:
                 global_conn_id += 1
                 conn_id = f"in{global_conn_id}"
@@ -125,11 +156,32 @@ def process_device(cursor, device: Dict, device_rules: Dict, global_conn_id: int
                     props.get('resistance', 0.0)
                 ))
                 
-                logger.info(f"创建连接: {strip_device_prefix(conn['sourceTerminal'])} -> "
-                           f"{strip_device_prefix(conn['targetTerminal'])} "
-                           f"({props.get('connType', 'unknown')})")
+                print(f"创建连接: {strip_device_prefix(conn['sourceTerminal'])} -> "
+                      f"{strip_device_prefix(conn['targetTerminal'])} "
+                      f"({props.get('connType', 'unknown')})")
+                      
+                used_points.add(conn['source'])
+                used_points.add(conn['target'])
 
-    return global_conn_id
+    # 显示未使用的端子
+    unused_points = get_unused_points(points, used_points)
+    if unused_points:
+        print("\n未创建连接的端子:")
+        for point in unused_points:
+            print(f"  * {point['Terminal']}")
+    else:
+        print("\n所有端子都已创建连接")
+
+    # 显示处理结果摘要
+    print(f"\n处理结果:")
+    print(f"  * 总端子数: {len(points)}")
+    print(f"  * 已连接端子数: {len(used_points)}")
+    print(f"  * 未连接端子数: {len(unused_points)}")
+    print(f"  * 创建连接数: {len(used_points) // 2}")  # 每个连接涉及两个端子
+
+    # 等待用户确认
+    input("\n按Enter键继续处理下一个设备...")
+    return global_conn_id, used_points
 
 def create_internal_connections():
     """创建设备内部连接的主函数"""
@@ -162,19 +214,38 @@ def create_internal_connections():
                 device for device in devices
                 if device['Device'] and get_device_type(device['Device']) in allowed_device_types
             ]
-            
-            logger.info(f"筛选出 {len(filtered_devices)} 个符合条件的设备")
+            total_devices = len(filtered_devices)
+            logger.info(f"筛选出 {total_devices} 个符合条件的设备")
             
             # 处理每个设备
             global_conn_id = 0
-            for device in filtered_devices:
+            total_used_points = 0
+            total_unused_points = 0
+            
+            for i, device in enumerate(filtered_devices, 1):
                 try:
-                    global_conn_id = process_device(cursor, device, None, global_conn_id)
+                    global_conn_id, used_points = process_device(cursor, device, i, total_devices, global_conn_id)
+                    total_used_points += len(used_points)
+                    # 获取未使用的端子数
+                    cursor.execute("""
+                        SELECT COUNT(*) as count
+                        FROM v_csv_devpoint
+                        WHERE belongtoDevice = %s
+                    """, (device['belongtoDevice'],))
+                    result = cursor.fetchone()
+                    total_points = result['count']
+                    total_unused_points += total_points - len(used_points)
                     conn.commit()
                 except Exception as e:
                     logger.error(f"处理设备 {device['Device']} 时出错: {str(e)}")
                     continue
 
+            print("\n处理完成!")
+            print(f"总设备数: {total_devices}")
+            print(f"总连接数: {global_conn_id}")
+            print(f"总端子数: {total_used_points + total_unused_points}")
+            print(f"已连接端子数: {total_used_points}")
+            print(f"未连接端子数: {total_unused_points}")
             logger.info(f"总共创建了 {global_conn_id} 个内部连接")
         return 0
 
