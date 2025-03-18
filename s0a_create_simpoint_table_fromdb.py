@@ -17,6 +17,7 @@ def create_simpoint_table(connection):
               `id` int(11) NOT NULL AUTO_INCREMENT,
               `raw` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
               `ftid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+              `target_ftid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
               `belongtoDevice` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
               `Function` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
               `Location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
@@ -32,6 +33,7 @@ def create_simpoint_table(connection):
               `isSensePoint` tinyint(1) NULL DEFAULT 0,
               PRIMARY KEY (`id`) USING BTREE,
               INDEX `idx_ftid`(`ftid`) USING BTREE,
+              INDEX `idx_target_ftid`(`target_ftid`) USING BTREE,
               INDEX `idx_location_device`(`Location`, `Device`) USING BTREE
             ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
             """
@@ -74,14 +76,15 @@ def insert_simpoints(connection):
                     
                     insert_sql = """
                     INSERT INTO v_simpoint 
-                    (raw, ftid, belongtoDevice, Function, Location, Device, Terminal, Type,
+                    (raw, ftid, target_ftid, belongtoDevice, Function, Location, Device, Terminal, Type,
                     voltage, current, resistance, isInPanel, isSocket, isSetPoint, isSensePoint)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """
                     
                     cursor.execute(insert_sql, (
                         raw,
                         ftid,
+                        None,  # target_ftid 默认为NULL
                         belongto_device,
                         device['project_name'],  # Function 使用 project_name
                         'Sim',  # Location 固定为 Sim
