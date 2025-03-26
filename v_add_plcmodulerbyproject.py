@@ -2,9 +2,9 @@ import pymysql
 from config import MYSQL_CONFIG
 from device_mapping import get_plc_device
 
-def create_plc_type_table():
+def create_plc_type_table(conn):
+    """创建并初始化PLC类型表"""
     try:
-        conn = pymysql.connect(**MYSQL_CONFIG)
         cursor = conn.cursor()
         
         # 创建表(添加IF NOT EXISTS)
@@ -45,9 +45,9 @@ def create_plc_type_table():
         
     except pymysql.Error as err:
         print(f"数据库错误: {err}")
-    finally:
-        if 'conn' in locals():
-            conn.close()
+    except pymysql.Error as err:
+        print(f"数据库错误: {err}")
+        raise
 
 def force_update_device_types(conn):
     """强制更新所有匹配的设备类型"""
@@ -215,9 +215,12 @@ if __name__ == "__main__":
         conn = pymysql.connect(**MYSQL_CONFIG)
         
         # 可以单独注释不需要执行的方法
-        # create_plc_type_table(conn)  # 方法1: 创建PLC类型表并插入数据
-        # force_update_device_types(conn)  # 方法2: 更新设备类型
+        create_plc_type_table(conn)  # 方法1: 创建PLC类型表并插入数据
+        pause = input("1 方法1: 创建PLC类型表并插入数据 按Enter键继续...")
+        force_update_device_types(conn)  # 方法2: 更新设备类型
+        pause = input("2 方法2: 更新设备类型 按Enter键继续...")
         force_update_device_point(conn)  # 方法3: 更新设备点位类型
+        pause = input("3 方法3: 更新设备点位类型按Enter键继续...")
         
         conn.commit()
         print("所有操作已完成")
