@@ -36,6 +36,10 @@ def create_plc_type_table():
         print("\n开始强制更新设备类型...")
         force_update_device_types(conn)
         
+        # 强制更新设备点位类型
+        print("\n开始强制更新设备点位类型...")
+        force_update_device_point(conn)
+        
         conn.commit()
         print("所有更新已提交")
         
@@ -87,6 +91,139 @@ def force_update_device_types(conn):
     except pymysql.Error as err:
         print(f"更新设备类型时出错: {err}")
         raise
+def force_update_device_point(conn):
+    """根据Function,Device和Terminal更新v_csv_devpoint的Type字段"""
+    cursor = conn.cursor()
+    try:
+        # 先查看Device以A开头的记录(不限制Type值)
+        cursor.execute("""
+            SELECT id, Function, Device, Terminal, Type
+            FROM v_csv_devpoint
+            WHERE Device LIKE 'A%'
+            AND Function NOT IN ('A01', 'A02')
+            LIMIT 100
+        """)
+        plc_points = cursor.fetchall()
+        
+        print("PLC设备前100条记录(Device以A开头):")
+        print("ID | Function | Device | Terminal | Type")
+        print("-" * 50)
+        for row in plc_points:
+            print(f"{row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]}")
+            
+        # 获取需要更新的记录(只处理PLC设备且Type为NULL或空)
+        cursor.execute("""
+            SELECT id, Function, Device, Terminal
+            FROM v_csv_devpoint
+            WHERE Device LIKE 'A%'
+        """)
+        points = cursor.fetchall()
+        print(f"\n找到 {len(points)} 条需要更新的记录")
+        
+        updated_count = 0
+        count = 1  # 初始化计数器
+        
+        for point_id, func, device, terminal in points:
+            count += 1  # 递增计数器
+            try:
+                print(f"\n[处理记录 #{count}]")
+                print(f"1. 当前记录信息:")
+                print(f"   - ID: {point_id}")
+                print(f"   - Function: {func}")
+                print(f"   - Device: {device}")
+                print(f"   - Terminal: {terminal}")
+                
+                # 1. 检查v_plc_typeitem表中是否有匹配的类型
+                print(f"\n2. 查询 v_plc_typeitem 表:")
+                print(f"   - 条件: Function='{func}' AND Device='{device}'")
+                cursor.execute("""
+                    SELECT Type FROM v_plc_typeitem
+                    WHERE Function = %s AND Device = %s
+                    LIMIT 1
+                """, (func, device))
+                
+                type_result = cursor.fetchone()
+                if not type_result:
+                    print(f"   - 结果: 未找到匹配记录")
+                    continue
+                
+                plc_type = type_result[0]
+                print(f"   - 结果: 找到Type='{plc_type}'")
+                
+                print(f"\n3. 查询 device_types 表:")
+                print(f"   - 条件: type_name='{plc_type}'")
+                cursor.execute("""
+                    SELECT id FROM device_types
+                    WHERE type_name = %s
+                    LIMIT 1
+                """, (plc_type,))
+                
+                type_id_result = cursor.fetchone()
+                if not type_id_result:
+                    print(f"   - 结果: 未找到匹配记录")
+                    continue
+                
+                type_id = type_id_result[0]
+                print(f"   - 结果: 找到id='{type_id}'")
+                
+                print(f"\n4. 转换Terminal值:")
+                print(f"   - 输入: {terminal}")
+                try:
+                    point_index = int(terminal.replace('T', ''))
+                    print(f"   - 结果: point_index={point_index}")
+                except ValueError as e:
+                    print(f"   - 错误: 转换失败 - {e}")
+                    continue
+                
+                print(f"\n5. 查询 device_type_points 表:")
+                print(f"   - 条件: device_type_id='{type_id}', point_index='{point_index}'")
+                cursor.execute("""
+                    SELECT point_type FROM device_type_points
+                    WHERE device_type_id = %s AND point_index = %s
+                    LIMIT 1
+                """, (type_id, point_index))
+                
+                point_type_result = cursor.fetchone()
+                if point_type_result:
+                    print(f"   - 结果: 找到point_type='{point_type_result[0]}'")
+                    
+                    print(f"\n6. 更新记录:")
+                    print(f"   - ID: {point_id}")
+                    print(f"   - 新Type值: {point_type_result[0]}")
+                    cursor.execute("""
+                        UPDATE v_csv_devpoint
+                        SET Type = %s
+                        WHERE id = %s
+                    """, (point_type_result[0], point_id))
+                    updated_count += 1
+                    print(f"   - 状态: 更新成功")
+                else:
+                    print(f"   - 结果: 未找到匹配记录")
+                    
+            except (ValueError, pymysql.Error) as e:
+                print(f"处理记录{point_id}时出错: {e}")
+                continue
+        
+        print(f"成功更新 {updated_count} 条记录的Type字段")
+        
+    except pymysql.Error as err:
+        print(f"更新设备点位时出错: {err}")
+        raise
 
 if __name__ == "__main__":
-    create_plc_type_table()
+    try:
+        conn = pymysql.connect(**MYSQL_CONFIG)
+        
+        # 可以单独注释不需要执行的方法
+        # create_plc_type_table(conn)  # 方法1: 创建PLC类型表并插入数据
+        # force_update_device_types(conn)  # 方法2: 更新设备类型
+        force_update_device_point(conn)  # 方法3: 更新设备点位类型
+        
+        conn.commit()
+        print("所有操作已完成")
+        
+    except pymysql.Error as err:
+        print(f"数据库错误: {err}")
+    finally:
+        if 'conn' in locals():
+            conn.close()
