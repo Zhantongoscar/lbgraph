@@ -76,7 +76,7 @@ def main():
                 print(f"  最长非回头路径(长度:{path['path_length']}):")
                 print(f"    路径: {' -> '.join(path['path'])}")
                 print(f"    终点: {path['end_node']}")
-                print(f"    终点属性: {path['end_properties']}")
+                print(f"    终点属性: Type={path['end_properties'].get('Type', 'Unknown')}")
             else:
                 print("  未找到有效路径")
                 
