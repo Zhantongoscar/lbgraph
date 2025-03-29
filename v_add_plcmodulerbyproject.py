@@ -71,16 +71,16 @@ def create_plc_type_table(conn):
             ('EOS1550', 'V01', 'A14', 'EL9011'),
             ('EOS1550', 'O01', 'A1', 'EL1859'),
             ('EOS1550', 'O01', 'A2', 'EL5151'),
-            ('EOS1550', 'Q15', 'A21', 'FLK-D25 SUB'),
-            ('EOS1550', 'Q15', 'A22', 'FLK-D25 SUB'),
-            ('EOS1550', 'Q15', 'A23', 'FLK-D25 SUB'),
-            ('EOS1550', 'Q15', 'A24', 'FLK-D25 SUB'),
-            ('EOS1550', 'Q15', 'A25', 'FLK-D25 SUB'),
+            ('EOS1550', 'Q15', 'A21', 'FLK-D25'),
+            ('EOS1550', 'Q15', 'A22', 'FLK-D25'),
+            ('EOS1550', 'Q15', 'A23', 'FLK-D25'),
+            ('EOS1550', 'Q15', 'A24', 'FLK-D25'),
+            ('EOS1550', 'Q15', 'A25', 'FLK-D25'),
             ('EOS1550', 'P01', 'A0.2', 'EK1122'),
-            ('EOS1550', 'O02', 'A20-X4', 'GV204'),
-            ('EOS1550', 'O02', 'A20-X1', 'GV205'),
-            ('EOS1550', 'O02', 'A20-X2', 'GV206'),
-            ('EOS1550', 'O02', 'A20-X3', 'GV207'),
+            ('EOS1550', 'O02', 'A20-X4', 'GV204_X4'),
+            ('EOS1550', 'O02', 'A20-X1', 'GV204_X1'),
+            ('EOS1550', 'O02', 'A20-X2', 'GV204_X2'),
+            ('EOS1550', 'O02', 'A20-X3', 'GV204_X3'),
             ('EOS1550', 'P01', 'A0.1', '01005N'),
             ('EOS1550', 'P01', 'A0.0', 'EK1101'),
             ('EOS1550', 'P01', 'A0', 'EK1101'),
@@ -164,18 +164,54 @@ def force_update_device_types(conn):
     except pymysql.Error as err:
         print(f"更新设备类型时出错: {err}")
         raise
+def extract_point_index(terminal):
+    """从Terminal值中提取点位索引
+    
+    Args:
+        terminal (str): Terminal值，如 "T1", "A4:13" 等
+        
+    Returns:
+        int: 提取的点位索引值
+        
+    Raises:
+        ValueError: 当无法解析Terminal值时
+    """
+    try:
+        # 处理以T开头的情况（如"T1"）
+        if terminal.startswith('T'):
+            return int(terminal[1:])
+        
+        # 处理包含冒号的情况（如"A4:13"）
+        if ':' in terminal:
+            return int(terminal.split(':')[1])
+            
+        # 处理其他格式
+        # 如果是纯数字
+        if terminal.isdigit():
+            return int(terminal)
+            
+        # 如果以数字结尾
+        import re
+        match = re.search(r'\d+$', terminal)
+        if match:
+            return int(match.group())
+            
+        raise ValueError(f"无法从Terminal值 '{terminal}' 提取点位索引")
+        
+    except Exception as e:
+        raise ValueError(f"处理Terminal值 '{terminal}' 时出错: {str(e)}")
+
 def force_update_device_point(conn):
     """根据Function,Device和Terminal更新v_csv_devpoint的Type字段"""
     cursor = conn.cursor()
     try:
         # 先查看Device以A开头的记录(不限制Type值)
         cursor.execute("""
-            SELECT id, Function, Device, Terminal, Type
-            FROM v_csv_devpoint
-            WHERE Device LIKE 'A%'
-            AND Function NOT IN ('A01', 'A02')
-            LIMIT 100
-        """)
+                SELECT id, Function, Device, Terminal, Type
+                FROM v_csv_devpoint
+                WHERE Function NOT IN ('A01', 'A02')
+                LIMIT 100
+            """)
         plc_points = cursor.fetchall()
         
         print("PLC设备前100条记录(Device以A开头):")
@@ -188,7 +224,6 @@ def force_update_device_point(conn):
         cursor.execute("""
             SELECT id, Function, Device, Terminal
             FROM v_csv_devpoint
-            WHERE Device LIKE 'A%'
         """)
         points = cursor.fetchall()
         print(f"\n找到 {len(points)} 条需要更新的记录")
@@ -239,13 +274,14 @@ def force_update_device_point(conn):
                 type_id = type_id_result[0]
                 print(f"   - 结果: 找到id='{type_id}'")
                 
-                print(f"\n4. 转换Terminal值:")
+                print(f"\n4. 解析Terminal值:")
                 print(f"   - 输入: {terminal}")
                 try:
-                    point_index = int(terminal.replace('T', ''))
-                    print(f"   - 结果: point_index={point_index}")
+                    point_index = extract_point_index(terminal)
+                    print(f"   - 结果: 成功解析得到point_index={point_index}")
                 except ValueError as e:
-                    print(f"   - 错误: 转换失败 - {e}")
+                    print(f"   - 错误: {str(e)}")
+                    print(f"   - 跳过此记录并继续处理")
                     continue
                 
                 print(f"\n5. 查询 device_type_points 表:")
@@ -287,16 +323,16 @@ if __name__ == "__main__":
     try:
         conn = pymysql.connect(**MYSQL_CONFIG)
         
-        #可以单独注释不需要执行的方法
+     
         pause = input("1 方法1 基于代码内的内容，预设plc 模板 按Enter键继续...")
         create_plc_type_table(conn)  # 方法1: 创建PLC类型表并插入数据
 
         pause = input("2 方法2: 基于plc模块型号表，更新device 字段值 按Enter键继续...")
         force_update_device_types(conn)  # 方法2: 更新设备类型
         
-        #pause = input("2 方法2: 更新设备类型 按Enter键继续...")
-        #force_update_device_point(conn)  # 方法3: 更新设备点位类型
-        #pause = input("3 方法3: 更新设备点位类型按Enter键继续...")
+        pause = input("3 方法3: 更新设备点位类型 按Enter键继续...")
+        force_update_device_point(conn)  # 方法3: 更新设备点位类型
+       
         
         conn.commit()
         print("所有操作已完成")
