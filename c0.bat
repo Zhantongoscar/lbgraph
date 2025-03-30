@@ -15,9 +15,5 @@ echo Starting c0d...
 call c0d.bat
 echo.
 
-echo Starting v_add_plcmodulerbyproject.py...
-python v_add_plcmodulerbyproject.py
-echo.
-
 echo All processes completed.
 pause
