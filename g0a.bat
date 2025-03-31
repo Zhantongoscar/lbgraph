@@ -1,3 +1,3 @@
 @echo off
 set PYTHONPATH=.
-python g0a_graph_neo_Harting.py
+C:\Users\13701\AppData\Local\Programs\Python\Python313\python.exe g0a_graph_neo_Harting.py
