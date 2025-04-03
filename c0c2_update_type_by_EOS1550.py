@@ -21,89 +21,83 @@ logger = logging.getLogger(__name__)
 # 设备类型对照表，使用Function和Device的组合作为键
 DEVICE_TYPE_MAPPINGS = {
     'A02': {
-       'A:'{
-        : 'E3204',
-    '   : 'E3403'
-    }
-    ,:{
-        
-    }
-    O01'::{{
-        -X1
-    'A20-X2': '',
-         A2 -X3A: 'GV204'2
-'       : 2'-X4E515GV24
-    }
-    ,:{
-        
-        OA2.0': 'EK'101: 
-{       
-    0   -X1': GV204',
-    }
-       'A: {
-       0-X2':'GV204',
-       0-X3':'GV204',
-       0-X4':'GV204'
-       
-       {
-       ': 'E1101',
-       .0': EK1101',
-       .1': 01005N',
-       .2': EK1122'
-       
-    }
-    Q01':: {
-       {
-       0': 'E4004',
-       1': 'E3064',
-       2': 'E3162',
-       3': 'E1004',
-       ': 'E5151',
-       ': 'E3064',
-         A'': 'EL4004A5
-'       : 6E4132'36
-         A7A: 'EL4004'6
-'       : 8E8601-8411'
+        'A1': 'EL2809',
+        'A2': 'EL2809',
+        'A3': 'EL1809',
+        'A4': 'EL3204',
+        'A5': 'EL3403'
     },
-     V0 A: {
-        'A1.1': 'EL9100'8
-'       : 13-X1': 'EL6'31E,
-        'A2.1'4132'91
-         A'.1A: 'EL9100'9
-'       : 6E8601-8411'
-        ,A7': 'EL364
-       8': 'EL334'
-    }
-}
-
-def get_db_connection():
-    """获取数据库连接"""
-    try:
-        with open('configjson', 'r', encoding='utf-8 as f
-            config = json.load(f)['mysql']
-        conn = pymysql.connect(
-           host=config[host]
+    'O01': {
+        'A1': 'EL1859',
+        'A2': 'EL5151'
+    },
+    'O02': {
+        'A20-X1': 'GV204_X1',
+        'A20-X2': 'GV204_X2',
+        'A20-X3': 'GV204_X3',
+        'A20-X4': 'GV204_X4'
+    },
+    'P01': {
+        'T1': 'EL9400',
+        'T2': 'EL9100',
+        'A0': 'EK1101',
+        'A0.0': 'EK1101',
+        'A0.1': '01005N',
+        'A0.2': 'EK1122',
+        'A0.10': '1005N'
+    },
+    'Q01': {
+        'A1': 'EL1859',
+        'A2': 'EL1551',
+        'A3': 'EL3064',
+        'A4': 'EL1859',
+        'A5': 'EL4132',
+        'A6': 'EL8601-8411',
+        'A7': 'EL1859',
+        'A8': 'EL4132',
+        'A9': 'EL8601-8411',
+        'A10': 'EL4004',
+        'A11': 'EL3064',
+        'A12': 'EL3162',
+        'A13': 'EL1004'
+    },
     'Q15': {
-        'A21': 'FLK-D25',
-        'A22': 'FLK-D25',
-        'A23': 'FLK-D25',
-        'A24': 'FLK-D25',
-        'A25': 'FLK-D25',
+        'A1': 'EL2809',
+        'A2': 'EL1809',
         'A3': 'EL4004',
         'A4': 'EL3064',
         'A5': 'EL4004',
         'A6': 'EL3064',
         'A7': 'EL4004',
-        'A8': 'EL3064'
+        'A8': 'EL3064',
+        'A9': 'EL1859',
+        'A10': 'EL4004',
+        'A11': 'EL3064',
+        'A12': 'EL3064',
+        'A21': 'FLK-D25',
+        'A22': 'FLK-D25',
+        'A23': 'FLK-D25',
+        'A24': 'FLK-D25',
+        'A25': 'FLK-D25'
+    },
+    'S02': {
+        'A1': 'EL1859'
     },
     'V01': {
+        'A1': 'EL2809',
         'A1.1': 'EL9100',
-        'A13-X1': 'EL6731',
+        'A2': 'EL2809',
         'A2.1': 'EL9100',
+        'A3': 'EL1809',
+        'A4': 'EL1809',
+        'A5': 'EL1809',
         'A5.1': 'EL9100',
         'A6': 'EL3064',
         'A7': 'EL3064',
-        'A8': 'EL3314'
+        'A8': 'EL3314',
+        'A13': 'Profib',
+        'A13-X1': 'EL6731',
+        'A14': 'EL9011'
     }
 }
 
@@ -214,26 +208,6 @@ def update_devpoint_types(cursor):
         gv204_count = cursor.rowcount
         logger.info(f"统一更新了 {gv204_count} 个GV204类型设备")
 
-        # 查看device_types表的情况
-        cursor.execute("SELECT COUNT(*) as count, GROUP_CONCAT(type_name) as types FROM device_types")
-        dt_stats = cursor.fetchone()
-        logger.info(f"device_types表包含 {dt_stats['count']} 个类型: {dt_stats['types']}")
-
-        # 检查类型匹配情况
-        cursor.execute("""
-            SELECT vd.Type, dt.type_name, COUNT(*) as count
-            FROM v_csv_device vd
-            LEFT JOIN device_types dt ON vd.Type = dt.type_name
-            WHERE vd.Location LIKE 'K1.%'
-            GROUP BY vd.Type, dt.type_name
-        """)
-        matches = cursor.fetchall()
-        logger.info("类型匹配情况:")
-        for match in matches:
-            logger.info(f"设备类型: {match['Type']}, "
-                      f"匹配到的类型: {match['type_name']}, "
-                      f"数量: {match['count']}")
-
         # 更新v_csv_devpoint的type字段
         update_sql = """
             UPDATE v_csv_devpoint vdp
@@ -247,26 +221,6 @@ def update_devpoint_types(cursor):
         cursor.execute(update_sql)
         update_count = cursor.rowcount
         logger.info(f"已更新 {update_count} 个设备端点的类型")
-
-        # 查看部分更新成功的记录
-        cursor.execute("""
-            SELECT vdp.belongtoDevice, vdp.Terminal, vdp.Type,
-                   vd.Type as device_type, dtp.point_type
-            FROM v_csv_devpoint vdp
-            JOIN v_csv_device vd ON vdp.belongtoDevice = vd.fdid
-            JOIN device_types dt ON vd.Type = dt.type_name
-            JOIN device_type_points dtp ON dt.id = dtp.device_type_id
-            WHERE vdp.Location LIKE 'K1.%'
-            LIMIT 5
-        """)
-        samples = cursor.fetchall()
-        logger.info("更新成功的示例记录:")
-        for sample in samples:
-            logger.info(f"设备={sample['belongtoDevice']}, "
-                      f"端子={sample['Terminal']}, "
-                      f"类型={sample['Type']}, "
-                      f"设备类型={sample['device_type']}, "
-                      f"点位类型={sample['point_type']}")
 
         # 获取未更新的端点数量
         cursor.execute("""

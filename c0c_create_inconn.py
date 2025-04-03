@@ -8,7 +8,9 @@ import logging
 from datetime import datetime
 import re
 import os
+import time
 from typing import Dict, List, Set, Tuple
+
 from c0c_device_rules import create_device_rule
 
 # 配置日志输出到文件和控制台
@@ -122,7 +124,7 @@ def process_device_points(cursor, device: Dict, points: List[Dict]) -> None:
         else:
             print("设备特征: 标准设备")
 
-def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int) -> Tuple[int, Set[str]]:
+def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int, need_confirm: bool) -> Tuple[int, Set[str]]:
     """处理单个设备"""
     print_device_header(index, total, device)
     
@@ -197,9 +199,35 @@ def process_device(cursor, device: Dict, index: int, total: int, global_conn_id:
     print(f"  * 未连接端子数: {len(unused_points)}")
     print(f"  * 创建连接数: {len(used_points) // 2}")  # 每个连接涉及两个端子
 
-    # 等待用户确认
-    input("\n按Enter键继续处理下一个设备...")
+    # 根据need_confirm决定是否等待用户确认
+    if need_confirm:
+        input("\n按Enter键继续处理下一个设备...")
     return global_conn_id, used_points
+
+def wait_for_user_input() -> bool:
+    """等待用户选择是否需要逐个确认设备处理"""
+    print("\n" + "="*60)
+    print("是否需要逐个确认设备处理？")
+    print("1. 如果需要逐个确认，请在5秒内按任意键")
+    print("2. 如果不需要确认，等待5秒后将自动处理所有设备")
+    print("="*60)
+    
+    try:
+        import msvcrt
+        # 等待5秒用户输入
+        for i in range(50):  # 50 * 0.1 = 5秒
+            if msvcrt.kbhit():  # 检查是否有按键
+                msvcrt.getch()  # 读取按键
+                print("\n已选择：逐个确认设备处理")
+                return True
+            time.sleep(0.1)
+        print("\n已选择：自动处理所有设备")
+        return False
+    except ImportError:
+        # 如果不是Windows系统，回退到简单的输入模式
+        print("\n请输入选择（直接回车自动处理，输入任意字符后回车逐个确认）：")
+        choice = input().strip()
+        return bool(choice)
 
 def create_internal_connections():
     """创建设备内部连接的主函数"""
@@ -208,6 +236,9 @@ def create_internal_connections():
         # 连接数据库
         conn = get_db_connection()
         logger.info("已连接到数据库")
+
+        # 等待用户选择是否需要确认
+        need_confirm = wait_for_user_input()
 
         # 创建v_csv_innerconn表
         with conn.cursor() as cursor:
@@ -242,7 +273,7 @@ def create_internal_connections():
             
             for i, device in enumerate(filtered_devices, 1):
                 try:
-                    global_conn_id, used_points = process_device(cursor, device, i, total_devices, global_conn_id)
+                    global_conn_id, used_points = process_device(cursor, device, i, total_devices, global_conn_id, need_confirm)
                     total_used_points += len(used_points)
                     # 获取未使用的端子数
                     cursor.execute("""
