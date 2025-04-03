@@ -6,9 +6,7 @@ import pymysql
 import json
 import logging
 from datetime import datetime
-import re
 
-# 配置日志输出到文件和控制台
 log_file = f'update_type_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
 logging.basicConfig(
     level=logging.INFO,
@@ -20,47 +18,93 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# EOS1550设备类型对照表
-EOS1550_DEVICE_TYPES = {
-    'A02A4': 'EL3204',
-    'A02A5': 'EL3403',
-    'O01A2': 'EL5151',
-    'O02A20-X1': 'GV204-X1',  # 修正GV204的类型名称
-    'O02A20-X2': 'GV204-X2',
-    'O02A20-X3': 'GV204-X3',
-    'O02A20-X4': 'GV204-X4',
-    'P01A0': 'EK1101',
-    'P01A0.0': 'EK1101',
-    'P01A0.1': 'EK1005',
-    'P01A0.2': 'EK1122',
-    'Q01A10': 'EL4004',
-    'Q01A11': 'EL3064',
-    'Q01A12': 'EL3162',
-    'Q01A13': 'EL1004',
-    'Q01A2': 'EL5151',
-    'Q01A3': 'EL3064',
-    'Q01A5': 'EL4132',
-    'Q01A6': 'EL8601-8411',
-    'Q01A8': 'EL4132',
-    'Q01A9': 'EL8601-8411',
-    'Q15A21': 'FLK-D25',
-    'Q15A22': 'FLK-D25',
-    'Q15A23': 'FLK-D25',
-    'Q15A24': 'FLK-D25',
-    'Q15A25': 'FLK-D25',
-    'Q15A3': 'EL4004',
-    'Q15A4': 'EL3064',
-    'Q15A5': 'EL4004',
-    'Q15A6': 'EL3064',
-    'Q15A7': 'EL4004',
-    'Q15A8': 'EL3064',
-    'V01A1.1': 'EL9100',
-    'V01A13-X1': 'EL6731',
-    'V01A2.1': 'EL9100',
-    'V01A5.1': 'EL9100',
-    'V01A6': 'EL3064',
-    'V01A7': 'EL3064',
-    'V01A8': 'EL3314'
+# 设备类型对照表，使用Function和Device的组合作为键
+DEVICE_TYPE_MAPPINGS = {
+    'A02': {
+       'A:'{
+        : 'E3204',
+    '   : 'E3403'
+    }
+    ,:{
+        
+    }
+    O01'::{{
+        -X1
+    'A20-X2': '',
+         A2 -X3A: 'GV204'2
+'       : 2'-X4E515GV24
+    }
+    ,:{
+        
+        OA2.0': 'EK'101: 
+{       
+    0   -X1': GV204',
+    }
+       'A: {
+       0-X2':'GV204',
+       0-X3':'GV204',
+       0-X4':'GV204'
+       
+       {
+       ': 'E1101',
+       .0': EK1101',
+       .1': 01005N',
+       .2': EK1122'
+       
+    }
+    Q01':: {
+       {
+       0': 'E4004',
+       1': 'E3064',
+       2': 'E3162',
+       3': 'E1004',
+       ': 'E5151',
+       ': 'E3064',
+         A'': 'EL4004A5
+'       : 6E4132'36
+         A7A: 'EL4004'6
+'       : 8E8601-8411'
+    },
+     V0 A: {
+        'A1.1': 'EL9100'8
+'       : 13-X1': 'EL6'31E,
+        'A2.1'4132'91
+         A'.1A: 'EL9100'9
+'       : 6E8601-8411'
+        ,A7': 'EL364
+       8': 'EL334'
+    }
+}
+
+def get_db_connection():
+    """获取数据库连接"""
+    try:
+        with open('configjson', 'r', encoding='utf-8 as f
+            config = json.load(f)['mysql']
+        conn = pymysql.connect(
+           host=config[host]
+    'Q15': {
+        'A21': 'FLK-D25',
+        'A22': 'FLK-D25',
+        'A23': 'FLK-D25',
+        'A24': 'FLK-D25',
+        'A25': 'FLK-D25',
+        'A3': 'EL4004',
+        'A4': 'EL3064',
+        'A5': 'EL4004',
+        'A6': 'EL3064',
+        'A7': 'EL4004',
+        'A8': 'EL3064'
+    },
+    'V01': {
+        'A1.1': 'EL9100',
+        'A13-X1': 'EL6731',
+        'A2.1': 'EL9100',
+        'A5.1': 'EL9100',
+        'A6': 'EL3064',
+        'A7': 'EL3064',
+        'A8': 'EL3314'
+    }
 }
 
 def get_db_connection():
@@ -81,21 +125,6 @@ def get_db_connection():
     except Exception as e:
         logger.error(f"数据库连接失败: {str(e)}")
         raise
-
-def extract_device_key(function, device):
-    """从Function和Device提取设备类型匹配键"""
-    if not function or not device:
-        return None
-    
-    # 组合完整标识符
-    device_id = f"{function}{device}"
-    
-    # 使用正则表达式提取匹配键
-    # 匹配 Function + Device 编号部分
-    match = re.match(r'([A-Z][0-9]+[A-Z][0-9]+(?:\.[0-9]+)?(?:-[A-Z][0-9]+)?)', device_id)
-    if match:
-        return match.group(1)
-    return None
 
 def update_device_types(cursor):
     """更新设备类型"""
@@ -123,39 +152,30 @@ def update_device_types(cursor):
         # 处理每个设备
         for device in devices:
             device_id = device['id']
-            function = device['Function'] or ''
-            device_name = device['Device'] or ''
+            function = (device['Function'] or '').strip()
+            device_name = (device['Device'] or '').strip()
             current_type = device['Type']
             
-            # 提取匹配键
-            lookup_key = extract_device_key(function, device_name)
-            if lookup_key:
-                logger.debug(f"处理设备: {function}{device_name}, 提取的匹配键: {lookup_key}")
-            
-                # 在对照表中查找匹配项
-                new_type = None
-                for key, type_value in EOS1550_DEVICE_TYPES.items():
-                    if lookup_key.startswith(key):
-                        new_type = type_value
-                        break
-                
-                # 如果找到匹配的类型并且与当前类型不同，则更新
-                if new_type and new_type != current_type:
-                    cursor.execute("""
-                        UPDATE v_csv_device 
-                        SET Type = %s 
-                        WHERE id = %s
-                    """, (new_type, device_id))
+            # 匹配设备类型
+            new_type = None
+            if function in DEVICE_TYPE_MAPPINGS:
+                if device_name in DEVICE_TYPE_MAPPINGS[function]:
+                    new_type = DEVICE_TYPE_MAPPINGS[function][device_name]
                     
-                    logger.info(f"更新设备: {function}{device_name} - Type: {current_type} -> {new_type}")
-                    update_count += 1
-                else:
-                    no_match_count += 1
-                    if function:  # 只记录有Function值的设备
-                        logger.info(f"未找到匹配: {function}{device_name}")
+            # 如果找到匹配的类型并且与当前类型不同，则更新
+            if new_type and new_type != current_type:
+                cursor.execute("""
+                    UPDATE v_csv_device 
+                    SET Type = %s 
+                    WHERE id = %s
+                """, (new_type, device_id))
+                
+                logger.info(f"更新设备: {function}{device_name} - Type: {current_type} -> {new_type}")
+                update_count += 1
             else:
                 no_match_count += 1
-                logger.debug(f"无法提取匹配键: {function}{device_name}")
+                if function:  # 只记录有Function值的设备
+                    logger.info(f"未找到匹配: Function={function}, Device={device_name}")
 
         logger.info(f"更新完成: 更新 {update_count} 个设备类型, {no_match_count} 个设备未匹配")
         return update_count, no_match_count
@@ -183,6 +203,16 @@ def update_devpoint_types(cursor):
         logger.info(f"v_csv_device表统计: 总记录数={type_stats['total']}, "
                    f"有Type值的记录数={type_stats['with_type']}, "
                    f"不同Type值数量={type_stats['unique_types']}")
+
+        # 处理GV204的特殊情况
+        cursor.execute("""
+            UPDATE v_csv_device
+            SET Type = 'GV204'
+            WHERE Type LIKE 'GV204-X_'
+            AND Location LIKE 'K1.%'
+        """)
+        gv204_count = cursor.rowcount
+        logger.info(f"统一更新了 {gv204_count} 个GV204类型设备")
 
         # 查看device_types表的情况
         cursor.execute("SELECT COUNT(*) as count, GROUP_CONCAT(type_name) as types FROM device_types")
