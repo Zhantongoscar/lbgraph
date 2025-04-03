@@ -8,13 +8,29 @@ import traceback
 # MySQL数据库连接
 def get_mysql_connection():
     """
-    获取MySQL数据库连接
+    获取MySQL数据库连接，包含重试机制
     """
-    try:
-        return pymysql.connect(**MYSQL_CONFIG, cursorclass=pymysql.cursors.DictCursor)
-    except Exception as e:
-        print(f"MySQL连接失败: {str(e)}")
-        sys.exit(1)
+    max_retries = 3
+    retry_interval = 5  # 秒
+    current_try = 1
+    
+    while current_try <= max_retries:
+        try:
+            print(f"\n尝试连接MySQL (第{current_try}次尝试)...")
+            config = MYSQL_CONFIG.copy()
+            config['connect_timeout'] = 30  # 增加连接超时时间
+            config['read_timeout'] = 30     # 增加读取超时时间
+            config['write_timeout'] = 30    # 增加写入超时时间
+            return pymysql.connect(**config, cursorclass=pymysql.cursors.DictCursor)
+        except Exception as e:
+            print(f"MySQL连接失败: {str(e)}")
+            if current_try < max_retries:
+                print(f"等待{retry_interval}秒后重试...")
+                time.sleep(retry_interval)
+                current_try += 1
+            else:
+                print("已达到最大重试次数，退出程序")
+                sys.exit(1)
 
 def extract_sort_key(terminal_id):
     match = re.match(r'(.+?:)(\d+)$', terminal_id)
@@ -326,18 +342,40 @@ def update_terminal_need(driver, terminal_id, need_type):
     with driver.session() as session:
         session.run(query, terminal_id=terminal_id, need_type=need_type)
 
+# 全局变量定义
+GROUPS = ["20", "21", "22", "23"]
+
 def get_user_group_choice():
     """
     让用户选择要处理的组 (X20-X23)
     """
-    groups = ["20", "21", "22", "23"]
     print("\n可用的组：")
-    for i, group in enumerate(groups, 1):
+    print("0. 全部")
+    for i, group in enumerate(GROUPS, 1):
         print(f"{i}. X{group}")
     
-    # 临时修改：默认返回第一个组（X20）
-    print("\n[DEBUG] 自动选择组: X20")
-    return groups[0]
+    print("\n请选择要处理的组（0-4）：")
+    print("0: 处理所有组")
+    print("1-4: 选择对应的组")
+    
+    try:
+        choice = input("\n请输入选择（0-4，默认0）: ").strip()
+        if not choice:
+            print("\n[DEBUG] 选择：处理所有组")
+            return "all"
+        if choice == "0":
+            print("\n[DEBUG] 选择：处理所有组")
+            return "all"
+        elif choice.isdigit() and 1 <= int(choice) <= 4:
+            group = GROUPS[int(choice)-1]
+            print(f"\n[DEBUG] 选择：处理组 X{group}")
+            return group
+        else:
+            print("\n输入无效，默认处理所有组")
+            return "all"
+    except KeyboardInterrupt:
+        print("\n用户中断，默认处理所有组")
+        return "all"
 
 def get_neo4j_driver():
     """
@@ -370,47 +408,157 @@ def query_neo4j(driver, group_number):
     """
     prefix = f"=A02+K1.B1-X{group_number}"
     
-    # 修改路径查询，排除回头路径和更准确地处理类型
+    # 简化路径查询，只返回必要信息
     path_query = """
-    MATCH path = (start)-[:conn*1..5]->(end)
+    MATCH path = (start)-[:conn*1..3]->(end)
     WHERE start.ftid = $terminal_id
-    AND end.ftid IS NOT NULL
-    AND start <> end
-    AND ALL(n IN nodes(path) WHERE single(m IN nodes(path) WHERE m = n))
-    AND NONE(node IN nodes(path) WHERE node.Type = 'PE')
-    RETURN path,
-           length(path) AS pathLength,
-           end,
-           properties(end) AS end_properties,
-           end.Function as end_function
-    ORDER BY pathLength DESC
+    AND end.Function IS NOT NULL
+    AND (end.Function STARTS WITH 'Q' OR end.Function STARTS WITH 'I')
+    RETURN end.ftid as end_id,
+           end.Function as end_function,
+           length(path) as path_length
+    ORDER BY path_length
     LIMIT 1
     """
     
+    print(f"\n正在查询Neo4j数据库:")
+    print(f"  - 查找前缀为 {prefix} 的终端节点...")
+
     with driver.session() as session:
         result = session.run(query, prefix=prefix)
         terminals = [dict(record) for record in result]
+        print(f"  - 找到 {len(terminals)} 个终端节点")
         
-        batch_size = 100
-        for i in range(0, len(terminals), batch_size):
-            batch = terminals[i:i + batch_size]
-            for terminal in batch:
-                path_result = session.run(path_query, terminal_id=terminal['terminal_id'])
-                record = path_result.single()
-                if record:
-                    path = record['path']
-                    path_nodes = [node for node in path.nodes if node['ftid'] is not None]
-                    end_node = record['end']
-                    end_props = record['end_properties']
-                    terminal['longest_path'] = {
-                        'path': [node['ftid'] for node in path_nodes],
-                        'path_length': record['pathLength'],
-                        'end_node': end_node['ftid'],
-                        'end_properties': end_props
-                    }
+        print("  - 开始查找终端的连接路径...")
+        for terminal in terminals:
+            print(f"\n  处理终端: {terminal['terminal_id']}")
+            path_result = session.run(path_query, terminal_id=terminal['terminal_id'])
+            record = path_result.single()
+            if record:
+                print(f"    ✓ 找到有效路径")
+                # 简化存储的信息
+                terminal['path_info'] = {
+                    'end_id': record['end_id'],
+                    'end_function': record['end_function'],
+                    'path_length': record['path_length']
+                }
+                print(f"      终点: {record['end_id']}")
+                print(f"      路径长度: {record['path_length']}")
     
     terminals.sort(key=lambda x: extract_sort_key(x['terminal_id']))
     return terminals
+
+def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals, stats):
+    """
+    处理一组终端的函数
+    """
+    # 更新组内的统计信息
+    group_stats = {
+        'total': len(terminals),
+        'processed': 0,
+        'success': 0,
+        'failed': 0,
+        'skipped': 0
+    }
+    
+    # 处理每个终端
+    total = len(terminals)
+    processed = 0
+    for terminal in terminals:
+        processed += 1
+        start_terminal = terminal['terminal_id']
+        start_properties = terminal.get('properties', {})
+        current_need = start_properties.get('Need', '未设置')
+        print(f"\n[{processed}/{total}] {start_terminal} - {terminal['types']}")
+        print(f"  当前Need属性: {current_need}")
+        
+        if 'path_info' in terminal:
+            path = terminal['path_info']
+            print(f"  连接路径(长度:{path['path_length']}):")
+            print(f"    终点: {path['end_id']}")
+            print(f"    终点功能: {path['end_function']}")
+            
+            need_type = 'DI' if path['end_function'].startswith('Q') else 'DO'
+            print(f"    起点({start_terminal})需要的属性: Need={need_type}")
+
+            if need_type == 'Unknown':
+                print("    × 跳过处理：无法确定需要的类型")
+                group_stats['skipped'] += 1
+                continue
+
+            success = False
+            try:
+                group_stats['processed'] += 1
+                # 1. 更新Neo4j的Need属性
+                update_terminal_need(driver, start_terminal, need_type)
+                print(f"    √ Need属性已更新到Neo4j数据库")
+                
+                # 2. 处理MySQL数据库更新
+                print(f"    正在更新MySQL数据库...")
+                
+                # 检查是否已存在对应的记录
+                query = """
+                    SELECT moduler, hartingbox, ftid, target_ftid
+                    FROM simpoint
+                    WHERE target_ftid = %s
+                    OR ftid = %s
+                """
+                
+                print(f"    [DEBUG SQL] 执行查询: {query}")
+                print(f"    [DEBUG SQL] 参数: {(start_terminal, start_terminal)}")
+                
+                mysql_cursor.execute(query, (start_terminal, start_terminal))
+                existing_record = mysql_cursor.fetchone()
+                
+                if existing_record:
+                    # 如果记录已存在
+                    if existing_record['target_ftid'] == start_terminal:
+                        mysql_cursor.execute("""
+                            UPDATE simpoint
+                            SET hartingbox = %s
+                            WHERE target_ftid = %s
+                        """, (harting_group, start_terminal))
+                        print(f"    √ 已更新端点对应记录的hartingbox")
+                else:
+                    # 如果记录不存在，尝试在现有模板中分配点位
+                    template_name = find_available_template(mysql_cursor, need_type, harting_group)
+                    if not template_name:
+                        # 如果没有可用模板，创建新模板
+                        template_name = create_new_template(mysql_cursor, mysql_conn, need_type, harting_group)
+                    
+                    if template_name:
+                        # 在模板中分配点位
+                        assigned_ftid = assign_point(mysql_cursor, mysql_conn, template_name, start_terminal, need_type, harting_group)
+                        if assigned_ftid:
+                            print(f"    √ 已分配点位: {assigned_ftid}")
+                            success = True
+                    
+                # 提交更改
+                mysql_conn.commit()
+                success = True
+                group_stats['success'] += 1
+                
+            except Exception as e:
+                mysql_conn.rollback()
+                print(f"    × 处理失败: {str(e)}")
+                traceback.print_exc()
+                group_stats['failed'] += 1
+                
+        else:
+            print("  未找到有效路径")
+            group_stats['skipped'] += 1
+
+        # 显示当前进度
+        success_rate = (group_stats['success'] / total * 100) if total > 0 else 0
+        print(f"\n当前进度: {processed}/{total} "
+              f"(成功: {group_stats['success']}, 失败: {group_stats['failed']}, 跳过: {group_stats['skipped']})")
+        print(f"组内成功率: {success_rate:.1f}%")
+
+
+    # 显示组处理结果
+    print(f"\n组 {harting_group} 处理完成:")
+    print(f"总数: {group_stats['total']}, 成功: {group_stats['success']}, 失败: {group_stats['failed']}, 跳过: {group_stats['skipped']}")
+    print(f"成功率: {(group_stats['success']/group_stats['total']*100 if group_stats['total'] > 0 else 0):.1f}%")
 
 def main():
     """
@@ -434,153 +582,62 @@ def main():
         
         # 让用户选择要处理的组
         selected_group = get_user_group_choice()
-        harting_group = f"X{selected_group}"
-        print(f"\n选择了组: {harting_group}")
-        
-        # 查询选定组的终端
-        terminals = query_neo4j(driver, selected_group)
-        print(f"\n查询结果(组{harting_group}，按前缀和数字顺序排序)：")
-        total_terminals = len(terminals)
-        stats['total'] = total_terminals
-        print(f"共找到 {total_terminals} 个终端需要处理")
-        
-        
-        auto_process = True  # 添加自动处理标志
-        for idx, terminal in enumerate(terminals, 1):
-            start_terminal = terminal['terminal_id']
-            start_properties = terminal.get('properties', {})
-            current_need = start_properties.get('Need', '未设置')
-            print(f"\n[{idx}/{total_terminals}] {start_terminal} - {terminal['types']}")
-            print(f"  当前Need属性: {current_need}")
-            
-            if 'longest_path' in terminal:
-                path = terminal['longest_path']
-                print(f"  最长非回头路径(长度:{path['path_length']}):")
-                print(f"    路径: {' -> '.join(path['path'])}")
-                print(f"    终点: {path['end_node']}")
-                end_type = determine_node_type(path['end_properties'])
-                print(f"    终点属性: Type={end_type}")
-                print(f"    Function: {path['end_properties'].get('Function', '')}")
-                need_type = determine_need_type(end_type)
-                print(f"    起点({start_terminal})需要的属性: Need={need_type}")
+        if selected_group == "all":
+            groups_to_process = GROUPS
+            print("\n处理所有组: X20, X21, X22, X23")
+        else:
+            groups_to_process = [selected_group]
+            print(f"\n处理组: X{selected_group}")
 
-                if need_type == 'Unknown':
-                    print("    × 跳过处理：无法确定需要的类型")
-                    stats['skipped'] += 1
-                    continue
+        # 计算总终端数并显示
+        for group in groups_to_process:
+            harting_group = f"X{group}"
+            group_terminals = query_neo4j(driver, group)
+            group_count = len(group_terminals)
+            stats['total'] += group_count
+            print(f"\n查询结果(组{harting_group}，按前缀和数字顺序排序)：")
+            print(f"组{harting_group}发现 {group_count} 个终端需要处理")
 
-                stats['processed'] += 1
-                success = False
-                try:
-                    # 1. 更新Neo4j的Need属性
-                    update_terminal_need(driver, start_terminal, need_type)
-                    print(f"    √ Need属性已更新到Neo4j数据库")
-                    
-                    # 2. 处理MySQL数据库更新
-                    print(f"    正在更新MySQL数据库...")
-                    
-                    # 检查是否已存在对应的记录
-                    query = """
-                        SELECT moduler, hartingbox, ftid, target_ftid
-                        FROM simpoint
-                        WHERE target_ftid = %s
-                        OR ftid = %s
-                    """
-                    
-                    print(f"    [DEBUG SQL] 执行查询: {query}")
-                    print(f"    [DEBUG SQL] 参数: {(start_terminal, start_terminal)}")
-                    
-                    mysql_cursor.execute(query, (start_terminal, start_terminal))
-                    existing_record = mysql_cursor.fetchone()
-                    
-                    if existing_record:
-                        # 如果记录已存在
-                        if existing_record['target_ftid'] == start_terminal:
-                            # 如果是作为目标存在，更新hartingbox
-                            mysql_cursor.execute("""
-                                UPDATE simpoint
-                                SET hartingbox = %s
-                                WHERE target_ftid = %s
-                            """, (harting_group, start_terminal))
-                            mysql_conn.commit()
-                            print(f"    √ 已更新现有记录的hartingbox为{harting_group}")
-                        else:
-                            print(f"    × 跳过处理：ftid={start_terminal}已经存在于simpoint表中")
-                    else:
-                        # 查找可用的模板
-                        template_name = find_available_template(mysql_cursor, need_type, harting_group)
-                        
-                        if template_name:
-                            # 使用现有模板
-                            try:
-                                point_ftid = assign_point(mysql_cursor, mysql_conn,
-                                                      template_name, start_terminal, need_type, harting_group)
-                                print(f"    √ 已分配到模板{template_name}的点位{point_ftid}")
-                            except Exception as e:
-                                print(f"    × 点位分配失败: {str(e)}")
-                                # 如果分配失败，尝试创建新模板
-                                try:
-                                    new_template = create_new_template(mysql_cursor, mysql_conn,
-                                                                   need_type, harting_group)
-                                    point_ftid = assign_point(mysql_cursor, mysql_conn,
-                                                          new_template, start_terminal, need_type, harting_group)
-                                    print(f"    √ 已创建新模板{new_template}并分配点位{point_ftid}")
-                                except Exception as e2:
-                                    print(f"    × 创建新模板失败: {str(e2)}")
-                        else:
-                            # 创建新模板
-                            try:
-                                new_template = create_new_template(mysql_cursor, mysql_conn,
-                                                               need_type, harting_group)
-                                point_ftid = assign_point(mysql_cursor, mysql_conn,
-                                                      new_template, start_terminal, need_type, harting_group)
-                                print(f"    √ 已创建新模板{new_template}并分配点位{point_ftid}")
-                            except Exception as e:
-                                print(f"    × 创建新模板失败: {str(e)}")
-                                stats['failed'] += 1
-                
-                except Exception as e:
-                    print(f"    × 数据库更新失败: {str(e)}")
-                    stats['failed'] += 1
-                else:
-                    stats['success'] += 1
-                    success = True
-            else:
-                print("  未找到有效路径")
-                stats['skipped'] += 1
+        print(f"\n总共找到 {stats['total']} 个终端需要处理")
+
+        # 处理所有组的终端
+        for group in groups_to_process:
+            harting_group = f"X{group}"
+            print(f"\n开始处理组 {harting_group} 中的终端...")
             
-            # 显示当前进度
-            success_rate = (stats['success'] / stats['processed'] * 100) if stats['processed'] > 0 else 0
-            print(f"\n当前进度: {stats['processed']}/{stats['total']} "
-                  f"(成功: {stats['success']}, 失败: {stats['failed']}, 跳过: {stats['skipped']})")
-            print(f"成功率: {success_rate:.1f}%")
-            
-            if idx < total_terminals and not auto_process:
-                try:
-                    input("\n按Enter键继续查看下一个节点...")
-                    print()
-                except KeyboardInterrupt:
-                    print("\n用户中断查询")
-                    print("\n最终统计:")
-                    print(f"总计处理: {stats['processed']}/{stats['total']}")
-                    print(f"成功: {stats['success']}")
-                    print(f"失败: {stats['failed']}")
-                    print(f"跳过: {stats['skipped']}")
-                    print(f"成功率: {success_rate:.1f}%")
-                    break
+            # 查询并处理该组的终端
+            group_terminals = query_neo4j(driver, group)
+            process_terminals(driver, mysql_conn, mysql_cursor, harting_group, group_terminals, stats)
+
+            # 显示该组处理结果
+            print(f"\n组 {harting_group} 处理完成")
     
     except Exception as e:
         print(f"处理过程中发生错误: {str(e)}")
         print("建议: 1. 检查数据库连接 2. 减少查询范围 3. 增加数据库内存配置")
     finally:
         # 显示最终统计信息
-        if stats['processed'] > 0:
-            print("\n处理完成！最终统计:")
-            print(f"总计处理: {stats['processed']}/{stats['total']}")
-            print(f"成功: {stats['success']}")
-            print(f"失败: {stats['failed']}")
-            print(f"跳过: {stats['skipped']}")
-            success_rate = (stats['success'] / stats['processed'] * 100)
+        group_stats = {
+            'total': stats['total'],
+            'success': 0,
+            'failed': 0,
+            'skipped': 0
+        }
+        
+        # 从处理结果中收集统计信息
+        if 'success' in stats:
+            group_stats['success'] = stats['success']
+        if 'failed' in stats:
+            group_stats['failed'] = stats['failed']
+        if 'skipped' in stats:
+            group_stats['skipped'] = stats['skipped']
+        
+        print("\n处理完成！最终统计:")
+        print(f"总计处理: {group_stats['total']} 个终端")
+        print(f"成功: {group_stats['success']}")
+        print(f"失败: {group_stats['failed']}")
+        print(f"跳过: {group_stats['skipped']}")
+        success_rate = (group_stats['success'] / group_stats['total'] * 100) if group_stats['total'] > 0 else 0
             print(f"成功率: {success_rate:.1f}%")
         
         # 关闭数据库连接
