@@ -353,7 +353,7 @@ def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, proj
             desc_query = "DESCRIBE devices"
             mysql_cursor.execute(desc_query)
             device_fields = mysql_cursor.fetchall()
-            print(f"    [DEBUG] devices表字段: {[field[0] for field in device_fields]}")
+            print(f"    [DEBUG] devices表字段: {[field['Field'] for field in device_fields]}")
 
             # 构建插入查询
             devices_query = """
@@ -415,7 +415,10 @@ def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, proj
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             
-            ftid = f"{template_name}_{point['point_index']}"
+            # 构建新的ftid格式: =<project_name>+Sim-<template_name>_<point_index>
+            # 使用冒号替换下划线作为分隔符
+            ftid = f"=lb_test+Sim-{template_name}:{point['point_index']}"
+            print(f"    [DEBUG] 创建点位ftid: {ftid}")
             params = (
                 ftid,
                 project_id,
