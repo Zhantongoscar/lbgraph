@@ -3,7 +3,7 @@
 
 import sys
 import pymysql
-from config import MYSQL_CONFIG
+import json
 import logging
 from datetime import datetime
 
@@ -29,12 +29,16 @@ def create_and_fill_tables():
         project_id = get_project_id()
         logger.info(f"使用项目ID: {project_id}")
 
-        # 使用config.py中的数据库配置
-        config = MYSQL_CONFIG
+        # 加载数据库配置
+        with open('config.json', 'r', encoding='utf-8') as f:
+            config = json.load(f)['mysql']
 
         # 连接到数据库
         conn = pymysql.connect(
-            **config,
+            host=config['host'],
+            user=config['user'],
+            password=config['password'],
+            database=config['database'],
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
         )

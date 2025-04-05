@@ -1,0 +1,332 @@
+{
+  "version": "1.0",
+  "description": "设备内部连接规则配置",
+  "allowedDeviceTypes": ["K", "Q", "S"],
+  "defaultConnectionProperties": {
+    "voltage": 24.0,
+    "current": 0.1,
+    "resistance": 240.0,
+    "isCable": false,
+    "isInPanel": true,
+    "connType": "devInConn"
+  },
+  "deviceRules": {
+    "K": {
+      "description": "继电器连接规则",
+      "subtypes": {
+        "KSAFE": {
+          "friendly_name": "安全继电器规则",
+          "pattern": "^K",
+          "priority": 1,
+          "detection": {
+            "patterns": ["^S"],
+            "or_terminals": ["A11", "A12", "53", "54"]
+          },
+          "connections": [
+            {
+              "type": "coil",
+              "points": ["0", "1"],
+              "properties": {
+                "connType": "coil",
+                "description": "0-1线圈"
+              }
+            },
+            {
+              "type": "coil",
+              "points": ["A11", "A12"],
+              "properties": {
+                "connType": "coil",
+                "description": "主线圈"
+              }
+            },
+            {
+              "type": "coil",
+              "points": ["A1", "A2"],
+              "properties": {
+                "connType": "coil",
+                "description": "辅助线圈1"
+              }
+            },
+            {
+              "type": "coil",
+              "points": ["S11", "S12"],
+              "properties": {
+                "connType": "coil",
+                "description": "安全线圈S1"
+              }
+            },
+            {
+              "type": "coil",
+              "points": ["S11", "S13"],
+              "properties": {
+                "connType": "coil",
+                "description": "安全线圈S2"
+              }
+            },
+            {
+              "type": "coil",
+              "points": ["S21", "S22"],
+              "properties": {
+                "connType": "coil",
+                "description": "安全线圈S3"
+              }
+            },
+            {
+              "type": "contacts",
+              "pattern_pairs": [
+                {
+                  "nc": {
+                    "pattern": ["^(\\d+)1$", "\\12"],
+                    "examples": ["11-12", "21-22", "31-32"]
+                  }
+                },
+                {
+                  "no": {
+                    "pattern": ["^(\\d+)3$", "\\14"],
+                    "examples": ["13-14", "23-24", "33-34", "53-54"]
+                  }
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true
+              }
+            }
+          ]
+        },
+        "default": {
+          "friendly_name": "标准继电器规则",
+          "pattern": "^K",
+          "priority": 2,
+          "connections": [
+            {
+              "type": "coil",
+              "points": ["A1", "A2"],
+              "properties": {
+                "connType": "coil"
+              }
+            },
+            {
+              "type": "contacts",
+              "pattern_pairs": [
+                {
+                  "combined": {
+                    "patterns": [
+                      {
+                        "nc": ["^(\\d+)1$", "\\12"]
+                      },
+                      {
+                        "no": ["^(\\d+)1$", "\\14"]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "pairs": [
+                {
+                  "nc": ["A", "0"],
+                  "no": ["A", "+"]
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Q": {
+      "description": "Q类设备规则",
+      "friendly_name": "Q类设备标准规则",
+      "connections": [
+        {
+          "type": "coil",
+          "points": ["D1", "D2"],
+          "properties": {
+            "connType": "coil"
+          }
+        },
+        {
+          "type": "contacts",
+          "pairs": [
+            {
+              "no": ["L1", "T1"]
+            },
+            {
+              "no": ["L2", "T2"]
+            },
+            {
+              "no": ["L3", "T3"]
+            },
+            {
+              "no": ["3.13", "3.14"]
+            },
+            {
+              "no": ["13", "14"]
+            },
+            {
+              "no": ["1", "2"]
+            },
+            {
+              "no": ["3", "4"]
+            },
+            {
+              "no": ["5", "6"]
+            }
+          ],
+          "pattern_pairs": [
+            {
+              "no": {
+                "pattern": ["^([1-9])\\.13$", "\\1.14"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["^(\\d+)3$", "\\14"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["1$", "2"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["3$", "4"]
+              }
+            },
+            {
+              "no": {
+                "pattern": ["5$", "6"]
+              }
+            }
+          ],
+          "properties": {
+            "voltage": 24.0,
+            "current": 0.1,
+            "resistance": 240.0,
+            "isCable": false,
+            "isInPanel": true,
+            "connType": "NO"
+          }
+        }
+      ]
+    },
+    "S": {
+      "description": "S类设备规则",
+      "friendly_name": "S类设备标准规则",
+      "subtypes": {
+        "SBOTH": {
+          "friendly_name": "S类按钮和LED规则",
+          "priority": 1,
+          "detection": {
+            "terminals": [".3", ".4", "X1", "X2"]
+          },
+          "connections": [
+            {
+              "type": "contacts",
+              "pairs": [
+                {
+                  "no": [".3", ".4"]
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true,
+                "connType": "button"
+              }
+            },
+            {
+              "type": "contacts",
+              "pairs": [
+                {
+                  "no": ["X1", "X2"]
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true,
+                "connType": "led"
+              }
+            }
+          ]
+        },
+        "SNO": {
+          "friendly_name": "S类NO触点规则",
+          "priority": 2,
+          "detection": {
+            "terminals": ["13", "14"]
+          },
+          "connections": [
+            {
+              "type": "contacts",
+              "pairs": [
+                {
+                  "no": ["13", "14"]
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true
+              }
+            }
+          ]
+        },
+        "default": {
+          "friendly_name": "S类标准规则",
+          "priority": 3,
+          "connections": [
+            {
+              "type": "contacts",
+              "pairs": [
+                {
+                  "nc": ["1", "2"]
+                },
+                {
+                  "no": ["3", "4"]
+                },
+                {
+                  "no": ["11", "12"]
+                },
+                {
+                  "no": [".3", ".4"]
+                }
+              ],
+              "pattern_pairs": [
+                {
+                  "no": {
+                    "pattern": ["^([1-9])\\.13$", "\\1.14"]
+                  }
+                }
+              ],
+              "properties": {
+                "voltage": 24.0,
+                "current": 0.1,
+                "resistance": 240.0,
+                "isCable": false,
+                "isInPanel": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

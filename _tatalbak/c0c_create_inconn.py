@@ -3,7 +3,7 @@
 
 import sys
 import pymysql
-from config import MYSQL_CONFIG
+import json
 import logging
 from datetime import datetime
 import re
@@ -27,8 +27,13 @@ logger = logging.getLogger(__name__)
 
 def get_db_connection():
     """获取数据库连接"""
+    with open('config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)['mysql']
     return pymysql.connect(
-        **MYSQL_CONFIG,
+        host=config['host'],
+        user=config['user'],
+        password=config['password'],
+        database=config['database'],
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
