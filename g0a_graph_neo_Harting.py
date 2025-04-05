@@ -14,7 +14,7 @@ def initialize_database(mysql_cursor, mysql_conn):
         print("正在初始化数据库...")
         
         # 创建v_simpoint表
-        create_table_query = """
+        create_vsimpoint_query = """
         CREATE TABLE IF NOT EXISTS v_simpoint (
             id INT AUTO_INCREMENT PRIMARY KEY,
             ftid VARCHAR(255) NOT NULL,
@@ -37,7 +37,128 @@ def initialize_database(mysql_cursor, mysql_conn):
         """
         
         print("创建v_simpoint表...")
-        mysql_cursor.execute(create_table_query)
+        mysql_cursor.execute(create_vsimpoint_query)
+        
+        # 检查数据库连接
+        try:
+            mysql_cursor.execute("SELECT 1")
+            print("MySQL连接正常")
+        except Exception as e:
+            print(f"MySQL连接测试失败: {str(e)}")
+            raise
+
+        # 检查数据库名称
+        try:
+            mysql_cursor.execute("SELECT DATABASE()")
+            db_name = mysql_cursor.fetchone()['DATABASE()']
+            print(f"当前数据库: {db_name}")
+        except Exception as e:
+            print(f"获取数据库名称失败: {str(e)}")
+            raise
+
+        # 检查devices表是否存在
+        try:
+            show_tables_query = "SHOW TABLES LIKE 'devices'"
+            mysql_cursor.execute(show_tables_query)
+            if not mysql_cursor.fetchone():
+                raise Exception("devices表不存在，请确保数据库已正确初始化")
+
+            print("检查devices表结构...")
+            # 检查表结构
+            check_devices_query = "DESCRIBE devices"
+            mysql_cursor.execute(check_devices_query)
+            device_fields = mysql_cursor.fetchall()
+            if not device_fields:
+                raise Exception("devices表结构为空")
+            # 使用Field名称来访问字段名
+            field_names = [field['Field'] for field in device_fields]
+            print(f"devices表字段: {', '.join(field_names)}")
+
+            # 检查现有数据
+            count_query = "SELECT COUNT(*) as count FROM devices"
+            mysql_cursor.execute(count_query)
+            result = mysql_cursor.fetchone()
+            print(f"devices表现有记录数: {result['count']}")
+
+        except Exception as e:
+            print(f"检查devices表时出错: {str(e)}")
+            print(f"错误类型: {type(e).__name__}")
+            traceback.print_exc()
+            raise
+        
+        # 同步现有的模板数据到devices表
+        templates_query = """
+            SELECT DISTINCT moduler, hartingbox
+            FROM v_simpoint
+            WHERE (moduler LIKE 'EDB%' OR moduler LIKE 'EBD%')
+            AND hartingbox IS NOT NULL
+        """
+        
+        try:
+            # 使用默认项目lb_test
+            project_name = 'lb_test'
+            print(f"使用项目名称: {project_name}")
+            
+            # 验证项目存在并已订阅
+            project_query = "SELECT project_name, is_subscribed FROM project_subscriptions WHERE project_name = %s"
+            mysql_cursor.execute(project_query, (project_name,))
+            project = mysql_cursor.fetchone()
+            
+            if not project:
+                raise Exception(f"项目'{project_name}'不存在")
+            if not project['is_subscribed']:
+                raise Exception(f"项目'{project_name}'未订阅")
+
+            # 查找模板
+            print("查找现有模板...")
+            mysql_cursor.execute(templates_query)
+            templates = mysql_cursor.fetchall()
+            print(f"找到 {len(templates)} 个模板")
+            
+            if templates:
+                print("\n同步模板到devices表...")
+                inserted_count = 0
+                for template in templates:
+                    moduler = template['moduler']
+                    # 从moduler (如"EDB1")中提取类型和序号
+                    module_type = moduler[:3]  # "EDB"
+                    serial_number = moduler[3:] # "1"
+                    
+                    insert_query = """
+                        INSERT IGNORE INTO devices
+                        (project_name, module_type, serial_number, type_id, status, rssi, Location)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """
+                    
+                    params = (
+                        project_name,      # 使用找到的有效项目名称
+                        module_type,
+                        serial_number,
+                        1 if module_type == 'EDB' else 2,  # EDB=1, EBD=2
+                        'online',
+                        0,
+                        template['hartingbox']
+                    )
+                    
+                    try:
+                        print(f"正在同步模板: {moduler}")
+                        mysql_cursor.execute(insert_query, params)
+                        mysql_conn.commit()  # 每个插入都立即提交
+                        inserted_count += mysql_cursor.rowcount
+                        print(f"  - 成功: rowcount={mysql_cursor.rowcount}")
+                    except Exception as e:
+                        print(f"  - 失败: {str(e)}")
+                        mysql_conn.rollback()
+                
+                mysql_cursor.execute("SELECT COUNT(*) as count FROM devices")
+                count = mysql_cursor.fetchone()['count']
+                print(f"同步完成，插入{inserted_count}条记录，devices表现有记录数: {count}")
+                
+        except Exception as e:
+            print(f"同步模板时出错: {str(e)}")
+            mysql_conn.rollback()
+            raise
+        
         mysql_conn.commit()
         print("数据库初始化完成")
         
@@ -197,7 +318,7 @@ def find_available_template(mysql_cursor, need_type, harting_group):
 
 def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, project_id):
     """
-    创建新的模板
+    创建新的模板，并同步到devices表
     """
     template_prefix = 'EDB' if need_type == 'DI' else 'EBD'
     print(f"    [DEBUG] 开始创建新的{template_prefix}模板")
@@ -225,6 +346,51 @@ def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, proj
         
         type_id = result['id']
         print(f"    [DEBUG] 找到设备类型ID: {type_id}")
+        
+        # 首先创建devices表记录
+        try:
+            # 获取当前devices表中的结构
+            desc_query = "DESCRIBE devices"
+            mysql_cursor.execute(desc_query)
+            device_fields = mysql_cursor.fetchall()
+            print(f"    [DEBUG] devices表字段: {[field[0] for field in device_fields]}")
+
+            # 构建插入查询
+            devices_query = """
+                INSERT INTO devices
+                (project_name, module_type, serial_number, type_id, status, rssi, Location)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """
+            # 从template_name中提取serial_number（数字部分）
+            serial_number = str(next_num)
+            
+            # 验证项目存在并已订阅
+            project_query = "SELECT project_name, is_subscribed FROM project_subscriptions WHERE project_name = 'lb_test'"
+            mysql_cursor.execute(project_query)
+            project = mysql_cursor.fetchone()
+            
+            if not project:
+                raise Exception("项目'lb_test'不存在")
+            if not project['is_subscribed']:
+                raise Exception("项目'lb_test'未订阅")
+
+            devices_params = (
+                'lb_test',         # 使用固定的项目名称
+                template_prefix,    # module_type (EDB或EBD)
+                serial_number,      # serial_number（仅数字部分）
+                type_id,           # type_id
+                'online',          # status
+                0,                # rssi 默认值
+                harting_group     # Location (X20-X23)
+            )
+            print(f"    [DEBUG SQL] 创建devices记录: {devices_query}")
+            print(f"    [DEBUG SQL] 参数: {devices_params}")
+            mysql_cursor.execute(devices_query, devices_params)
+            print(f"    [DEBUG] 成功创建devices记录: {template_name}")
+        except Exception as e:
+            print(f"    [ERROR] 创建devices记录失败: {str(e)}")
+            traceback.print_exc()
+            raise
         
         # 获取点位配置
         query = """
