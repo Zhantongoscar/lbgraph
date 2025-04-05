@@ -4,10 +4,22 @@ import sys
 import traceback
 import msvcrt
 import time
+import re
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 
 # 可用的Harting盒组
 GROUPS = ["20", "21", "22", "23"]
+
+def extract_number(ftid):
+    """
+    从ftid中提取数字部分用于排序
+    例如从'=lb_test+Sim-EDB2:1'提取出'2.1'
+    """
+    match = re.search(r'EDB(\d+):(\d+)', ftid)
+    if match:
+        board, point = match.groups()
+        return float(f"{board}.{point}")
+    return 0
 
 def pause_with_prompt():
     """
@@ -107,16 +119,11 @@ def verify_nodes_and_relationships(driver, group_number):
         """, "Sim_conn关系"),
         
         ("""
-        MATCH ()-[r:conn]->()
-        RETURN count(r) as count
-        """, "conn关系"),
-        
-        ("""
-        MATCH (s:Sim_terminal)-[:Sim_conn]->(v:V_terminal)-[:conn]->(end)
+        MATCH (s:Sim_terminal)-[:Sim_conn]->(v:V_terminal)
         WHERE s.hartingbox = $harting_box
         AND v.ftid CONTAINS $group_prefix
         RETURN COUNT(*) as count
-        """, "完整路径")
+        """, "Sim_terminal到V_terminal连接")
     ]
     
     harting_box = f"X{group_number}"
@@ -136,6 +143,27 @@ def verify_nodes_and_relationships(driver, group_number):
         print(f"验证过程中发生错误: {str(e)}")
         traceback.print_exc()
 
+def query_direct_connections(driver, harting_box, group_prefix):
+    """
+    查询直连的V端子
+    """
+    query = """
+    MATCH (start:Sim_terminal)-[r:Sim_conn]->(v:V_terminal)
+    WHERE start.hartingbox = $harting_box
+    AND v.ftid CONTAINS $group_prefix
+    RETURN 
+        start.ftid as start_id,
+        start.point_type as start_type,
+        v.ftid as v_terminal_id,
+        v.Function as v_function,
+        1 as path_length,
+        [start.ftid, v.ftid] as path_nodes,
+        true as is_direct
+    """
+    with driver.session() as session:
+        result = session.run(query, harting_box=harting_box, group_prefix=group_prefix)
+        return [dict(record) for record in result]
+
 def query_paths_for_group(driver, group_number):
     """
     查询指定组的所有路径
@@ -143,94 +171,63 @@ def query_paths_for_group(driver, group_number):
     # 首先验证节点和关系
     verify_nodes_and_relationships(driver, group_number)
     
-    # 简化的查询语句
-    query = """
-    MATCH path = (start:Sim_terminal)-[:Sim_conn]->(v:V_terminal)-[:conn*0..2]->(end)
-    WHERE start.hartingbox = $harting_box
-    AND v.ftid CONTAINS $group_prefix
-    AND (NOT (end)-[:conn]->() OR end = v)
-    AND start <> end
-    
-    WITH start, v, path, end
-    ORDER BY length(path) DESC
-    
-    RETURN DISTINCT
-        start.ftid as start_id,
-        start.point_type as start_type,
-        v.ftid as v_terminal_id,
-        v.Function as v_function,
-        end.ftid as end_id,
-        end.Function as end_function,
-        length(path) as path_length,
-        [n IN nodes(path) | n.ftid] as path_nodes
-    ORDER BY start_id, path_length DESC
-    """
-    
     harting_box = f"X{group_number}"
     group_prefix = f"X{group_number}"
     
     print(f"\n开始查询 {harting_box} 组的路径...")
     print("  - 从Sim_terminal开始")
-    print("  - 经过V_terminal")
-    print("  - 查找最远的终点")
+    print("  - 查找直连和路由连接")
     
     try:
-        with driver.session() as session:
-            result = session.run(query, 
-                               group_prefix=group_prefix,
-                               harting_box=harting_box)
-            paths = [dict(record) for record in result]
-            
-            if not paths:
-                print(f"  未找到 {harting_box} 组的路径")
-                return
-            
-            # 计算当前组中唯一起点的数量
-            unique_starts = len(set(path['start_id'] for path in paths))
-            print(f"\n在 {harting_box} 组找到 {unique_starts} 个起点")
-            
-            # 用于跟踪当前处理的起点
-            current_start = None
-            current_start_count = 0
-            
-            # 存储每个起点的最长路径
-            start_paths = {}
-            for path in paths:
-                start_id = path['start_id']
-                if start_id not in start_paths or path['path_length'] > start_paths[start_id]['path_length']:
-                    start_paths[start_id] = path
-            
-            # 遍历最长路径
-            for start_id, path in start_paths.items():
-                # 如果是新的起点
-                if current_start != path['start_id']:
-                    # 如果不是第一个起点，在新起点前暂停
-                    if current_start is not None:
-                        pause_with_prompt()
-                    
-                    current_start = path['start_id']
-                    current_start_count += 1
-                    print(f"\n{'-'*80}")
-                    print(f"正在处理 {harting_box} 组的第 {current_start_count}/{unique_starts} 个端点")
-                    print(f"{'-'*80}")
-                    print(f"起点: {current_start}")
-                    print(f"类型: {path['start_type']}\n")
+        # 获取所有直连
+        paths = query_direct_connections(driver, harting_box, group_prefix)
+        
+        if not paths:
+            print(f"  未找到 {harting_box} 组的路径")
+            return
+        
+        # 对路径按起点的自然顺序排序
+        paths.sort(key=lambda x: extract_number(x['start_id']))
+        
+        # 计算当前组中唯一起点的数量
+        unique_starts = len(set(path['start_id'] for path in paths))
+        print(f"\n在 {harting_box} 组找到 {unique_starts} 个起点")
+        
+        # 用于跟踪当前处理的起点
+        current_start = None
+        current_start_count = 0
+        
+        # 遍历所有路径
+        for path in paths:
+            # 如果是新的起点
+            if current_start != path['start_id']:
+                # 如果不是第一个起点，在新起点前暂停
+                if current_start is not None:
+                    pause_with_prompt()
                 
-                # 打印路径信息
-                print(f"  路径 (总长度: {path['path_length']}):")
-                print(f"  - V端子: {path['v_terminal_id']} (功能: {path['v_function'] or '无'})")
-                if path.get('end_id') and path['end_id'] != path['v_terminal_id']:
-                    print(f"  - 终点: {path['end_id']} (功能: {path['end_function'] or '无'})")
-                
-                # 打印完整路径序列
-                print("  - 路径序列:")
-                for i, node_id in enumerate(path['path_nodes']):
-                    print(f"    {i+1}. {node_id}")
-                print()
+                current_start = path['start_id']
+                current_start_count += 1
+                print(f"\n{'-'*80}")
+                print(f"正在处理 {harting_box} 组的第 {current_start_count}/{unique_starts} 个端点")
+                print(f"{'-'*80}")
+                print(f"起点: {current_start}")
+                print(f"类型: {path['start_type']}\n")
             
-            # 在最后一个端点处理完后也暂停
-            pause_with_prompt()
+            # 打印路径信息
+            print(f"  路径 (单步直连):")
+            print(f"  - V端子: {path['v_terminal_id']} (功能: {path['v_function'] or '无'})")
             
+            # 打印完整路径序列
+            print("\n  路径序列:")
+            for i, node_id in enumerate(path['path_nodes']):
+                print(f"    {i+1}. {node_id}")
+                if i < len(path['path_nodes']) - 1:
+                    print(f"       ↓ [Sim_conn]")
+            print()
+        
+        # 在最后一个端点处理完后也暂停
+        pause_with_prompt()
+        
     except Exception as e:
         print(f"查询过程中发生错误: {str(e)}")
         traceback.print_exc()
