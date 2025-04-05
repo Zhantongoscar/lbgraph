@@ -4,7 +4,49 @@ import pymysql
 from config import MYSQL_CONFIG, NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 import sys
 import traceback
+import time
 
+def initialize_database(mysql_cursor, mysql_conn):
+    """
+    初始化数据库，创建必要的表
+    """
+    try:
+        print("正在初始化数据库...")
+        
+        # 创建v_simpoint表
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS v_simpoint (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ftid VARCHAR(255) NOT NULL,
+            project_name VARCHAR(255) NOT NULL,
+            moduler VARCHAR(255) NOT NULL,
+            device_name VARCHAR(255) NOT NULL,
+            point_type VARCHAR(50) NOT NULL,
+            point_index INT NOT NULL,
+            sim_type VARCHAR(50),
+            mode VARCHAR(50),
+            hartingbox VARCHAR(50),
+            description TEXT,
+            target_ftid VARCHAR(255),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_ftid (ftid),
+            INDEX idx_target_ftid (target_ftid),
+            INDEX idx_moduler (moduler)
+        )
+        """
+        
+        print("创建v_simpoint表...")
+        mysql_cursor.execute(create_table_query)
+        mysql_conn.commit()
+        print("数据库初始化完成")
+        
+    except Exception as e:
+        print(f"初始化数据库失败: {str(e)}")
+        mysql_conn.rollback()
+        raise
+
+# MySQL数据库连接
 # MySQL数据库连接
 def get_mysql_connection():
     """
@@ -83,7 +125,7 @@ def get_next_template_number(mysql_cursor, template_prefix):
     """
     query = """
     SELECT MAX(CAST(SUBSTRING(moduler, %s) AS UNSIGNED))
-    FROM simpoint
+    FROM v_simpoint
     WHERE moduler LIKE %s
     """
     print(f"    [DEBUG SQL] 执行查询: {query}")
@@ -107,7 +149,7 @@ def check_template_count(mysql_cursor, template_prefix):
     """
     query = """
     SELECT COUNT(DISTINCT moduler)
-    FROM simpoint
+    FROM v_simpoint
     WHERE moduler LIKE %s
     """
     print(f"    [DEBUG SQL] 执行查询: {query}")
@@ -126,15 +168,14 @@ def find_available_template(mysql_cursor, need_type, harting_group):
     """
     template_prefix = 'EDB' if need_type == 'DI' else 'EBD'
     point_type = 'DI' if need_type == 'DI' else 'DO'
-    
     query = """
     SELECT DISTINCT s1.moduler, COUNT(s2.id) as available_points
-    FROM simpoint s1
-    LEFT JOIN simpoint s2 ON s1.moduler = s2.moduler
+    FROM v_simpoint s1
+    LEFT JOIN v_simpoint s2 ON s1.moduler = s2.moduler
         AND s2.target_ftid IS NULL
         AND s2.point_type = %s
+        AND (s2.hartingbox = %s OR s2.hartingbox IS NULL)
     WHERE s1.moduler LIKE %s
-    AND (s1.hartingbox = %s OR s1.hartingbox IS NULL)
     GROUP BY s1.moduler
     HAVING available_points > 0
     ORDER BY s1.moduler ASC, available_points DESC
@@ -142,9 +183,9 @@ def find_available_template(mysql_cursor, need_type, harting_group):
     """
     
     print(f"    [DEBUG SQL] 执行查询: {query}")
-    print(f"    [DEBUG SQL] 参数: {(point_type, f'{template_prefix}%', harting_group)}")
+    print(f"    [DEBUG SQL] 参数: {(point_type, harting_group, f'{template_prefix}%')}")
     
-    mysql_cursor.execute(query, (point_type, f"{template_prefix}%", harting_group))
+    mysql_cursor.execute(query, (point_type, harting_group, f"{template_prefix}%"))
     result = mysql_cursor.fetchone()
     
     if result:
@@ -154,7 +195,7 @@ def find_available_template(mysql_cursor, need_type, harting_group):
         print(f"    [DEBUG] 未找到可用的{template_prefix}模板")
         return None
 
-def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group):
+def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, project_id):
     """
     创建新的模板
     """
@@ -202,7 +243,7 @@ def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group):
         # 创建新的模板实例
         for point in points:
             query = """
-                INSERT INTO simpoint
+                INSERT INTO v_simpoint
                 (ftid, project_name, moduler, device_name,
                  point_type, point_index, sim_type, mode, hartingbox, description)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -211,7 +252,7 @@ def create_new_template(mysql_cursor, mysql_conn, need_type, harting_group):
             ftid = f"{template_name}_{point['point_index']}"
             params = (
                 ftid,
-                "HARTING",
+                project_id,
                 template_name,
                 template_name,
                 point['point_type'],
@@ -246,7 +287,7 @@ def assign_point(mysql_cursor, mysql_conn, template_name, target_ftid, need_type
         # 查找合适的点位
         query = """
         SELECT id, ftid, point_type
-        FROM simpoint
+        FROM v_simpoint
         WHERE moduler = %s
         AND target_ftid IS NULL
         AND point_type = %s
@@ -274,7 +315,7 @@ def assign_point(mysql_cursor, mysql_conn, template_name, target_ftid, need_type
         try:
             # 更新点位和hartingbox
             query = """
-                UPDATE simpoint
+                UPDATE v_simpoint
                 SET target_ftid = %s,
                     hartingbox = %s
                 WHERE id = %s
@@ -288,7 +329,7 @@ def assign_point(mysql_cursor, mysql_conn, template_name, target_ftid, need_type
             
             # 更新同一模板下所有点位的hartingbox
             query = """
-                UPDATE simpoint
+                UPDATE v_simpoint
                 SET hartingbox = %s
                 WHERE moduler = %s
                 AND hartingbox IS NULL
@@ -302,7 +343,7 @@ def assign_point(mysql_cursor, mysql_conn, template_name, target_ftid, need_type
             # 检查更新结果
             query = """
                 SELECT COUNT(*)
-                FROM simpoint
+                FROM v_simpoint
                 WHERE moduler = %s AND hartingbox = %s
             """
             
@@ -452,6 +493,10 @@ def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals
     """
     处理一组终端的函数
     """
+    # 获取第一个终端的project_id作为默认值
+    default_project_id = "HARTING"  # 默认值
+    if terminals and terminals[0].get('properties', {}).get('project_id'):
+        default_project_id = terminals[0]['properties']['project_id']
     # 更新组内的统计信息
     group_stats = {
         'total': len(terminals),
@@ -488,7 +533,10 @@ def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals
 
             success = False
             try:
+                # 更新处理计数
                 group_stats['processed'] += 1
+                stats['processed'] += 1
+                
                 # 1. 更新Neo4j的Need属性
                 update_terminal_need(driver, start_terminal, need_type)
                 print(f"    √ Need属性已更新到Neo4j数据库")
@@ -499,7 +547,7 @@ def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals
                 # 检查是否已存在对应的记录
                 query = """
                     SELECT moduler, hartingbox, ftid, target_ftid
-                    FROM simpoint
+                    FROM v_simpoint
                     WHERE target_ftid = %s
                     OR ftid = %s
                 """
@@ -514,20 +562,23 @@ def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals
                     # 如果记录已存在
                     if existing_record['target_ftid'] == start_terminal:
                         mysql_cursor.execute("""
-                            UPDATE simpoint
+                            UPDATE v_simpoint
                             SET hartingbox = %s
                             WHERE target_ftid = %s
                         """, (harting_group, start_terminal))
                         print(f"    √ 已更新端点对应记录的hartingbox")
                 else:
+                    # 获取当前终端的project_id
+                    current_project_id = start_properties.get('project_id', default_project_id)
+                    
                     # 如果记录不存在，尝试在现有模板中分配点位
                     template_name = find_available_template(mysql_cursor, need_type, harting_group)
                     if not template_name:
                         # 如果没有可用模板，创建新模板
-                        template_name = create_new_template(mysql_cursor, mysql_conn, need_type, harting_group)
+                        template_name = create_new_template(mysql_cursor, mysql_conn, need_type, harting_group, current_project_id)
                     
                     if template_name:
-                        # 在模板中分配点位
+                        # 在模板中分配点位，使用之前获取的project_id
                         assigned_ftid = assign_point(mysql_cursor, mysql_conn, template_name, start_terminal, need_type, harting_group)
                         if assigned_ftid:
                             print(f"    √ 已分配点位: {assigned_ftid}")
@@ -537,16 +588,19 @@ def process_terminals(driver, mysql_conn, mysql_cursor, harting_group, terminals
                 mysql_conn.commit()
                 success = True
                 group_stats['success'] += 1
+                stats['success'] += 1
                 
             except Exception as e:
                 mysql_conn.rollback()
                 print(f"    × 处理失败: {str(e)}")
                 traceback.print_exc()
                 group_stats['failed'] += 1
+                stats['failed'] += 1
                 
         else:
             print("  未找到有效路径")
             group_stats['skipped'] += 1
+            stats['skipped'] += 1
 
         # 显示当前进度
         success_rate = (group_stats['success'] / total * 100) if total > 0 else 0
@@ -579,6 +633,9 @@ def main():
         driver = get_neo4j_driver()
         mysql_conn = get_mysql_connection()
         mysql_cursor = mysql_conn.cursor()
+        
+        # 初始化数据库表
+        initialize_database(mysql_cursor, mysql_conn)
         
         # 让用户选择要处理的组
         selected_group = get_user_group_choice()
@@ -617,28 +674,14 @@ def main():
         print("建议: 1. 检查数据库连接 2. 减少查询范围 3. 增加数据库内存配置")
     finally:
         # 显示最终统计信息
-        group_stats = {
-            'total': stats['total'],
-            'success': 0,
-            'failed': 0,
-            'skipped': 0
-        }
-        
-        # 从处理结果中收集统计信息
-        if 'success' in stats:
-            group_stats['success'] = stats['success']
-        if 'failed' in stats:
-            group_stats['failed'] = stats['failed']
-        if 'skipped' in stats:
-            group_stats['skipped'] = stats['skipped']
         
         print("\n处理完成！最终统计:")
-        print(f"总计处理: {group_stats['total']} 个终端")
-        print(f"成功: {group_stats['success']}")
-        print(f"失败: {group_stats['failed']}")
-        print(f"跳过: {group_stats['skipped']}")
-        if group_stats['total'] > 0:
-            success_rate = (group_stats['success'] / group_stats['total'] * 100)
+        print(f"总计处理: {stats['total']} 个终端")
+        print(f"成功: {stats['success']}")
+        print(f"失败: {stats['failed']}")
+        print(f"跳过: {stats['skipped']}")
+        if stats['total'] > 0:
+            success_rate = (stats['success'] / stats['total'] * 100)
             print(f"成功率: {success_rate:.1f}%")
         
         # 关闭数据库连接
@@ -648,10 +691,10 @@ def main():
             mysql_conn.close()
         
         # 根据处理结果返回适当的退出码
-        if group_stats['failed'] > 0:
+        if stats['failed'] > 0:
             print("\n警告：部分记录处理失败，请检查日志并重试失败的记录。")
             sys.exit(1)
-        elif group_stats['success'] == 0:
+        elif stats['success'] == 0:
             print("\n警告：没有成功处理任何记录。")
             sys.exit(2)
 

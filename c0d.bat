@@ -1,2 +1,2 @@
 @echo off
-.\.venv\Scripts\python.exe ./c0d_create_neo_all.py
+python ./c0d_create_neo_all.py
