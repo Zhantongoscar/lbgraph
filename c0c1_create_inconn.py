@@ -13,13 +13,11 @@ from typing import Dict, List, Set, Tuple
 
 from c0c_device_rules import create_device_rule
 
-# 配置日志输出到文件和控制台
-log_file = f'create_inconn_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+# 配置日志输出到控制台
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(message)s',
     handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler(sys.stdout)
     ]
 )

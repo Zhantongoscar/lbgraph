@@ -3,16 +3,15 @@
 
 import sys
 import pymysql
-import json
+from config import MYSQL_CONFIG
 import logging
 from datetime import datetime
 
-log_file = f'update_type_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'
+# 配置日志输出到控制台
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(message)s',
     handlers=[
-        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -104,13 +103,8 @@ DEVICE_TYPE_MAPPINGS = {
 def get_db_connection():
     """获取数据库连接"""
     try:
-        with open('config.json', 'r', encoding='utf-8') as f:
-            config = json.load(f)['mysql']
         conn = pymysql.connect(
-            host=config['host'],
-            user=config['user'],
-            password=config['password'],
-            database=config['database'],
+            **MYSQL_CONFIG,
             charset='utf8mb4',
             cursorclass=pymysql.cursors.DictCursor
         )
