@@ -76,7 +76,7 @@ def query_paths_for_group(driver, group_number):
     harting_box = f"X{group_number}"
     print(f"\n开始查询 {harting_box} 组的路径...")
 
-    # 查询路径的Cypher语句
+    # 修改后的Cypher查询包含关系属性
     path_query = """
     MATCH path = (s:Sim_terminal)-[:Sim_conn]->(v:V_terminal)-[:conn*0..5]->(end)
     WHERE s.hartingbox = $harting_box
@@ -86,7 +86,8 @@ def query_paths_for_group(driver, group_number):
         v.ftid as v_terminal_id,
         v.Function as v_function,
         [node in nodes(path) | node.ftid] as path_nodes,
-        [rel in relationships(path) | type(rel)] as relationships
+        // 新增关系属性收集
+        [rel in relationships(path) | {type: type(rel), connType: rel.connType}] as relationships_info
     ORDER BY s.ftid
     """
 
@@ -99,36 +100,73 @@ def query_paths_for_group(driver, group_number):
                 print(f"  未找到 {harting_box} 组的路径")
                 return
 
+            # 新增：过滤循环路径和排除子路径
+            filtered_paths = []
+            for record in paths:
+                nodes = record["path_nodes"]
+                if len(nodes) == len(set(nodes)):  # 检查路径是否有重复节点
+                    filtered_paths.append(record)
+
+            from collections import defaultdict
+            grouped = defaultdict(list)
+            for record in filtered_paths:
+                grouped[record["start_id"]].append(record)
+
+            final_grouped = defaultdict(list)
+            for start_id, paths_in_group in grouped.items():
+                # 按路径长度降序排序
+                paths_in_group.sort(key=lambda x: len(x["path_nodes"]), reverse=True)
+                selected = []
+                for path in paths_in_group:
+                    # 检查是否被已选路径包含
+                    is_unique = True
+                    for selected_path in selected:
+                        if len(path["path_nodes"]) < len(selected_path["path_nodes"]):
+                            if selected_path["path_nodes"][:len(path["path_nodes"])] == path["path_nodes"]:
+                                is_unique = False
+                                break
+                    if is_unique:
+                        selected.append(path)
+                final_grouped[start_id] = selected
+
+            if not final_grouped:
+                print(f"  未找到 {harting_box} 组的有效路径")
+                return
+
+            # 新增：按分组处理路径
             unique_starts = set()
             current_start = None
 
-            for record in paths:
-                if record["start_id"] not in unique_starts:
-                    # 如果不是第一个起点，暂停
+            for start_id in final_grouped:
+                if start_id not in unique_starts:
                     if current_start is not None:
                         pause_with_prompt()
                     
-                    current_start = record["start_id"]
+                    current_start = start_id
                     unique_starts.add(current_start)
                     
+                    first_record = final_grouped[start_id][0]
+                    start_type = first_record['start_type']
+                    
                     print(f"\n{'-'*80}")
-                    print(f"正在处理 {harting_box} 组的第 {len(unique_starts)}/{len(unique_starts)} 个端点")
+                    print(f"正在处理 {harting_box} 组的第 {len(unique_starts)}/{len(final_grouped)} 个端点")
                     print(f"{'-'*80}")
                     print(f"起点: {current_start}")
-                    print(f"类型: {record['start_type']}\n")
+                    print(f"类型: {start_type}\n")
 
                 # 打印路径信息
-                print(f"  路径:")
-                print(f"  - V端子: {record['v_terminal_id']} (功能: {record['v_function'] or '无'})")
-
-                # 打印路径序列
-                print("\n  路径序列:")
-                for i, (node_id, rel_type) in enumerate(zip(record["path_nodes"], 
-                                                          record["relationships"] + ["(终点)"])):
-                    print(f"    {i+1}. {node_id}")
-                    if rel_type != "(终点)":
-                        print(f"       ↓ [{rel_type}]")
-                print()
+                for record in final_grouped[start_id]:
+                    print(f"  路径:")
+                    print(f"  - V端子: {record['v_terminal_id']} (功能: {record['v_function'] or '无'})")
+                    
+                    print("\n  路径序列:")
+                    relationships_info = record.get("relationships_info", [])
+                    for i, (node_id, rel_info) in enumerate(zip(record["path_nodes"], relationships_info + [None])):
+                        print(f"    {i+1}. {node_id}")
+                        if rel_info is not None:
+                            print(f"         ↓ [{rel_info['type']} - {rel_info['connType']}]")
+                        else:
+                            print("         ↓ (终点)")
 
             # 在最后一个端点处理完后暂停
             pause_with_prompt()
