@@ -47,31 +47,10 @@ def get_unused_points(points: List[Dict], used_point_ids: Set[str]) -> List[Dict
     """获取未使用的端子点"""
     return [point for point in points if point['ftid'] not in used_point_ids]
 
-def create_innerconn_table(cursor):
-    """创建v_csv_innerconn表"""
-    try:
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS v_csv_innerconn (
-                id INT NOT NULL AUTO_INCREMENT,
-                connNo VARCHAR(255) NOT NULL,
-                source VARCHAR(255) NOT NULL,
-                target VARCHAR(255) NOT NULL,
-                color VARCHAR(50),
-                isCable TINYINT(1) DEFAULT 0,
-                isInPanel TINYINT(1) DEFAULT 0,
-                connType VARCHAR(50),
-                voltage DOUBLE DEFAULT 0,
-                current DOUBLE DEFAULT 0,
-                resistance DOUBLE DEFAULT 0,
-                PRIMARY KEY (id),
-                INDEX idx_source (source),
-                INDEX idx_target (target)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        """)
-        logger.info("v_csv_innerconn表创建成功")
-    except Exception as e:
-        logger.error(f"创建v_csv_innerconn表失败: {str(e)}")
-        raise
+def get_project_id():
+    """获取项目ID"""
+    project_id = input("请输入项目ID（直接回车默认为EOS1550）：").strip()
+    return project_id if project_id else 'EOS1550'
 
 def print_device_header(index: int, total: int, device: Dict):
     """打印设备处理头部信息"""
@@ -117,7 +96,7 @@ def process_device_points(cursor, device: Dict, points: List[Dict]) -> None:
         else:
             print("设备特征: 标准设备")
 
-def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int, need_confirm: bool) -> Tuple[int, Set[str]]:
+def process_device(cursor, device: Dict, index: int, total: int, global_conn_id: int, need_confirm: bool, project_id: str) -> Tuple[int, Set[str]]:
     """处理单个设备"""
     print_device_header(index, total, device)
     
@@ -153,9 +132,9 @@ def process_device(cursor, device: Dict, index: int, total: int, global_conn_id:
                 props = conn['properties']
                 
                 cursor.execute("""
-                    INSERT INTO v_csv_innerconn
-                    (connNo, source, target, color, isCable, isInPanel, connType, voltage, current, resistance)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO v_csv_conn
+                    (connNo, source, target, color, isCable, isInPanel, connType, connMode, voltage, current, resistance, project_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     conn_id,
                     conn['source'],
@@ -163,10 +142,12 @@ def process_device(cursor, device: Dict, index: int, total: int, global_conn_id:
                     None,
                     1 if props.get('isCable', False) else 0,
                     1 if props.get('isInPanel', True) else 0,
-                    props.get('connType', 'devInConn'),
+                    'inner',
+                    props.get('connType', 'direct'),
                     props.get('voltage', 0.0),
                     props.get('current', 0.0),
-                    props.get('resistance', 0.0)
+                    props.get('resistance', 0.0),
+                    project_id
                 ))
                 
                 print(f"创建连接: {strip_device_prefix(conn['sourceTerminal'])} -> "
@@ -232,13 +213,13 @@ def create_internal_connections():
 
         # 等待用户选择是否需要确认
         need_confirm = wait_for_user_input()
-
-        # 创建v_csv_innerconn表
+        # 获取项目ID并准备操作v_csv_conn表
         with conn.cursor() as cursor:
-            create_innerconn_table(cursor)
-            # 清空已有数据
-            cursor.execute("TRUNCATE TABLE v_csv_innerconn")
-            logger.info("清空v_csv_innerconn表中的现有数据")
+            project_id = get_project_id()
+            logger.info(f"使用项目ID: {project_id}")
+            # 清空已有内部连接数据
+            cursor.execute("DELETE FROM v_csv_conn WHERE connType = 'inner' AND project_id = %s", (project_id,))
+            logger.info(f"清空v_csv_conn表中project_id为{project_id}的内部连接数据")
             
             # 获取所有设备信息
             cursor.execute("""
@@ -266,7 +247,7 @@ def create_internal_connections():
             
             for i, device in enumerate(filtered_devices, 1):
                 try:
-                    global_conn_id, used_points = process_device(cursor, device, i, total_devices, global_conn_id, need_confirm)
+                    global_conn_id, used_points = process_device(cursor, device, i, total_devices, global_conn_id, need_confirm, project_id)
                     total_used_points += len(used_points)
                     # 获取未使用的端子数
                     cursor.execute("""
@@ -288,7 +269,7 @@ def create_internal_connections():
             print(f"总端子数: {total_used_points + total_unused_points}")
             print(f"已连接端子数: {total_used_points}")
             print(f"未连接端子数: {total_unused_points}")
-            logger.info(f"总共创建了 {global_conn_id} 个内部连接")
+            logger.info(f"总共创建了 {global_conn_id} 个内部连接，project_id: {project_id}")
         return 0
 
     except Exception as e:

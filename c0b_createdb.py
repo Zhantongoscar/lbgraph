@@ -69,6 +69,7 @@ def create_and_fill_tables():
                     id INT NOT NULL AUTO_INCREMENT,
                     raw VARCHAR(255) NOT NULL,
                     ftid VARCHAR(255) NOT NULL,
+                    drawingPage INT NULL,
                     belongtoDevice VARCHAR(255),
                     Function VARCHAR(255),
                     Location VARCHAR(255),
@@ -102,6 +103,7 @@ def create_and_fill_tables():
                     isCable TINYINT(1) DEFAULT 0,
                     isInPanel TINYINT(1) DEFAULT 0,
                     connType VARCHAR(50),
+                    connMode VARCHAR(50) DEFAULT 'direct',
                     voltage DOUBLE DEFAULT 0,
                     current DOUBLE DEFAULT 0,
                     resistance DOUBLE DEFAULT 0,
@@ -228,13 +230,15 @@ def create_and_fill_tables():
             logger.info("导入连接数据...")
             sql = """
                 INSERT INTO v_csv_conn
-                (connNo, source, target, color, isInPanel, project_id)
+                (connNo, source, target, color, isInPanel, connType, connMode, project_id)
                 SELECT DISTINCT
                     cnumber as connNo,
                     s_ftid as source,
                     t_ftid as target,
                     color,
                     1 as isInPanel,
+                    'ex' as connType,
+                    'direct' as connMode,
                     '{0}' as project_id
                 FROM v_csv_raw r
                 WHERE s_ftid IS NOT NULL

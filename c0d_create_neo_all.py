@@ -105,8 +105,8 @@ def create_terminal_device_relations(connection, driver):
     except Exception as e:
         print(f"创建端子-设备关系时出错: {e}")
 
-def create_external_connections(connection, driver):
-    """从v_csv_conn读取数据并创建外部连接关系"""
+def create_all_connections(connection, driver):
+    """从v_csv_conn读取数据并创建所有连接关系（包括外部连接和内部连接）"""
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM v_csv_conn")
@@ -135,83 +135,12 @@ def create_external_connections(connection, driver):
                     processed += 1
                     
                     if processed % 100 == 0:
-                        print(f"已处理 {processed} 个外部连接")
+                        print(f"已处理 {processed} 个连接")
             
-            print(f"\n创建了 {processed} 个双向外部连接")
+            print(f"\n创建了 {processed} 个双向连接")
     except Exception as e:
         print(f"创建外部连接时出错: {e}")
 
-def create_inner_connections(connection, driver):
-    """从v_csv_innerconn读取数据并创建内部连接关系"""
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT * FROM v_csv_innerconn
-                ORDER BY connNo
-            """)
-            connections = cursor.fetchall()
-
-            with driver.session() as session:
-                total_created = 0
-                total_skipped = 0
-
-                for conn in connections:
-                    try:
-                        # 验证源点和目标点是否存在
-                        check_query = """
-                            MATCH (s:V_terminal {ftid: $source})
-                            MATCH (t:V_terminal {ftid: $target})
-                            RETURN s, t
-                        """
-                        result = session.run(check_query, 
-                                          source=conn['source'],
-                                          target=conn['target']).peek()
-
-                        if result:  # 如果两个点都存在
-                            props = {
-                                'connNo': conn['connNo'],
-                                'color': conn['color'],
-                                'isCable': bool(conn['isCable']),
-                                'isInPanel': bool(conn['isInPanel']),
-                                'connType': conn['connType'],
-                                'voltage': float(conn['voltage']) if conn['voltage'] is not None else 0.0,
-                                'current': float(conn['current']) if conn['current'] is not None else 0.0,
-                                'resistance': float(conn['resistance']) if conn['resistance'] is not None else 0.0
-                            }
-
-                            query = """
-                                MATCH (s:V_terminal {ftid: $source}), (t:V_terminal {ftid: $target})
-                                MERGE (s)-[r:conn {connNo: $connNo}]->(t)
-                                SET r = $props
-                            """
-                            # 创建双向关系
-                            session.run(query, 
-                                      source=conn['source'],
-                                      target=conn['target'],
-                                      connNo=conn['connNo'],
-                                      props=props)
-                            session.run(query, 
-                                      source=conn['target'],
-                                      target=conn['source'],
-                                      connNo=conn['connNo'],
-                                      props=props)
-
-                            total_created += 1
-                            if total_created % 100 == 0:
-                                print(f"已处理 {total_created} 个内部连接")
-                        else:
-                            print(f"跳过连接 {conn['connNo']}: 源点 ({conn['source']}) 或目标点 ({conn['target']}) 不存在")
-                            total_skipped += 1
-
-                    except Exception as e:
-                        print(f"处理内部连接 {conn['connNo']} 时出错: {str(e)}")
-                        continue
-
-                print(f"\n处理完成:")
-                print(f"成功创建内部连接: {total_created}")
-                print(f"跳过的内部连接: {total_skipped}")
-    except Exception as e:
-        print(f"创建内部连接时出错: {e}")
 
 def print_neo4j_queries():
     """打印有用的Neo4j查询语句"""
@@ -225,15 +154,14 @@ def print_neo4j_queries():
     print("MATCH (t:V_terminal)-[r:belongto]->(d:V_device)")
     print("RETURN d.name, COUNT(t) as terminal_count;")
     
-    print("\n3. 查看外部连接:")
+    print("\n3. 查看所有连接:")
     print("MATCH (s:V_terminal)-[r:conn]->(t:V_terminal)")
-    print("WHERE NOT r.connNo STARTS WITH 'in'")
-    print("RETURN s.ftid, t.ftid, r.connNo, r.connType LIMIT 25;")
+    print("RETURN s.ftid, t.ftid, r.connNo, r.connType, r.connMode LIMIT 25;")
     
-    print("\n4. 查看内部连接:")
+    print("\n4. 按连接类型查看连接:")
     print("MATCH (s:V_terminal)-[r:conn]->(t:V_terminal)")
-    print("WHERE r.connNo STARTS WITH 'in'")
-    print("RETURN s.ftid, t.ftid, r.connNo, r.connType LIMIT 25;")
+    print("RETURN r.connType, r.connMode, count(*) as count")
+    print("ORDER BY count DESC;")
     
     print("\n5. 检查重复的连接:")
     print("MATCH ()-[r:conn]->() WITH r.connNo as connNo, count(*) as cnt")
@@ -267,11 +195,8 @@ def main():
         create_terminal_device_relations(mysql_conn, neo4j_driver)
         
         # 2. 创建连接关系
-        print("\n>>> 步骤4: 创建外部连接")
-        create_external_connections(mysql_conn, neo4j_driver)
-        
-        print("\n>>> 步骤5: 创建内部连接")
-        create_inner_connections(mysql_conn, neo4j_driver)
+        print("\n>>> 步骤4: 创建所有连接（外部连接和内部连接）")
+        create_all_connections(mysql_conn, neo4j_driver)
         
         # 3. 输出查询指南
         print_neo4j_queries()
